@@ -1,0 +1,20 @@
+
+ext {
+    signModule = true
+}
+
+archivesBaseName = project.projectName
+
+dependencies {
+    compile project(":api")
+    compile project(":processor-api")
+    compile dependencyJavaPoet
+    compileOnly dependencyAutoService
+    apt dependencyAutoService
+    testCompile dependencyJunit
+}
+
+performSigning(signingEnabled, signModule)
+configureUpload(gplLicenseName, signingEnabled, signModule)
+
+uploadArchives.enabled = true

@@ -1,0 +1,16 @@
+
+archivesBaseName = "${project.projectName}-${project.name}"
+
+dependencies {
+    compileOnly project(":api")
+    apt project(":processor")
+    compile "org.functionaljava:functionaljava:4.4"
+    compile 'io.atlassian.fugue:fugue:3.0.0'
+    compile 'com.atlassian.fugue:fugue:2.6.1'
+    compile 'com.google.guava:guava:18.0'
+    testCompile dependencyJunit
+}
+
+configureUpload(bsd3LicenseName, "false", false)
+
+uploadArchives.enabled = false

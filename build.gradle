@@ -1,0 +1,218 @@
+
+defaultTasks 'build'
+
+ext {
+}
+
+buildscript {
+    ext {
+        uptodateVersion = "1.6.0"
+    }
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath "com.ofg:uptodate-gradle-plugin:$uptodateVersion"
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.4"
+        classpath "nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0"
+    }
+}
+
+apply plugin: "jacoco"
+apply plugin: 'com.github.kt3k.coveralls'
+
+
+allprojects {
+
+
+
+    jacoco {
+        toolVersion = "0.7.1.201405082137"
+    }
+
+    defaultTasks "build"
+
+    ext {
+        isSnapshot = true
+        d4jBaseVersion = "0.1"
+
+        snapshotAppendix = "-SNAPSHOT"
+        d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
+
+        signModule = false
+
+        projectTitle = "Derive4J"
+        projectName = "derive4j"
+        pomProjectName = projectTitle
+        pomOrganisation = "Derive4J contributors"
+        projectDescription = "Annotation processor and framework for deriving algebraic data types constructors, morphisms, optics and typeclasses"
+        projectUrl = "https://github.com/derive4j/derive4j"
+        scmUrl = "git://github.com/derive4j/derive4j.git"
+        scmGitFile = "scm:git@github.com:derive4j/derive4j.git"
+
+        sonatypeBaseUrl = "https://oss.sonatype.org"
+        sonatypeSnapshotUrl = "$sonatypeBaseUrl/content/repositories/snapshots/"
+        sonatypeRepositoryUrl = "$sonatypeBaseUrl/content/groups/public"
+        sonatypeReleaseUrl = "$sonatypeBaseUrl/service/local/staging/deploy/maven2/"
+        sonatypeUploadUrl = isSnapshot ? sonatypeSnapshotUrl : sonatypeReleaseUrl
+        primaryEmail = "jb@giraudeau.info"
+
+        dependencyJavaPoet = "com.squareup:javapoet:1.3.0"
+        dependencyJunit = "junit:junit:4.12"
+        dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
+
+        gplLicenseName = "The GNU General Public License"
+        lgplLicenseName = "The GNU Lesser General Public License"
+        bsd3LicenseName = "The BSD3 License"
+
+        displayCompilerWarnings = true
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+        mavenLocal()
+    }
+
+    version = d4jVersion
+    group = "org.derive4j"
+
+}
+
+subprojects {
+
+
+    buildscript {
+        repositories {
+            mavenCentral()
+        }
+
+        dependencies {
+            classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+        }
+    }
+
+    apply plugin: "jacoco"
+    apply plugin: 'com.github.kt3k.coveralls'
+    apply plugin: "net.ltgt.apt"
+
+    apply from: "$rootDir/lib.gradle"
+    apply plugin: "java"
+    apply plugin: "eclipse"
+    apply plugin: "idea"
+    apply plugin: "com.ofg.uptodate"
+    apply plugin: "license"
+
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven {
+            url sonatypeRepositoryUrl
+        }
+    }
+
+    if (displayCompilerWarnings) {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:all"
+        }
+    }
+
+    jacocoTestReport {
+        reports {
+            html.enabled = true
+            xml.enabled = true
+            csv.enabled = false
+//        html.destination "${buildDir}/jacocoHtml"
+        }
+    }
+
+
+    task coverage(dependsOn: ["test", "jacocoTestReport"]) << {
+
+    }
+
+    license {
+        header project.file('etc/HEADER.txt')
+        strictCheck true
+    }
+
+}
+
+task coverage(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+    dependsOn = subprojects.test
+    sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories =  files(subprojects.sourceSets.main.output)
+    executionData = files(subprojects.jacocoTestReport.executionData)
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        csv.enabled = false
+    }
+}
+
+configure(subprojects) {
+
+    apply plugin: "maven"
+    apply plugin: "signing"
+    apply plugin: "osgi"
+
+    sourceCompatibility = "1.8"
+
+    task javadocJar(type: Jar, dependsOn: "javadoc") {
+        classifier = 'javadoc'
+        from "build/docs/javadoc"
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+    }
+
+    artifacts {
+        archives jar
+        archives javadocJar
+        archives sourcesJar
+    }
+
+    jar {
+        version project.d4jVersion
+        manifest {
+            name = 'Derive for Java'
+            instruction 'Signature-Version', project.d4jVersion
+            instruction 'Bundle-ActivationPolicy', 'lazy'
+            instruction 'Bundle-Vendor', 'derive4j.org'
+            if(project.name != "processor") {
+                instruction 'Require-Bundle', 'org.derive4j;bundle-version="'+project.d4jBaseVersion+'"'
+            }
+        }
+    }
+
+    eclipse {
+        project {
+            natures 'org.eclipse.pde.PluginNature'
+            buildCommand 'org.eclipse.pde.ManifestBuilder'
+            buildCommand 'org.eclipse.pde.SchemaBuilder'
+        }
+    }
+
+    // Output MANIFEST.MF statically so eclipse can see it for plugin development
+    task eclipsePluginManifest(dependsOn: jar) << {
+        file("META-INF").mkdirs()
+        jar.manifest.writeTo(file("META-INF/MANIFEST.MF"))
+    }
+
+    eclipseProject.dependsOn eclipsePluginManifest
+}
+
+task env << {
+    println System.getenv()
+}
