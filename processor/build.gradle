@@ -6,7 +6,7 @@ ext {
 archivesBaseName = project.projectName
 
 dependencies {
-    compile project(":api")
+    compile project(":annotation")
     compile project(":processor-api")
     compile dependencyJavaPoet
     compileOnly dependencyAutoService

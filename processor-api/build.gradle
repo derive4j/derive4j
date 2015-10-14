@@ -6,7 +6,7 @@ ext {
 archivesBaseName = "${project.projectName}-${project.name}"
 
 dependencies {
-    compile project(":api")
+    compile project(":annotation")
     compile dependencyJavaPoet
     testCompile dependencyJunit
 }

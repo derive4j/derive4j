@@ -1,7 +1,7 @@
 
 ext {
     signModule = true
-    projectTitle = "Derive4J - Annotations API"
+    projectTitle = "Derive4J - Annotations"
 }
 
 archivesBaseName = "${project.projectName}-${project.name}"
