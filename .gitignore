@@ -4,7 +4,6 @@ lib_managed
 *.iws
 .deps
 .idea
-gradle
 .gradle
 build
 *.iml
