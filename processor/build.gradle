@@ -1,7 +1,6 @@
 
-ext {
-    signModule = true
-}
+
+projectTitle = "Derive4J - Annotation Processor"
 
 archivesBaseName = project.projectName
 
@@ -14,7 +13,4 @@ dependencies {
     testCompile dependencyJunit
 }
 
-performSigning(signingEnabled, signModule)
-configureUpload(gplLicenseName, signingEnabled, signModule)
-
-uploadArchives.enabled = true
+configureUpload(gplLicenseName)

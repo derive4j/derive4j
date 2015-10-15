@@ -1,4 +1,6 @@
 
+projectTitle = "Derive4J - Examples"
+
 archivesBaseName = "${project.projectName}-${project.name}"
 
 dependencies {
@@ -11,6 +13,6 @@ dependencies {
     testCompile dependencyJunit
 }
 
-configureUpload(bsd3LicenseName, "false", false)
+configureUpload(bsd3LicenseName)
 
-uploadArchives.enabled = false
+artifactoryPublish.skip = true

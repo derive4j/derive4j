@@ -20,23 +20,15 @@ buildscript {
 
     dependencies {
         classpath "com.ofg:uptodate-gradle-plugin:$uptodateVersion"
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
         classpath "net.ltgt.gradle:gradle-apt-plugin:0.4"
         classpath "nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.0"
     }
 }
 
-apply plugin: "jacoco"
-apply plugin: 'com.github.kt3k.coveralls'
-
-
 allprojects {
 
-
-
-    jacoco {
-        toolVersion = "0.7.1.201405082137"
-    }
+    apply plugin: 'com.jfrog.artifactory-upload'
 
     defaultTasks "build"
 
@@ -47,8 +39,6 @@ allprojects {
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
 
-        signModule = false
-
         projectTitle = "Derive4J"
         projectName = "derive4j"
         pomProjectName = projectTitle
@@ -58,11 +48,6 @@ allprojects {
         scmUrl = "git://github.com/derive4j/derive4j.git"
         scmGitFile = "scm:git@github.com:derive4j/derive4j.git"
 
-        sonatypeBaseUrl = "https://oss.sonatype.org"
-        sonatypeSnapshotUrl = "$sonatypeBaseUrl/content/repositories/snapshots/"
-        sonatypeRepositoryUrl = "$sonatypeBaseUrl/content/groups/public"
-        sonatypeReleaseUrl = "$sonatypeBaseUrl/service/local/staging/deploy/maven2/"
-        sonatypeUploadUrl = isSnapshot ? sonatypeSnapshotUrl : sonatypeReleaseUrl
         primaryEmail = "jb@giraudeau.info"
 
         dependencyJavaPoet = "com.squareup:javapoet:1.3.0"
@@ -87,21 +72,10 @@ allprojects {
 
 }
 
+artifactoryPublish.skip = true
+
 subprojects {
 
-
-    buildscript {
-        repositories {
-            mavenCentral()
-        }
-
-        dependencies {
-            classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
-        }
-    }
-
-    apply plugin: "jacoco"
-    apply plugin: 'com.github.kt3k.coveralls'
     apply plugin: "net.ltgt.apt"
 
     apply from: "$rootDir/lib.gradle"
@@ -110,34 +84,18 @@ subprojects {
     apply plugin: "idea"
     apply plugin: "com.ofg.uptodate"
     apply plugin: "license"
+    apply plugin: "com.jfrog.artifactory"
 
     repositories {
         mavenLocal()
         jcenter()
         mavenCentral()
-        maven {
-            url sonatypeRepositoryUrl
-        }
     }
 
     if (displayCompilerWarnings) {
         tasks.withType(JavaCompile) {
             options.compilerArgs << "-Xlint:all"
         }
-    }
-
-    jacocoTestReport {
-        reports {
-            html.enabled = true
-            xml.enabled = true
-            csv.enabled = false
-//        html.destination "${buildDir}/jacocoHtml"
-        }
-    }
-
-
-    task coverage(dependsOn: ["test", "jacocoTestReport"]) << {
-
     }
 
     license {
@@ -147,22 +105,9 @@ subprojects {
 
 }
 
-task coverage(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
-    dependsOn = subprojects.test
-    sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories =  files(subprojects.sourceSets.main.output)
-    executionData = files(subprojects.jacocoTestReport.executionData)
-    reports {
-        html.enabled = true
-        xml.enabled = true
-        csv.enabled = false
-    }
-}
-
 configure(subprojects) {
 
     apply plugin: "maven"
-    apply plugin: "signing"
     apply plugin: "osgi"
 
     sourceCompatibility = "1.8"
@@ -211,6 +156,30 @@ configure(subprojects) {
     }
 
     eclipseProject.dependsOn eclipsePluginManifest
+
+    artifactoryPublish {
+        dependsOn sourcesJar, javadocJar
+    }
+}
+
+artifactory {
+    contextUrl = 'http://oss.jfrog.org/artifactory'   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'   //The Artifactory repository key to publish to
+            username = jfrogUsername         //The publisher user name
+            password = jfrogPassword      //The publisher password
+        }
+        defaults {
+            publishConfigs('archives')
+            //publishIvy = false
+        }
+    }
+    resolve {
+        repository {
+            repoKey = 'libs-releases'  //The Artifactory (preferably virtual) repository key to resolve from
+        }
+    }
 }
 
 task env << {

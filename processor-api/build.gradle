@@ -1,7 +1,6 @@
 
-ext {
-    signModule = true
-}
+
+pomProjectName = "Derive4J - Annotation Processor API"
 
 archivesBaseName = "${project.projectName}-${project.name}"
 
@@ -11,7 +10,4 @@ dependencies {
     testCompile dependencyJunit
 }
 
-performSigning(signingEnabled, signModule)
-configureUpload(lgplLicenseName, signingEnabled, signModule)
-
-uploadArchives.enabled = true
+configureUpload(lgplLicenseName)

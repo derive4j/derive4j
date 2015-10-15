@@ -1,27 +1,6 @@
 
-import org.apache.tools.ant.taskdefs.condition.Os
 
-String findCommand(String dir, String command) {
-    def extension = Os.isFamily(Os.FAMILY_WINDOWS) ? ".exe" : ""
-    def cmd = "$dir/$command$extension"
-    if (! new File(cmd).exists()) {
-        throw new Exception("Command $command not found in dir $dir")
-    }
-    cmd
-}
-
-Boolean doSigning(String signingAllowed, Boolean doModule) {
-    signingAllowed.trim() == "true" && doModule
-}
-
-void performSigning(String signingAllowed, Boolean doModule) {
-    signing {
-        required { doSigning(signingAllowed, doModule) }
-        sign configurations.archives
-    }
-}
-
-void configureUpload(String licenseName, String signingEnabled, Boolean signModule) {
+void configureUpload(String licenseName) {
     install {
         repositories.mavenInstaller {
             pom {
@@ -56,25 +35,8 @@ void configureUpload(String licenseName, String signingEnabled, Boolean signModu
         }
     }
 
-    uploadArchives {
-        enabled = false
-        repositories {
-            mavenDeployer {
-                if (doSigning(signingEnabled, signModule)) {
-                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                }
-
-                repository(url: sonatypeUploadUrl) {
-                    authentication(userName: sonatypeUsername, password: sonatypePassword)
-                }
-                install.repositories.mavenInstaller.pom
-            }
-        }
-    }
 }
 
 ext {
-    doSigning = this.&doSigning
-    performSigning = this.&performSigning
     configureUpload = this.&configureUpload
 }
