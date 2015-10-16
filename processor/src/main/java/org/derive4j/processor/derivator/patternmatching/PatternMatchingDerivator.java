@@ -19,13 +19,13 @@
 package org.derive4j.processor.derivator.patternmatching;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DataConstructor;
 import org.derive4j.processor.api.model.DeriveContext;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeVariable;
@@ -34,11 +34,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.derive4j.processor.Utils.*;
 import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
 import static org.derive4j.processor.derivator.MapperDerivator.mapperTypeName;
 import static org.derive4j.processor.derivator.patternmatching.OtherwiseMatchingStepDerivator.otherwiseBuilderClassName;
 import static org.derive4j.processor.derivator.patternmatching.TotalMatchingStepDerivator.totalMatchingStepTypeSpec;
-import static org.derive4j.processor.Utils.*;
 
 public class PatternMatchingDerivator {
 
@@ -49,8 +49,8 @@ public class PatternMatchingDerivator {
         DeriveResult.result(DerivedCodeSpec.none()),
         firstConstructor -> {
 
-          ParameterizedTypeName firstMatchBuilderTypeName = ParameterizedTypeName.get(getClassName(deriveContext, TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor)),
-              adt.typeConstructor().typeVariables().stream().map(TypeName::get).toArray(TypeName[]::new));
+          TypeName firstMatchBuilderTypeName = Utils.typeName(getClassName(deriveContext, TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor)),
+              adt.typeConstructor().typeVariables().stream().map(TypeName::get));
 
           MethodSpec matchFactory = MethodSpec.methodBuilder(adt.matchMethod().element().getSimpleName().toString())
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)

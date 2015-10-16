@@ -186,14 +186,22 @@ public class Utils {
         .orElse("");
   }
 
-  public static ParameterizedTypeName typeName(TypeConstructor typeConstructor, List<TypeRestriction> restrictions, Types types) {
-    return ParameterizedTypeName.get(
+  public static TypeName typeName(TypeConstructor typeConstructor, List<TypeRestriction> restrictions, Types types) {
+    TypeName[] typeArgs = typeConstructor.typeVariables().stream()
+        .map(tv -> restrictions.stream()
+            .filter(tr -> types.isSameType(tr.restrictedTypeParameter(), tv))
+            .findFirst().map(TypeRestriction::type).orElse(tv))
+        .map(TypeName::get).toArray(TypeName[]::new);
+
+    return typeArgs.length == 0 ? TypeName.get(typeConstructor.declaredType()) : ParameterizedTypeName.get(
         ClassName.get(typeConstructor.typeElement()),
-        typeConstructor.typeVariables().stream()
-            .map(tv -> restrictions.stream()
-                .filter(tr -> types.isSameType(tr.restrictedTypeParameter(), tv))
-                .findFirst().map(TypeRestriction::type).orElse(tv))
-            .map(TypeName::get).toArray(TypeName[]::new));
+        typeArgs);
+  }
+
+  public static TypeName typeName(ClassName className, Stream<TypeName> typeArguments) {
+    TypeName[] typeArgs = typeArguments.toArray(TypeName[]::new);
+
+    return typeArgs.length == 0 ? className : ParameterizedTypeName.get(className, typeArgs);
   }
 
   public static List<ExecutableElement> getAbstractMethods(final List<? extends Element> amongElements) {

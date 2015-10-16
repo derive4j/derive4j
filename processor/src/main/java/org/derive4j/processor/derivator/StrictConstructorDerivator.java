@@ -19,11 +19,11 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
@@ -36,9 +36,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.Utils.joinStrings;
 import static org.derive4j.processor.Utils.optionalAsStream;
+import static org.derive4j.processor.api.DeriveResult.result;
 
 public final class StrictConstructorDerivator {
 
@@ -78,7 +78,9 @@ public final class StrictConstructorDerivator {
 
   private static DerivedCodeSpec constructorSpec(AlgebraicDataType adt, DataConstructor constructor, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
-    ParameterizedTypeName constructedType = Utils.typeName(adt.typeConstructor(), constructor.typeRestrictions(), deriveUtils.types());
+    TypeName constructedType = TypeName.get(deriveUtils.resolve(
+        adt.typeConstructor().declaredType(),
+        deriveUtils.typeRestrictions(constructor.typeRestrictions())));
 
     List<TypeVariableName> typeVariableNames = adt.typeConstructor().typeVariables().stream()
         .filter(tv -> constructor.typeRestrictions().stream().map(TypeRestriction::restrictedTypeParameter)
@@ -119,16 +121,39 @@ public final class StrictConstructorDerivator {
     typeSpecBuilder.addMethods(optionalAsStream(deriveHashCode(adt, constructor, deriveContext, deriveUtils)).collect(Collectors.toList()));
     typeSpecBuilder.addMethods(optionalAsStream(deriveToString(adt, constructor, deriveContext, deriveUtils)).collect(Collectors.toList()));
 
-    return DerivedCodeSpec.codeSpec(typeSpecBuilder.build(),
-        MethodSpec.methodBuilder(constructor.name())
-            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .addTypeVariables(typeVariableNames)
-            .addParameters(constructor.arguments().stream()
-                .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build()).collect(Collectors.toList()))
-            .returns(constructedType)
-            .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty() ? "" : "<>", Utils.asArgumentsString(constructor.arguments()))
-            .build()
-    );
+    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name())
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .addTypeVariables(typeVariableNames)
+        .addParameters(constructor.arguments().stream()
+            .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build()).collect(Collectors.toList()))
+        .returns(constructedType);
+
+    DerivedCodeSpec result;
+
+    if (constructor.arguments().isEmpty()) {
+      FieldSpec.Builder singleton = FieldSpec.builder(ClassName.get(adt.typeConstructor().typeElement()),
+          constructor.name(),
+          Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+          .initializer("new $L()", className);
+      if (!adt.typeConstructor().typeVariables().isEmpty()) {
+        singleton.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
+        factory.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
+      }
+
+      result = DerivedCodeSpec.codeSpec(typeSpecBuilder.build(),
+          singleton.build(),
+          factory
+              .addStatement("return $L", constructor.name())
+              .build());
+    } else {
+      result = DerivedCodeSpec.codeSpec(typeSpecBuilder.build(),
+          factory
+              .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty() ? "" : "<>", Utils.asArgumentsString(constructor.arguments()))
+              .build()
+      );
+    }
+
+    return result;
 
   }
 

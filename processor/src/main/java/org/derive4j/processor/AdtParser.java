@@ -238,6 +238,13 @@ public final class AdtParser implements DeriveUtils {
         .findFirst().map(tm -> tm);
   }
 
+  @Override
+  public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
+    return tv -> typeRestrictions.stream()
+        .filter(tr -> types.isSameType(tr.restrictedTypeParameter(), tv))
+        .findFirst().map(TypeRestriction::type);
+  }
+
   public MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
     return MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())

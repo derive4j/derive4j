@@ -21,6 +21,7 @@ package org.derive4j.processor.api;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.TypeRestriction;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -29,6 +30,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,6 +46,8 @@ public interface DeriveUtils {
   TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs);
 
   Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt);
+
+  Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions);
 
   TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
 
