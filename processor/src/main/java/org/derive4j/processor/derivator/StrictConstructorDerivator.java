@@ -346,7 +346,7 @@ public final class StrictConstructorDerivator {
     }, "this." + da.fieldName());
   }
 
-  private static Optional<ExecutableElement> findAbstractEquals(TypeElement typeElement, Elements elements) {
+  static Optional<ExecutableElement> findAbstractEquals(TypeElement typeElement, Elements elements) {
 
     TypeElement object = elements.getTypeElement(Object.class.getName());
     List<ExecutableElement> objectMethods = Utils.getMethods(object.getEnclosedElements()).collect(Collectors.toList());
@@ -355,7 +355,7 @@ public final class StrictConstructorDerivator {
     return Utils.getAbstractMethods(typeElement.getEnclosedElements()).stream().filter(e -> elements.overrides(e, equals, object)).findFirst();
   }
 
-  private static Optional<ExecutableElement> findAbstractToString(TypeElement typeElement, Elements elements) {
+  static Optional<ExecutableElement> findAbstractToString(TypeElement typeElement, Elements elements) {
 
     TypeElement object = elements.getTypeElement(Object.class.getName());
     List<ExecutableElement> objectMethods = Utils.getMethods(object.getEnclosedElements()).collect(Collectors.toList());
@@ -364,7 +364,7 @@ public final class StrictConstructorDerivator {
     return Utils.getAbstractMethods(typeElement.getEnclosedElements()).stream().filter(e -> elements.overrides(e, toString, object)).findFirst();
   }
 
-  private static Optional<ExecutableElement> findAbstractHashCode(TypeElement typeElement, Elements elements) {
+  static Optional<ExecutableElement> findAbstractHashCode(TypeElement typeElement, Elements elements) {
 
     TypeElement object = elements.getTypeElement(Object.class.getName());
     List<ExecutableElement> objectMethods = Utils.getMethods(object.getEnclosedElements()).collect(Collectors.toList());

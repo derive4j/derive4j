@@ -26,8 +26,6 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.Derived;
 import org.derive4j.FieldNames;
 
 import java.util.function.BiFunction;
@@ -44,7 +42,7 @@ import static org.derive4j.exemple.Term2s.*;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data(@Derive({Derived.strictConstructors, Derived.getters, Derived.patternMatching, Derived.modifiers}))
+@Data
 public abstract class Term2<T> {
   Term2() {
   }

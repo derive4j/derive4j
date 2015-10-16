@@ -57,7 +57,7 @@ public final class GettersDerivator {
 
     String arg = Utils.uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString());
 
-    Flavours.OptionType optionType = Flavours.findOptionType(deriveContext.deriveFlavour(), deriveUtils.elements());
+    Flavours.OptionType optionType = Flavours.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
     DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type());
 
@@ -90,7 +90,7 @@ public final class GettersDerivator {
 
             Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
                 deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                    ? Optional.of(deriveUtils.types().getDeclaredType(Flavours.findOptionType(deriveContext.deriveFlavour(), deriveUtils.elements()).typeElement(), field.type()))
+                    ? Optional.of(deriveUtils.types().getDeclaredType(Flavours.findOptionType(deriveContext.flavour(), deriveUtils.elements()).typeElement(), field.type()))
                     : Optional.<TypeMirror>empty();
 
             Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());

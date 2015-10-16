@@ -64,7 +64,7 @@ public class OtherwiseMatchingStepDerivator {
       otherwiseMatchConstructorBuilder.addStatement("this.$L = $L", mapperFieldName(dc), mapperFieldName(dc));
     }
 
-    TypeElement f0 = Flavours.findF0(deriveContext.deriveFlavour(), deriveUtils.elements());
+    TypeElement f0 = Flavours.findF0(deriveContext.flavour(), deriveUtils.elements());
 
     return otherwiseMatchBuilder
         .addMethod(otherwiseMatchConstructorBuilder.build())
@@ -74,7 +74,7 @@ public class OtherwiseMatchingStepDerivator {
                 TypeName.get(deriveUtils.types().getDeclaredType(f0, adt.matchMethod().returnTypeVariable())),
                 "otherwise").build()
             )
-            .returns(TypeName.get(deriveUtils.types().getDeclaredType(Flavours.findF1(deriveContext.deriveFlavour(), deriveUtils.elements()),
+            .returns(TypeName.get(deriveUtils.types().getDeclaredType(Flavours.findF1(deriveContext.flavour(), deriveUtils.elements()),
                 adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
             .addCode(adt.dataConstruction().match(new DataConstruction.Cases<CodeBlock>() {
               @Override

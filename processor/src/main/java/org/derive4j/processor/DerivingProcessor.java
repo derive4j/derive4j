@@ -22,9 +22,13 @@ package org.derive4j.processor;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-import org.derive4j.*;
+import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Flavour;
+import org.derive4j.Visibility;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
+import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.MessageLocalization;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
@@ -36,7 +40,7 @@ import javax.lang.model.element.*;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -82,14 +86,14 @@ public class DerivingProcessor extends AbstractProcessor {
 
   private void processElements(final Set<? extends TypeElement> elements) throws IOException {
     AdtParser parser = new AdtParser(processingEnv.getTypeUtils(), processingEnv.getElementUtils());
-    Function<List<Derived>, BuiltinDerivator> derivator = BuiltinDerivator.derivator(parser);
+    BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator = BuiltinDerivator.derivator(parser);
     for (final TypeElement element : elements) {
       try {
         Data dataAnnotation = element.getAnnotation(Data.class);
 
         DeriveContext deriveContext = new DeriveContext() {
           @Override
-          public Flavour deriveFlavour() {
+          public Flavour flavour() {
             return dataAnnotation.flavour();
           }
 
@@ -105,51 +109,51 @@ public class DerivingProcessor extends AbstractProcessor {
         };
 
         DeriveResult<AlgebraicDataType> parseResult = parser.parseAlgebraicDataType(element);
-        Supplier<Unit> effect = parseResult.bind(adt -> derivator.apply(Arrays.asList(dataAnnotation.value().value()))
-            .derive(adt, deriveContext)).match(
-            message -> () -> message.match((msg, localizations) -> {
-              if (localizations.isEmpty()) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element);
-              } else {
-                localizations.forEach(msgL -> msgL.match(new MessageLocalization.Cases<Unit>() {
-                  @Override
-                  public Unit onElement(Element e) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
-                    return unit;
-                  }
+        Supplier<Unit> effect = parseResult.bind(adt -> derivator.apply(adt, deriveContext))
+            .match(
+                message -> () -> message.match((msg, localizations) -> {
+                  if (localizations.isEmpty()) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element);
+                  } else {
+                    localizations.forEach(msgL -> msgL.match(new MessageLocalization.Cases<Unit>() {
+                      @Override
+                      public Unit onElement(Element e) {
+                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
+                        return unit;
+                      }
 
-                  @Override
-                  public Unit onAnnotation(Element e, AnnotationMirror a) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a);
-                    return unit;
-                  }
+                      @Override
+                      public Unit onAnnotation(Element e, AnnotationMirror a) {
+                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a);
+                        return unit;
+                      }
 
-                  @Override
-                  public Unit onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a, v);
-                    return unit;
+                      @Override
+                      public Unit onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
+                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a, v);
+                        return unit;
+                      }
+                    }));
                   }
-                }));
-              }
-              return unit;
-            }),
-            codeSpec -> () -> {
-              TypeSpec classSpec = codeSpec.match((classes, fields, methods, infos, warnings) ->
-                  TypeSpec.classBuilder(deriveContext.targetClassName())
-                      .addModifiers(Modifier.FINAL, dataAnnotation.value().withVisbility() == Visibility.Package
-                          ? Modifier.FINAL : element.getModifiers().contains(Modifier.PUBLIC) ? Modifier.PUBLIC : Modifier.FINAL)
-                      .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
-                      .addTypes(classes)
-                      .addFields(fields)
-                      .addMethods(methods).build());
-              JavaFile javaFile = JavaFile.builder(deriveContext.targetPackage(), classSpec).build();
-              try {
-                javaFile.writeTo(processingEnv.getFiler());
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-              return unit;
-            });
+                  return unit;
+                }),
+                codeSpec -> () -> {
+                  TypeSpec classSpec = codeSpec.match((classes, fields, methods, infos, warnings) ->
+                      TypeSpec.classBuilder(deriveContext.targetClassName())
+                          .addModifiers(Modifier.FINAL, dataAnnotation.value().withVisbility() == Visibility.Package
+                              ? Modifier.FINAL : element.getModifiers().contains(Modifier.PUBLIC) ? Modifier.PUBLIC : Modifier.FINAL)
+                          .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
+                          .addTypes(classes)
+                          .addFields(fields)
+                          .addMethods(methods).build());
+                  JavaFile javaFile = JavaFile.builder(deriveContext.targetPackage(), classSpec).build();
+                  try {
+                    javaFile.writeTo(processingEnv.getFiler());
+                  } catch (IOException e) {
+                    throw new RuntimeException(e);
+                  }
+                  return unit;
+                });
 
         effect.get();
 

@@ -22,7 +22,7 @@ import org.derive4j.Flavour;
 
 public interface DeriveContext {
 
-  Flavour deriveFlavour();
+  Flavour flavour();
 
   String targetPackage();
 

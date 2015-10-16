@@ -20,6 +20,7 @@
 package org.derive4j.processor.api;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class DeriveResult<A> {
 
@@ -60,6 +61,15 @@ public abstract class DeriveResult<A> {
 
     R result(A result);
 
+  }
+
+  public static <A> DeriveResult<A> lazy(Supplier<DeriveResult<A>> deriveResult) {
+    return new DeriveResult<A>() {
+      @Override
+      public <R> R match(Function<DeriveMessage, R> errMsg, Function<A, R> result) {
+        return deriveResult.get().match(errMsg, result);
+      }
+    };
   }
 
 

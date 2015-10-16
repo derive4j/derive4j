@@ -49,5 +49,9 @@ public interface DeriveUtils {
 
   MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
 
+  default MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod) {
+    return overrideMethodBuilder(abstractMethod, tv -> Optional.empty());
+  }
+
   Stream<TypeVariable> typeVariablesIn(TypeMirror typeMirror);
 }

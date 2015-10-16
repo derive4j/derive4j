@@ -26,8 +26,6 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.Derived;
 
 import java.util.function.Function;
 
@@ -42,7 +40,7 @@ import static org.derive4j.exemple.Terms.*;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data(@Derive({Derived.strictConstructors, Derived.getters, Derived.patternMatching, Derived.modifiers}))
+@Data
 public abstract class Term<T> {
   Term() {
   }
@@ -75,7 +73,7 @@ public abstract class Term<T> {
     //  else IsZero(Succ(0))"
   }
 
-  public abstract <X> X match(Cases<X, T> cases);
+  public abstract <X> X match(Cases<T, X> cases);
 
   @Override
   public abstract boolean equals(Object obj);
@@ -93,7 +91,7 @@ public abstract class Term<T> {
     B __(A a);
   }
 
-  interface Cases<R, A> {
+  interface Cases<A, R> {
     R Zero(F<Integer, A> id);
 
     R Succ(Term<Integer> pred, F<Integer, A> id);

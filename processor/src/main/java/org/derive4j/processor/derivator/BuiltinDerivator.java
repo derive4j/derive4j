@@ -18,56 +18,32 @@
  */
 package org.derive4j.processor.derivator;
 
-import org.derive4j.Derived;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
-import org.derive4j.processor.Utils;
 
-import java.util.List;
-import java.util.function.Function;
+import java.util.Arrays;
+import java.util.function.BiFunction;
 
 import static org.derive4j.processor.Utils.traverseResults;
+import static org.derive4j.processor.api.DeriveResult.lazy;
 
-public interface BuiltinDerivator {
+public class BuiltinDerivator {
 
-  static Function<List<Derived>, BuiltinDerivator> derivator(DeriveUtils deriveUtils) {
-
-    return derivedList -> (adt, deriveContext) ->
-        MapperDerivator.derive(adt, deriveContext, deriveUtils).bind(visitorMappers ->
-
-            traverseResults(derivedList, d -> d.match(new Derived.Cases<DeriveResult<DerivedCodeSpec>>() {
-              @Override
-              public DeriveResult<DerivedCodeSpec> strictConstructors() {
-                return StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils);
-              }
-
-              @Override
-              public DeriveResult<DerivedCodeSpec> lazyConstructor() {
-                return LazyConstructorDerivator.derive(adt, deriveContext.deriveFlavour(), deriveUtils);
-              }
-
-              @Override
-              public DeriveResult<DerivedCodeSpec> patternMatching() {
-                return PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils);
-              }
-
-              @Override
-              public DeriveResult<DerivedCodeSpec> getters() {
-                return GettersDerivator.derive(adt, deriveContext, deriveUtils);
-              }
-
-              @Override
-              public DeriveResult<DerivedCodeSpec> modifiers() {
-                return ModiersDerivator.derive(adt, deriveContext, deriveUtils);
-              }
-
-            })).map(codeSpecList -> Utils.appendCodeSpecs(visitorMappers, codeSpecList.stream().reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs))));
+  public static BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator(DeriveUtils deriveUtils) {
+    return (adt, deriveContext) ->
+        traverseResults(Arrays.asList(
+            lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
+            lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
+            lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)),
+            lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)),
+            lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)),
+            lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils))
+        )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs));
   }
-
-  DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext);
 
 }

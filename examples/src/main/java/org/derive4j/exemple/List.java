@@ -26,14 +26,12 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.Derived;
 import org.derive4j.FieldNames;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-@Data(@Derive({Derived.lazyConstructor, Derived.strictConstructors, Derived.getters, Derived.patternMatching, Derived.modifiers}))
+@Data
 public abstract class List<A> {
 
   List() {

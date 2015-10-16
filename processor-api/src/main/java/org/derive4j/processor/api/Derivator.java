@@ -18,7 +18,6 @@
  */
 package org.derive4j.processor.api;
 
-import org.derive4j.Derived;
 import org.derive4j.Flavour;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
@@ -33,10 +32,6 @@ public interface Derivator {
 
   DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils);
 
-  default Set<Derived> requirements() {
-    return EnumSet.noneOf(Derived.class);
-  }
-
   default Set<Flavour> supportedFlavours() {
     return EnumSet.allOf(Flavour.class);
   }
@@ -44,7 +39,6 @@ public interface Derivator {
   default Optional<String> selector() {
     return Optional.empty();
   }
-
 
 
 }

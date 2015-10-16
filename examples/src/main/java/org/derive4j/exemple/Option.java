@@ -26,16 +26,15 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.Derived;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@Data(@Derive({Derived.lazyConstructor, Derived.strictConstructors, Derived.getters, Derived.patternMatching, Derived.modifiers}))
+@Data
 public abstract class Option<A> {
 
-  Option(){}
+  Option() {
+  }
 
   public abstract <X> X option(Supplier<X> none, Function<A, X> some);
 

@@ -51,7 +51,7 @@ public final class ModiersDerivator {
   private static DerivedCodeSpec generateModfier(DataArgument field, AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
     String moderArg = field.fieldName() + "Mod";
-    TypeElement f1 = Flavours.findF1(deriveContext.deriveFlavour(), deriveUtils.elements());
+    TypeElement f1 = Flavours.findF1(deriveContext.flavour(), deriveUtils.elements());
     String f1Apply = Utils.getAbstractMethods(f1.getEnclosedElements()).get(0).getSimpleName().toString();
 
     String adtArg = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());

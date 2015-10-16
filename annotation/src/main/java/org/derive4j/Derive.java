@@ -20,9 +20,6 @@ package org.derive4j;
 
 import java.lang.annotation.Target;
 
-import static org.derive4j.Derived.getters;
-import static org.derive4j.Derived.patternMatching;
-import static org.derive4j.Derived.strictConstructors;
 import static org.derive4j.Visibility.Same;
 
 @Target(value = {})
@@ -32,6 +29,6 @@ public @interface Derive {
 
   Visibility withVisbility() default Same;
 
-  Derived[] value() default {strictConstructors, getters, patternMatching};
+  Instances[] value() default {};
 
 }

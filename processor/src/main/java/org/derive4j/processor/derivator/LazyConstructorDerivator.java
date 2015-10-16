@@ -19,13 +19,13 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
-import org.derive4j.Flavour;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.api.model.TypeConstructor;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
@@ -33,16 +33,18 @@ import javax.lang.model.element.TypeElement;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.codeSpec;
+import static org.derive4j.processor.derivator.StrictConstructorDerivator.*;
 
 public final class LazyConstructorDerivator {
 
 
-  public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, Flavour flavour, DeriveUtils deriveUtils) {
+  public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
     TypeConstructor typeConstructor = adt.typeConstructor();
-    TypeElement lazyTypeElement = Flavours.findF0(flavour, deriveUtils.elements());
+    TypeElement lazyTypeElement = Flavours.findF0(deriveContext.flavour(), deriveUtils.elements());
     TypeName lazyArgTypeName = TypeName.get(deriveUtils.types().getDeclaredType(lazyTypeElement, typeConstructor.declaredType()));
     String lazyArgName = Utils.uncapitalize(typeConstructor.typeElement().getSimpleName());
     TypeName typeName = TypeName.get(typeConstructor.declaredType());
@@ -61,7 +63,9 @@ public final class LazyConstructorDerivator {
             .addParameter(ParameterSpec.builder(lazyArgTypeName, lazyArgName).build())
             .addStatement("this.expression = $N", lazyArgName).build())
         .addMethod(
-            Utils.overrideMethodBuilder(adt.matchMethod().element())
+            MethodSpec.methodBuilder("eval")
+                .addModifiers(Modifier.PRIVATE)
+                .returns(typeName)
                 .addCode(CodeBlock.builder()
                     .addStatement("$T _evaluation = this.evaluation", typeName)
                     .beginControlFlow("if (_evaluation == null)")
@@ -71,16 +75,40 @@ public final class LazyConstructorDerivator {
                     .addStatement("this.evaluation = _evaluation = expression.$L()", Utils.getAbstractMethods(lazyTypeElement.getEnclosedElements()).get(0).getSimpleName())
                     .addStatement("this.expression = null")
                     .endControlFlow().endControlFlow().endControlFlow()
-                    .addStatement("return _evaluation.$L($L)", adt.matchMethod().element().getSimpleName(), Utils.asArgumentsStringOld(adt.matchMethod().element().getParameters()))
+                    .addStatement("return _evaluation")
                     .build())
+                .build())
+        .addMethod(
+            Utils.overrideMethodBuilder(adt.matchMethod().element())
+                .addStatement("return this.eval().$L($L)", adt.matchMethod().element().getSimpleName(), Utils.asArgumentsStringOld(adt.matchMethod().element().getParameters()))
                 .build());
 
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.INTERFACE) {
       typeSpecBuilder.addSuperinterface(typeName);
-    }
-    else {
+    } else {
       typeSpecBuilder.superclass(typeName);
     }
+
+    typeSpecBuilder.addMethods(optionalAsStream(
+        findAbstractEquals(typeConstructor.typeElement(), deriveUtils.elements())
+            .map(equals -> deriveUtils.overrideMethodBuilder(equals)
+                .addStatement("return this.eval().equals($L)", equals.getParameters().get(0).getSimpleName())
+                .build())
+    ).collect(Collectors.toList()));
+
+    typeSpecBuilder.addMethods(optionalAsStream(
+        findAbstractHashCode(typeConstructor.typeElement(), deriveUtils.elements())
+            .map(hashCode -> deriveUtils.overrideMethodBuilder(hashCode)
+                .addStatement("return this.eval().hashCode()")
+                .build())
+    ).collect(Collectors.toList()));
+
+    typeSpecBuilder.addMethods(optionalAsStream(
+        findAbstractToString(typeConstructor.typeElement(), deriveUtils.elements())
+            .map(toString -> deriveUtils.overrideMethodBuilder(toString)
+                .addStatement("return this.eval().toString()")
+                .build())
+    ).collect(Collectors.toList()));
 
     return result(codeSpec(
         typeSpecBuilder.build(),

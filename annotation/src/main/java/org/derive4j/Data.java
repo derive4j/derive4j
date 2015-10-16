@@ -30,6 +30,4 @@ public @interface Data {
 
   Derive value() default @Derive();
 
-  Instances[] derive() default {};
-
 }

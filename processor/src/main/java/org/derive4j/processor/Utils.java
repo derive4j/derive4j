@@ -299,10 +299,14 @@ public class Utils {
 
 
   public static <A, B> DeriveResult<List<B>> traverseResults(List<A> as, Function<A, DeriveResult<B>> f) {
+    return traverseResults(as.stream().map(f).collect(Collectors.toList()));
+  }
+
+  public static <A> DeriveResult<List<A>> traverseResults(List<DeriveResult<A>> as) {
     DeriveMessage errorMsg;
-    List<B> results = new ArrayList<>();
-    for (A a : as) {
-      errorMsg = f.apply(a).match(err -> err, result -> {
+    List<A> results = new ArrayList<>();
+    for (DeriveResult<A> a : as) {
+      errorMsg = a.match(err -> err, result -> {
             results.add(result);
             return null;
           }
