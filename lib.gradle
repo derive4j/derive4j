@@ -20,7 +20,7 @@ void configureUpload(String licenseName) {
                     licenses {
                         license {
                             name licenseName
-                            url "https://github.com/derive4j/derive4j/blob/master/${project.name}/etc/LICENCE.txt"
+                            url "https://github.com/derive4j/derive4j/blob/master/${project.name}/LICENSE.txt"
                             distribution 'repo'
                         }
                     }
