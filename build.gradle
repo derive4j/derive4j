@@ -33,7 +33,7 @@ allprojects {
     defaultTasks "build"
 
     ext {
-        isSnapshot = true
+        isSnapshot = false
         d4jBaseVersion = "0.1"
 
         snapshotAppendix = "-SNAPSHOT"
@@ -169,7 +169,12 @@ artifactory {
     contextUrl = 'http://oss.jfrog.org/artifactory'   //The base Artifactory URL if not overridden by the publisher/resolver
     publish {
         repository {
-            repoKey = 'oss-snapshot-local'   //The Artifactory repository key to publish to
+            // The Artifactory repository key to publish to :
+            if (isSnapshot) {
+                repoKey = 'oss-snapshot-local'
+            } else {
+                repoKey = 'oss-release-local'
+            }
             username = jfrogUsername         //The publisher user name
             password = jfrogPassword      //The publisher password
         }
