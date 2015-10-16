@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without

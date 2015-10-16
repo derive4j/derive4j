@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.derive4j.processor;
 
 import com.squareup.javapoet.JavaFile;
