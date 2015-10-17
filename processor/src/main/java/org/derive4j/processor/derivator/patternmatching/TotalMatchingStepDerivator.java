@@ -89,7 +89,7 @@ public class TotalMatchingStepDerivator {
 
     if (nextConstructors.isEmpty()) {
       currentConstructorTotalMatchMethod
-          .returns(TypeName.get(deriveUtils.types().getDeclaredType(Flavours.findF1(deriveContext.flavour(), deriveUtils.elements()),
+          .returns(TypeName.get(deriveUtils.types().getDeclaredType(Flavours.findF(deriveContext.flavour(), deriveUtils.elements()),
               adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
           .addCode(adt.dataConstruction().match(new DataConstruction.Cases<CodeBlock>() {
             @Override

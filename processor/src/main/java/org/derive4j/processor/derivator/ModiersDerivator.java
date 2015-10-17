@@ -19,24 +19,25 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
+import static org.derive4j.processor.api.DeriveResult.result;
 
 public final class ModiersDerivator {
 
@@ -51,7 +52,7 @@ public final class ModiersDerivator {
   private static DerivedCodeSpec generateModfier(DataArgument field, AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
     String moderArg = field.fieldName() + "Mod";
-    TypeElement f1 = Flavours.findF1(deriveContext.flavour(), deriveUtils.elements());
+    TypeElement f1 = Flavours.findF(deriveContext.flavour(), deriveUtils.elements());
     String f1Apply = Utils.getAbstractMethods(f1.getEnclosedElements()).get(0).getSimpleName().toString();
 
     String adtArg = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
@@ -63,7 +64,8 @@ public final class ModiersDerivator {
         .findFirst()
         .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()));
 
-    MethodSpec.Builder modBuilder = MethodSpec.methodBuilder("mod" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    String modMethodName = "mod" + Utils.capitalize(field.fieldName());
+    MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
             .map(TypeVariableName::get).collect(Collectors.toList()))
         .addTypeVariables(uniqueTypeVariables.stream()
@@ -82,7 +84,7 @@ public final class ModiersDerivator {
 
     CodeBlock lambdas = adt.dataConstruction().constructors().stream()
         .map(constructor ->
-            CodeBlock.builder().add("($L) -> " + (constructor.typeRestrictions().isEmpty() ? "$L" :"($T) ") +"$L($L)",
+            CodeBlock.builder().add("($L) -> " + (constructor.typeRestrictions().isEmpty() ? "$L" : "($T) ") + "$L($L)",
                 Utils.asLambdaParametersString(constructor.arguments(), constructor.typeRestrictions()),
                 constructor.typeRestrictions().isEmpty() ? "" : ClassName.get(adt.typeConstructor().typeElement()),
                 constructor.name(),
@@ -91,6 +93,20 @@ public final class ModiersDerivator {
                     : fn))).build())
         .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
         .orElse(CodeBlock.builder().build());
+
+
+    String setterArgName = "new" + Utils.capitalize(field.fieldName());
+    MethodSpec setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .addTypeVariables(adt.typeConstructor().typeVariables().stream()
+            .map(TypeVariableName::get).collect(Collectors.toList()))
+        .addTypeVariables(uniqueTypeVariables.stream()
+            .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()))
+            .collect(Collectors.toList()))
+        .addParameter(ParameterSpec.builder(deriveUtils.resolveToTypeName(field.type(), polymorphism), setterArgName).build())
+        .returns(ParameterizedTypeName.get(ClassName.get(f1),
+            TypeName.get(adt.typeConstructor().declaredType()), deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)))
+        .addStatement("return $L(__ -> $L)", modMethodName, setterArgName).build();
+
 
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
@@ -103,7 +119,7 @@ public final class ModiersDerivator {
 
             String visitorVarName = Utils.uncapitalize(visitorType.asElement().getSimpleName());
 
-            return DerivedCodeSpec.methodSpec(modBuilder.addStatement("$T $L = $T.$L($L)",
+            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("$T $L = $T.$L($L)",
                 deriveUtils.resolveToTypeName(visitorType, tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
                     ? Optional.of(deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
                     : Optional.<TypeName>empty()),
@@ -112,20 +128,20 @@ public final class ModiersDerivator {
                 MapperDerivator.visitorLambdaFactoryName(adt),
                 lambdas)
                 .addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), visitorVarName)
-                .build());
+                .build()));
 
           }
 
           @Override
           public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return DerivedCodeSpec.methodSpec(modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build());
+            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
           }
         });
       }
 
       @Override
       public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.methodSpec(modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build());
+        return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
       }
 
       @Override

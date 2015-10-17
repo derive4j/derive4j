@@ -59,7 +59,7 @@ public final class Flavours {
     }));
   }
 
-  public static TypeElement findF1(Flavour flavour, Elements elements) {
+  public static TypeElement findF(Flavour flavour, Elements elements) {
     return elements.getTypeElement(flavour.match(new Flavour.Cases<String>() {
 
       @Override
@@ -69,7 +69,7 @@ public final class Flavours {
 
       @Override
       public String Fj() {
-        return "fj.F1";
+        return "fj.F";
       }
 
       @Override
