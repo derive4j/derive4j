@@ -203,7 +203,7 @@ public abstract class Request {
 
 ```
 # Use it in your project
-Derive4J is available via Jcenter.
+Derive4J is available via Jcenter. It should be declared as a compile-time only dependency (not needed at runtime).
 ## Maven:
 ```xml
 <repositories>
@@ -217,6 +217,7 @@ Derive4J is available via Jcenter.
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
   <version>0.3</version>
+  <optional>true</optional>
 </dependency>
 ```
 ##Gradle
