@@ -24,13 +24,13 @@ import static fj.data.optic.Lens.lens;
 import static fj.data.optic.Optional.optional;
 import static fj.data.optic.Prism.prism;
 
-
-
 /**
- * A data type to modelize an http request. Abstract because concrete implementation will be generated,
- * by Derive4J (annotation processor for the @Data annotation).
- * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
- * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
+ * A data type to modelize an http request. Abstract because concrete
+ * implementation will be generated, by Derive4J (annotation processor
+ * for the @Data annotation). Default @Data flavour is JDK,
+ * here we specify FJ (Functional Java), also available is Fugue and Fugue2.
+ * The flavour is used to determine which implementation of 'Option' or
+ * 'Function' will be used by generated code.
  */
 @Data(flavour = Flavour.FJ)
 public abstract class Request {
@@ -51,20 +51,20 @@ public abstract class Request {
   public abstract <X> X match(Cases<X> cases);
 
   /**
-   * Alternatively, if you prefer a more FP style, you can define a catamorphism instead
-   * (equivalent to the visitor above, most useful for standard data type like
-   * Option, Either, List...):
+   * Alternatively, if you prefer a more FP style, you can define a
+   * catamorphism instead (equivalent to the visitor above, most useful
+   * for standard data type like Option, Either, List...):
    */
-//  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
-//                              @FieldNames("path") F<String, X> DELETE,
-//                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
-//                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
+  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
+                              @FieldNames("path") F<String, X> DELETE,
+                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
+                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
 
   /**
-   * Derive4J philosophy is to be as safe and consistent as possible. That is why
-   * Object.{equals, hashCode, toString} are not implemented by generated classes by default.
-   * Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them,
-   * by declaring them abstract:
+   * Derive4J philosophy is to be as safe and consistent as possible.
+   * That is why Object.{equals, hashCode, toString} are not implemented
+   * by generated classes by default. Nonetheless, as a concession to legacy,
+   * it is possible to force Derive4J to implement them, by declaring them abstract:
    */
   @Override
   public abstract int hashCode();
@@ -76,8 +76,9 @@ public abstract class Request {
   /**
    * Now run compilation and a 'Requests' classe will be generated, by default with
    * the same visibility as 'Request'.
-   * If You want you can specify the visibility Package in the @Data annotation and expose
-   * only public methods here, and delegate to the generated Requests class. eg. for constructors:
+   * If You want you can specify the visibility Package in the @Data annotation
+   * and expose only public methods here, and delegate to the generated Requests class.
+   * eg. for constructors:
    */
   public static Request GET(String path) {
     return Requests.GET(path);
@@ -134,7 +135,9 @@ public abstract class Request {
    * Lenses: optics focused on a field present for all datatype contructors
    * (getter cannot 'failed'):
    */
-  public static final Lens<Request, String> _path = lens(Requests::getPath, Requests::setPath);
+  public static final Lens<Request, String> _path = lens(
+      Requests::getPath,
+      Requests::setPath);
   // which is Equivalent to:
   public static final Lens<Request, String> _pathPatternMatch = lens(
       // getter function:
@@ -156,9 +159,11 @@ public abstract class Request {
    * Optional: optics focused on a field that may not be present for all contructors
    * (getter return an 'Option'):
    */
-  private static final Optional<Request, String> _body = optional(Requests::getBody, Requests::setBody);
+  public static final Optional<Request, String> _body = optional(
+      Requests::getBody,
+      Requests::setBody);
   // Equivalent to:
-  private static final Optional<Request, String> _bodyPatternMatch = optional(
+  public static final Optional<Request, String> _bodyPatternMatch = optional(
       // getter function:
       Requests.match()
           .PUT((path, body) -> some(body))
@@ -178,7 +183,7 @@ public abstract class Request {
   /**
    * Prism: optics focused on a specific constructor:
    */
-  private static final Prism<Request, String> _GET = prism(
+  public static final Prism<Request, String> _GET = prism(
       // Getter function
       Requests.match()
           .GET(fj.data.Option::some)
@@ -187,7 +192,7 @@ public abstract class Request {
       Requests::GET);
 
   // If there more than one field, we use a tuple as the prism target:
-  private static final Prism<Request, P2<String, String>> _POST = prism(
+  public static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
       Requests.match()
           .POST((path, body) -> some(p(path, body)))
