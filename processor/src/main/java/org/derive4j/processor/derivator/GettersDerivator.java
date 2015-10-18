@@ -165,12 +165,14 @@ public final class GettersDerivator {
         .addParameter(TypeName.get(adt.typeConstructor().declaredType()), arg)
         .returns(TypeName.get(field.type()));
 
+
+    String lambdas = joinStringsAsArguments(adt.dataConstruction().constructors().stream()
+        .map(dc -> "(" + Utils.asLambdaParametersString(dc.arguments(), dc.typeRestrictions()) + ") -> " + field.fieldName()));
+
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
       public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
 
-        String lambdas = joinStringsAsArguments(constructors.constructors().stream()
-            .map(dc -> "(" + Utils.asLambdaParametersString(dc.arguments(), dc.typeRestrictions()) + ") -> " + field.fieldName()));
 
         return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
           @Override
@@ -233,11 +235,10 @@ public final class GettersDerivator {
 
       @Override
       public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.methodSpec(getterBuilder.addStatement("return $L.$L(($L) -> $L)",
+        return DerivedCodeSpec.methodSpec(getterBuilder.addStatement("return $L.$L($L)",
             arg,
             adt.matchMethod().element().getSimpleName(),
-            Utils.asArgumentsString(constructor.arguments(), constructor.typeRestrictions()),
-            field.fieldName()
+            lambdas
         ).build());
       }
 

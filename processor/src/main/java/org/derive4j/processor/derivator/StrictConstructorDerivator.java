@@ -98,8 +98,12 @@ public final class StrictConstructorDerivator {
 
     Function<TypeVariable, Optional<TypeMirror>> typesRestrictions = tv -> constructor.typeRestrictions().stream().filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeParameter(), tv)).map(TypeRestriction::type).findFirst();
 
-    String className = Utils.capitalize(constructor.name());
-    TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(Utils.capitalize(constructor.name()))
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName(adt.typeConstructor().declaredType().asElement().getSimpleName().toString(), "Type Element");
+    constructor.arguments().stream().forEach(da -> nameAllocator.newName(deriveUtils.types().asElement(da.type()).getSimpleName().toString(), da.fieldName()));
+
+    String className = nameAllocator.newName(Utils.capitalize(constructor.name()), "Impl Element");
+    TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
         .addTypeVariables(typeVariableNames)
         .addFields(constructor.arguments().stream()

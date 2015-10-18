@@ -276,38 +276,11 @@ public final class AdtParser implements DeriveUtils {
 
                   @Override
                   public DeriveResult<DataConstructor> oneConstructor(DataConstructor constructor) {
-                    Optional<AnnotationMirror> fieldNamesAnnotaionMirror = visitorArg.getAnnotationMirrors().stream().filter(am -> types.isSameType(types.getDeclaredType(elements.getTypeElement(FieldNames.class.getName())), am.getAnnotationType())).findFirst().map(Function.<AnnotationMirror>identity());
-                    return fold(fieldNamesAnnotaionMirror,
-                        result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
-                            constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
-                                ? constructor.arguments()
-                                : constructor.arguments().stream().map(da -> da.match((name, type) -> argument(visitorArg.getSimpleName().toString(), type))).collect(Collectors.toList()),
-                            constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor())),
-
-                        am -> {
-                          FieldNames fieldNames = visitorArg.getAnnotation(FieldNames.class);
-                          int totalNbArgs = constructor.arguments().size() + constructor.typeRestrictions().size();
-                          return fieldNames.value().length != totalNbArgs
-                              ? error(message("wrong number of field names specified: " + totalNbArgs + " expected.", onAnnotation(visitorArg, am)))
-                              : result(
-                              DataConstructor.constructor(visitorArg.getSimpleName().toString(),
-                                  IntStream.range(0, constructor.arguments().size())
-                                      .mapToObj(i -> argument(fieldNames.value()[i], constructor.arguments().get(i).type()))
-                                      .collect(Collectors.toList()),
-
-                                  constructor.typeVariables(),
-
-                                  IntStream.range(constructor.arguments().size(), totalNbArgs)
-                                      .mapToObj(i -> {
-                                        TypeRestriction typeRestriction = constructor.typeRestrictions().get(i - constructor.arguments().size());
-                                        return typeRestriction(typeRestriction.restrictedTypeParameter(), typeRestriction.type(),
-                                            argument(fieldNames.value()[i], typeRestriction.dataArgument().type()));
-                                      })
-                                      .collect(Collectors.toList())
-                                  , constructor.deconstructor()));
-                        }
-
-                    );
+                    return result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
+                        constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
+                            ? constructor.arguments()
+                            : constructor.arguments().stream().map(da -> da.match((name, type) -> argument(visitorArg.getSimpleName().toString(), type))).collect(Collectors.toList()),
+                        constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor()));
                   }
 
                   @Override
@@ -321,6 +294,8 @@ public final class AdtParser implements DeriveUtils {
   }
 
   private DeriveResult<DataConstructor> parseDataConstructor(List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+
+
 
     ExecutableElement visitorAbstractMethod = deconstructor.visitorMethod();
     List<DataArgument> constructorArguments = new ArrayList<>();
@@ -342,7 +317,42 @@ public final class AdtParser implements DeriveUtils {
       seenVariables.addAll(typeVariablesIn(paramType).filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv))).collect(Collectors.toList()));
     }
     String constructorName = visitorAbstractMethod.getSimpleName().toString();
-    return result(constructor(constructorName, constructorArguments, seenVariables, typeRestrictions, deconstructor));
+    return result(constructor(constructorName, constructorArguments, seenVariables, typeRestrictions, deconstructor)).bind(
+        constructor -> {
+          VariableElement visitorArg = deconstructor.visitorParam();
+          Optional<AnnotationMirror> fieldNamesAnnotationMirror = visitorArg.getAnnotationMirrors().stream()
+              .filter(am -> types.isSameType(types.getDeclaredType(elements.getTypeElement(FieldNames.class.getName())), am.getAnnotationType()))
+              .findFirst().map(Function.<AnnotationMirror>identity());
+
+          return fold(fieldNamesAnnotationMirror,
+              result(constructor),
+              am -> {
+                FieldNames fieldNames = visitorArg.getAnnotation(FieldNames.class);
+                int totalNbArgs = constructor.arguments().size() + constructor.typeRestrictions().size();
+                return fieldNames.value().length != totalNbArgs
+                    ? error(message("wrong number of field names specified: " + totalNbArgs + " expected.", onAnnotation(visitorArg, am)))
+                    : result(
+                    DataConstructor.constructor(visitorArg.getSimpleName().toString(),
+                        IntStream.range(0, constructor.arguments().size())
+                            .mapToObj(i -> argument(fieldNames.value()[i], constructor.arguments().get(i).type()))
+                            .collect(Collectors.toList()),
+
+                        constructor.typeVariables(),
+
+                        IntStream.range(constructor.arguments().size(), totalNbArgs)
+                            .mapToObj(i -> {
+                              TypeRestriction typeRestriction = constructor.typeRestrictions().get(i - constructor.arguments().size());
+                              return typeRestriction(typeRestriction.restrictedTypeParameter(), typeRestriction.type(),
+                                  argument(fieldNames.value()[i], typeRestriction.dataArgument().type()));
+                            })
+                            .collect(Collectors.toList())
+                        , constructor.deconstructor()));
+              }
+
+          );
+        }
+
+    );
   }
 
   @Override

@@ -68,12 +68,14 @@ public class PatternMatchingDerivator {
                           deriveContext, deriveUtils)),
 
                   // Partial matching path:
-                  IntStream.rangeClosed(1, constructors.size())
+                  constructors.size() > 1
+                      ? IntStream.rangeClosed(1, constructors.size())
                       .mapToObj(i -> i < constructors.size()
                           ? partialMatchingStepTypeSpec(adt,
                           constructors.subList(0, i), constructors.get(i), constructors.subList(i + 1, constructors.size()),
                           deriveContext)
                           : OtherwiseMatchingStepDerivator.otherwiseMatchingStepTypeSpec(adt, deriveContext, deriveUtils))
+                      : Stream.<TypeSpec>empty()
 
               ).collect(Collectors.<TypeSpec>toList()),
 
