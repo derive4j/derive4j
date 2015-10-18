@@ -1,7 +1,7 @@
 The core annotation processor part of Derive4J (processor module) is published
-under the GNU GPL license.
+under the GNU GPL v3 license.
 
-Other useful modules (api and processor-api) are published under the GNU LGPL.
+Other useful modules (annotation and processor-api) are published under the GNU LGPL v3.
 
 Build scripts and examples are published under BSD-3 license:
 
