@@ -12,6 +12,7 @@
     - [First class lazyness](#first-class-lazyness)
     - [Flavours](#flavours)
     - [Optics (functional lenses)](#optics-functional-lenses)
+- [Updating deeply nested immutable datastructure](updating-deeply-nested-immutable-datastructure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
@@ -246,6 +247,71 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
       p2 -> Requests.POST(p2._1(), p2._2()));
 }
 ```
+# Updating deeply nested immutable datastructure
+Let's say you want to modelize a CRM. Each client is a ```Person``` which can be contacted either by email, telephone or postal mail. With Derive4J you could write the following:
+```java
+import org.derive4j.*;
+import java.util.function.BiFunction;
+
+@Data
+public abstract class Address {
+  public abstract <R> R match(@FieldNames({"number", "street"}) 
+  			      BiFunction<Integer, String, R> Address);
+}
+```
+```java
+import org.derive4j.Data;
+
+@Data
+public abstract class Contact {
+    interface Cases<R> {
+      R byEmail(String email);
+      R byPhone(String phoneNumber);
+      R byMail(Address postalAddress);
+    }
+    public abstract <R> R match(Cases<R> cases);
+}
+```
+```java
+import org.derive4j.*;
+import java.util.function.BiFunction;
+
+@Data
+public abstract class Person {
+  public abstract <R> R match(@FieldNames({"name", "contact"})
+                              BiFunction<String, Contact, R> Person);
+}
+```
+But now we have a problem: All client have been imported from a legacy database with a off by one error for the street number! We must create a function that increment each person street number (if it exist) by one. And without modifying the original datastructure (because it is immutable). With Derive4J, writing such a function is trivial:
+```java
+import java.util.Optional;
+import java.util.function.Function;
+
+import static org.derive4j.exemple.Addresss.Address;
+import static org.derive4j.exemple.Addresss.getNumber;
+import static org.derive4j.exemple.Addresss.modNumber;
+import static org.derive4j.exemple.Contacts.getPostalAddress;
+import static org.derive4j.exemple.Contacts.modPostalAddress;
+import static org.derive4j.exemple.Persons.Person;
+import static org.derive4j.exemple.Persons.getContact;
+import static org.derive4j.exemple.Persons.modContact;
+
+  public static void main(String[] args) {
+
+    Person joe = Person("Joe", Contacts.byMail(Address(10, "Main St")));
+
+    Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
+    
+    // newP is a copy of p with the street number incremented:
+    Person correctedJoe = incrementStreetNumber.apply(joe);
+
+    Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe))
+        .map(postalAddress -> getNumber(postalAddress));
+
+    System.out.println(newStreetNumber); // print "Optional[11]" !!
+  }
+```
+
 
 # Popular use-case: domain specific languages
 Algebraic data types are particulary well fitted for creating DSLs. Like a calculator for arthmetic expressions:
