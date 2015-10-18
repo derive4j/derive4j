@@ -17,7 +17,7 @@
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
-**Caution*:* if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page:
+**Caution**: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page:
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
 - http://tomasp.net/blog/types-and-math.aspx/
@@ -288,7 +288,8 @@ public abstract class Person {
                               BiFunction<String, Contact, R> Person);
 }
 ```
-But now we have a problem: All client have been imported from a legacy database with a off by one error for the street number! We must create a function that increment each person street number (if it exist) by one. And without modifying the original datastructure (because it is immutable). With Derive4J, writing such a function is trivial:
+But now we have a problem: All client have been imported from a legacy database with a off by one error for the street number! We must create a function that increments each person street number (if it exists) by one. And without modifying the original datastructure (because it is immutable).
+With Derive4J, writing such a function is trivial:
 ```java
 import java.util.Optional;
 import java.util.function.Function;
@@ -306,7 +307,9 @@ import static org.derive4j.exemple.Persons.modContact;
 
     Person joe = Person("Joe", Contacts.byMail(Address(10, "Main St")));
 
-    Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
+    Function<Person, Person> incrementStreetNumber = modContact(
+    						       modPostalAddress(
+    						         modNumber(number -> number + 1)));
     
     // newP is a copy of p with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
