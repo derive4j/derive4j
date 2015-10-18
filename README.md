@@ -117,7 +117,7 @@ Now let's say that you want a function that return the body size of a ```Request
         }
       });
 ```
-With Derive4J you can do that a lot less verbosely, thanks to a generated fluent [structural pattern matching](www.deadcoderising.com/pattern-matching-syntax-comparison-in-scala-haskell-ml/) synthax! And it does exhaustivity checks! (you must handle all cases). The above can be rewritten into:
+With Derive4J you can do that a lot less verbosely, thanks to a generated fluent [structural pattern matching](http://www.deadcoderising.com/pattern-matching-syntax-comparison-in-scala-haskell-ml/) synthax! And it does exhaustivity checks! (you must handle all cases). The above can be rewritten into:
 ```java
 static final Function<Request, Integer> getBodySize = Requests.match()
       .GET(path          -> 0)
@@ -233,7 +233,7 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
       // Reverse Get function (aka constructor)
       Requests::GET);
 
-  // If there more than one field, we use a tuple as the prism target:
+  // If there is more than one field, we use a tuple as the prism target:
   public static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
       Requests.match()
