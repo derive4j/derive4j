@@ -12,10 +12,11 @@
     - [First class lazyness](#first-class-lazyness)
     - [Flavours](#flavours)
     - [Optics (functional lenses)](#optics-functional-lenses)
+- [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
-Caution: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading: https://en.wikipedia.org/wiki/Algebraic_data_type
+Caution: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page: https://en.wikipedia.org/wiki/Algebraic_data_type and https://en.wikipedia.org/wiki/Tagged_union
 
 This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
 
@@ -243,6 +244,43 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
           .otherwise(Option::none),
       // reverse get (construct a POST request given a P2<String, String>):
       p2 -> Requests.POST(p2._1(), p2._2()));
+}
+```
+
+# Popular use-case: domain specific languages
+Algebraic data types are particulary well fitted for creating DSLs. Like a calculator for arthmetic expressions:
+```java
+import java.util.function.Function;
+import org.derive4j.Data;
+import static org.derive4j.exemple.Expressions.*;
+
+@Data
+public abstract class Expression {
+
+	interface Cases<R> {
+		R Const(Integer value);
+		R Add(Expression left, Expression right);
+		R Mult(Expression left, Expression right);
+		R Neg(Expression expr);
+	}
+	
+	public abstract <R> R match(Cases<R> cases);
+
+	private static Function<Expression, Integer> eval = Expressions
+		.match()
+			.Const(value        -> value)
+			.Add((left, right)  -> eval(left) + eval(right))
+			.Mult((left, right) -> eval(left) * eval(right))
+			.Neg(expr           -> -eval(expr));
+
+	public static Integer eval(Expression expression) {
+		return eval.apply(expression);
+	}
+
+	public static void main(String[] args) {
+		Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
+		System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
+	}
 }
 ```
 
