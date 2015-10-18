@@ -5,12 +5,12 @@
 ## Table of contents
 -  [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
     - [Constructors](#constructors)  
-    - [equals, hashCode, toString?](#equals-hashCode-tostring)  
+    - [equals, hashCode, toString?](#equals-hashcode-tostring)  
     - [Pattern matching synthax](#pattern-matching-synthax)
     - [Accessors (getters)](#accessors-getters)
     - [Functional setters ('withers')](#functional-setters-withers)
-    - [First class lazyness](first-class-lazyness)
-    - [Optics (functional lenses)](optics-functional-lenses)
+    - [First class lazyness](#first-class-lazyness)
+    - [Optics (functional lenses)](#optics-functional-lenses)
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
@@ -29,6 +29,7 @@ Let's say we want to modelize an HTTP request. For the sake of the example let's
 - a DELETE on a given ```path```
 - a POST of a content ```body``` on a given ```path```
 - a PUT of a content ```body``` on a given ```path```
+
 You could then use the [corrected visitor pattern](http://logji.blogspot.ch/2012/02/correcting-visitor-pattern.html) and write the following class in Java:
 
 ```java
@@ -38,7 +39,7 @@ package org.derive4j.exemple;
 @Data
 public abstract class Request {
 
-  /** the Request 'visitor' interface, R being the return type used by the 'accept' method :
+  /** the Request 'visitor' interface, R being the return type used by the 'accept' method : */
   interface Cases<R> {
     // A request can either be a 'GET' (of a path):
     R GET(String path);
@@ -56,12 +57,8 @@ public abstract class Request {
 
   /**
    * Alternatively and equivalently to the visitor pattern above, if you prefer a more FP style,
-   * you can define a catamorphism instead (most useful for standard data type like Option, Either, List...):
+   * you can define a catamorphism instead (most useful for standard data type like Option, Either, List...)
    */
-  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
-                              @FieldNames("path") F<String, X> DELETE,
-                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
-                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
 }
 ```
 ## Constructors
@@ -77,14 +74,16 @@ Without Derive4J, you would have to create subclass of ```Request``` for all fou
     };}
 ```
 for each cases.
-But thanks to the ```@Data``` annotation, Derive4j will do that four you! That is, it will generate a Requests class (by default in ```target/generated-sources/annotations``` when using maven) with four static factory methods (what we call '*constructors*' in FP):
-- ```java public static Request GET(String path)```
-- ```java public static Request DELETE(String path)```
-- ```java public static Request PUT(String path, String body)```
-- ```java public static Request POST(String path, String body)```
+But thanks to the ```@Data``` annotation, Derive4j will do that for you! That is, it will generate a Requests class (by default in ```target/generated-sources/annotations``` when using maven) with four static factory methods (what we call '*constructors*' in FP):
+```java
+  public static Request GET(String path) {...}
+  public static Request DELETE(String path) {...}
+  public static Request PUT(String path, String body) {...}
+  public static Request POST(String path, String body) {...}
+```
 
 ## equals, hashCode, toString?
-Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString} are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them, by declaring them abstract. Eg by adding the following in you annotated class:
+Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString} are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them, by declaring them abstract. Eg by adding the following in your annotated class:
 ```java
   @Override
   public abstract int hashCode();
