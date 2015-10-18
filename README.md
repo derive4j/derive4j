@@ -1,4 +1,4 @@
-# Derive4J: Java 8 annotation processor for deriving algebraic data types constructors, pattern macthing and more!
+# Derive4J: Java 8 annotation processor for deriving algebraic data types constructors, pattern matching and more!
 
 [ ![Download](https://api.bintray.com/packages/derive4j/derive4j/derive4j/images/download.svg) ](https://bintray.com/derive4j/derive4j/derive4j/_latestVersion)
 
