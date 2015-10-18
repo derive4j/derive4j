@@ -1,136 +1,208 @@
-# derive4j
+# Derive4J: Java 8 annotation processor for deriving algebraic data types constructors, pattern macthing and more!
+
 [ ![Download](https://api.bintray.com/packages/derive4j/derive4j/derive4j/images/download.svg) ](https://bintray.com/derive4j/derive4j/derive4j/_latestVersion)
 
-Java 8 annotation processor and framework for deriving algebraic data types constructors, morphisms. Optics and typeclasses comming soon.
+## Table of contents
+-  [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
+    - [Constructors](#constructors)  
+    - [equals, hashCode, toString?](#equals-hashCode-tostring)  
+    - [Pattern matching synthax](#pattern-matching-synthax)
+    - [Accessors (getters)](#accessors-getters)
+    - [Functional setters ('withers')](#functional-setters-withers)
+    - [First class lazyness](first-class-lazyness)
+    - [Optics (functional lenses)](optics-functional-lenses)
+- [Use it in your project](#use-it-in-your-project)
+- [Contact](#contact)
 
-This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html)
+Caution: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading: https://en.wikipedia.org/wiki/Algebraic_data_type
+
+This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
 
 So what can this project do for us, poor functional programmer stuck with a legacy language called Java?
 A good deal of what is available for free in better languages like haskell: pattern matching, laziness...
-An example being worth a thousand words:
+An example being worth a thousand words...
+
+# Example: a 'Visitor' for HTTP Request
+
+Let's say we want to modelize an HTTP request. For the sake of the example let's say that an http request can either be
+- a GET on a given ```path```
+- a DELETE on a given ```path```
+- a POST of a content ```body``` on a given ```path```
+- a PUT of a content ```body``` on a given ```path```
+You could then use the [corrected visitor pattern](http://logji.blogspot.ch/2012/02/correcting-visitor-pattern.html) and write the following class in Java:
 
 ```java
 package org.derive4j.exemple;
 
-import fj.*;
-import fj.data.Option;
-import fj.data.optic.*;
-import org.derive4j.*;
-
-import static fj.P.p;
-import static fj.data.Option.none;
-import static fj.data.Option.some;
-import static fj.data.optic.Lens.lens;
-import static fj.data.optic.Optional.optional;
-import static fj.data.optic.Prism.prism;
-
-/**
- * A data type to modelize an http request. Abstract because concrete
- * implementation will be generated, by Derive4J (annotation processor
- * for the @Data annotation). Default @Data flavour is JDK,
- * here we specify FJ (Functional Java), also available is Fugue and Fugue2.
- * The flavour is used to determine which implementation of 'Option' or
- * 'Function' will be used by generated code.
- */
-@Data(flavour = Flavour.FJ)
+/** A data type to modelize an http request. */
+@Data
 public abstract class Request {
 
-  /**
-   * First we start by defining a 'visitor' for our datatype:
-   */
-
-  // the 'visitor' interface:
-  interface Cases<X> {
-    X GET(String path);
-    X DELETE(String path);
-    X PUT(String path, String body);
-    X POST(String path, String body);
+  /** the Request 'visitor' interface, R being the return type used by the 'accept' method :
+  interface Cases<R> {
+    // A request can either be a 'GET' (of a path):
+    R GET(String path);
+    // or a 'DELETE' (of a path):
+    R DELETE(String path);
+    // or a 'PUT' (on a path, with a body):
+    R PUT(String path, String body);
+    // or a 'POST' (on a path, with a body):
+    R POST(String path, String body);
+    // and nothing else!
   }
 
-  // the 'accept' method:
-  public abstract <X> X match(Cases<X> cases);
+  // the 'accept' method of the visitor pattern:
+  public abstract <R> R match(Cases<X> cases);
 
   /**
-   * Alternatively, if you prefer a more FP style, you can define a
-   * catamorphism instead (equivalent to the visitor above, most useful
-   * for standard data type like Option, Either, List...):
+   * Alternatively and equivalently to the visitor pattern above, if you prefer a more FP style,
+   * you can define a catamorphism instead (most useful for standard data type like Option, Either, List...):
    */
   public abstract <X> X match(@FieldNames("path") F<String, X> GET,
                               @FieldNames("path") F<String, X> DELETE,
                               @FieldNames({"path", "body"}) F2<String, String, X> PUT,
                               @FieldNames({"path", "body"}) F2<String, String, X> POST);
+}
+```
+## Constructors
 
-  /**
-   * Derive4J philosophy is to be as safe and consistent as possible.
-   * That is why Object.{equals, hashCode, toString} are not implemented
-   * by generated classes by default. Nonetheless, as a concession to legacy,
-   * it is possible to force Derive4J to implement them, by declaring them abstract:
-   */
+Without Derive4J, you would have to create subclass of ```Request``` for all four cases. That is woule write, at the minimum something like:
+```java
+  public static Request GET(String path) {
+    return new Request() {
+      @Override
+      public <X> X match(Cases<X> cases) {
+        return cases.GET(path);
+      }
+    };}
+```
+for each cases.
+But thanks to the ```@Data``` annotation, Derive4j will do that four you! That is, it will generate a Requests class (by default in ```target/generated-sources/annotations``` when using maven) with four static factory methods (what we call '*constructors*' in FP):
+- ```java public static Request GET(String path)```
+- ```java public static Request DELETE(String path)```
+- ```java public static Request PUT(String path, String body)```
+- ```java public static Request POST(String path, String body)```
+
+## equals, hashCode, toString?
+Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString} are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them, by declaring them abstract. Eg by adding the following in you annotated class:
+```java
   @Override
   public abstract int hashCode();
   @Override
   public abstract boolean equals(Object obj);
   @Override
   public abstract String toString();
+```
+The safer solution would be to never use those methods and use 'type classes' instead, eg. [Equal](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Equal.java), [Hash](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Hash.java) and [Show](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Show.java).
+The project [Derive4J for Functiona Java](https://github.com/derive4j/derive4j-fj) aims at generating them automatically.
 
-  /**
-   * Now run compilation and a 'Requests' classe will be generated, by default with
-   * the same visibility as 'Request'.
-   * If You want you can specify the visibility Package in the @Data annotation
-   * and expose only public methods here, and delegate to the generated Requests class.
-   * eg. for constructors:
-   */
-  public static Request GET(String path) {
-    return Requests.GET(path);
+## Pattern matching synthax
+Now let's say that you want a function that return the body size of a ```Request```. Without Derive4J you would write something like:
+```java
+  static final Function<Request, Integer> getBodySize = request -> 
+      request.match(new Cases<Integer>() {
+        public Integer GET(String path) {
+          return 0;
+        }
+        public Integer DELETE(String path) {
+          return 0;
+        }
+        public Integer PUT(String path, String body) {
+          return body.length();
+        }
+        public Integer POST(String path, String body) {
+          return body.length();
+        }
+      });
+```
+With Derive4J you can do that a lot less verbosely, thanks to a generated fluent [structural pattern matching](www.deadcoderising.com/pattern-matching-syntax-comparison-in-scala-haskell-ml/) synthax! And it does exhaustivity checks! (you must handle all cases). The above can be rewritten into:
+```java
+static final Function<Request, Integer> getBodySize = Requests.match()
+      .GET(path          -> 0)
+      .DELETE(path       -> 0)
+      .PUT((path, body)  -> body.length())
+      .POST((path, body) -> body.length())
+```
+or even (because you don't care of GET and DELETE cases):
+```java
+static final Function<Request, Integer> getBodySize = Requests.match()
+      .PUT((path, body)  -> body.length())
+      .POST((path, body) -> body.length())
+      .otherwise(()      -> 0)
+```
+
+## Accessors (getters)
+Now, patterning mathing every time you want to inspect an instance of ```Request``` is a bit tedious. For this reason Derive4J generate 'getter' static methods for all fields. For the ```path``` and ```body``` fields, Derive4J will generate the following methods in the ```Requests``` class:
+```java
+  public static String getPath(Request request){
+    return Requests.match()
+        .GET(path          -> path)
+        .DELETE(path       -> path)
+        .PUT((path, body)  -> path)
+        .POST((path, body) -> path)
+        .apply(request);
   }
-  public static Request PUT(String path, String body) {
-    return Requests.PUT(path, body);
+  // return an Optional because the body is not present in the GET and DELETE cases:
+  static Optional<String> getBody(Request request){
+    return Requests.match()
+        .PUT((path, body)  -> Optional.of(body))
+        .POST((path, body) -> Optional.of(body))
+        .otherwise(()      -> Optional.empty())
+        .apply(request);
   }
+```
+(Actually the generated code is equivalent but more efficient)
 
-  /**
-   * Derive4J provides first class support for lazy construction of data types:
-   */
-  public static Request lazy(F0<Request> requestExpression) {
-    // the requestExpression will be lazy-evaluated on the first call
-    // to the 'match' method of the returned instance:
-    return Requests.lazy(requestExpression);
+Using the generated ```getBody``` methods we can rewrite or ```getBodySize``` function into:
+```java
+static final Function<Request, Integer> getBodySize = request ->
+      Requests.getBody(request)
+              .map(String::length)
+              .orElse(0);
+```
+
+## Functional setters ('withers')
+The most painful part of immutable data srtuctures (like the one generated by Derive4J) is updating them. Scala case classes have ´´´copy´´´ methods. Derive4J generate the following modifier and setter methods in the ```Requests``` class:
+```java
+  public static Function<Request, Request> setPath(String newPath){
+    return Requests.match()
+            .GET(path          -> Requests.GET(newPath))
+            .DELETE(path       -> Requests.DELETE(newPath))
+            .PUT((path, body)  -> Requests.PUT(newPath, body))
+            .POST((path, body) -> Requests.POST(newPath, body)));
   }
-
-  /**
-   * Then you can enrich your class with whatever methods you like,
-   * using generated static methods to trivialize your implementation:
-   */
-
-  /**
-   * OOP style 'getters':
-   */
-
-  public final String path() {
-    return Requests.getPath(this);
+  public static Function<Request, Request> modPath(Function<String, String> pathMapper){
+    return Requests.match()
+            .GET(path          -> Requests.GET(pathMapper.apply(path)))
+            .DELETE(path       -> Requests.DELETE(pathMapper.apply(path)))
+            .PUT((path, body)  -> Requests.PUT(pathMapper.apply(path), body))
+            .POST((path, body) -> Requests.POST(pathMapper.apply(path), body)));
   }
-
-  public final Option<String> body() {
-    return Requests.getBody(this);
+  public static Function<Request, Request> setBody(String newBody){
+    return Requests.match()
+            .GET(path          -> Requests.GET(path))    // identity function for GET
+            .DELETE(path       -> Requests.DELETE(path)) // and DELETE cases.
+            .PUT((path, body)  -> Requests.PUT(path, newBody))
+            .POST((path, body) -> Requests.POST(path, newBody)));
   }
+  ...
+```
+By returning a function, modifiers and setters allow for a lightweight syntax when updating deeply nested immutables datastructures.
 
-  /**
-   * OOP style 'withers':
-   */
-
-  public final Request withPath(String newPath) {
-    return Requests.setPath(newPath).f(this);
+## First class lazyness
+Language like haskell provide lazyness by default, which simplify a lot of algorithms. In traditional Java you would have to declare a method argument as ```Supplier<Request>``` (and do memoization) to emulate lazyiness. With Derive4J that is no more necessary as it generate a lazy constructor that gave you transparent lazy evaluation for all consumer for your datatype:
+```java
+  // the requestExpression will be lazy-evaluated on the first call
+  // to the 'match' method of the returned Request instance:
+  public static Request lazy(Supplier<Request> requestExpression) {
+    ...
   }
+```
+## Optics (functional lenses)
+If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
 
-  public final Request withBody(String newBody) {
-    // if there is no body field (eg. GET, DELETE) then the original request
-    // is returned (no modification):
-    return Requests.setBody(newBody).f(this);
-  }
-
-  /**
-   * FP style Optics (in the future, will be generated by a derive4j 'plugin'):
-   */
-
+Using Derive4J generated code, defining optics is a breeze:
+```java
   /**
    * Lenses: optics focused on a field present for all datatype contructors
    * (getter cannot 'failed'):
@@ -138,23 +210,6 @@ public abstract class Request {
   public static final Lens<Request, String> _path = lens(
       Requests::getPath,
       Requests::setPath);
-  // which is Equivalent to:
-  public static final Lens<Request, String> _pathPatternMatch = lens(
-      // getter function:
-      Requests.match()
-          .GET(path -> path)
-          .DELETE(path -> path)
-          .PUT((path, body) -> path)
-          .POST((path, body) -> path),
-      // setter function:
-      newPath ->
-          Requests.match()
-              .GET(path -> Requests.GET(newPath))
-              .DELETE(path -> Requests.DELETE(newPath))
-              .PUT((path, body) -> Requests.PUT(newPath, body))
-              .POST((path, body) -> Requests.POST(newPath, body))
-  );
-
   /**
    * Optional: optics focused on a field that may not be present for all contructors
    * (getter return an 'Option'):
@@ -162,24 +217,6 @@ public abstract class Request {
   public static final Optional<Request, String> _body = optional(
       Requests::getBody,
       Requests::setBody);
-  // Equivalent to:
-  public static final Optional<Request, String> _bodyPatternMatch = optional(
-      // getter function:
-      Requests.match()
-          .PUT((path, body) -> some(body))
-          .POST((path, body) -> some(body))
-          .otherwise(() -> none()),
-      // setter function:
-      newBody ->
-          Requests.match()
-              .GET(path -> Requests.GET(path)) // or with method reference:
-              .DELETE(Requests::DELETE)
-              .PUT((path, body) -> Requests.PUT(path, newBody))
-              .POST((path, body) -> Requests.POST(path, newBody))
-  );
-
-
-
   /**
    * Prism: optics focused on a specific constructor:
    */
@@ -200,8 +237,8 @@ public abstract class Request {
       // reverse get (construct a POST request given a P2<String, String>):
       p2 -> Requests.POST(p2._1(), p2._2()));
 }
-
 ```
+
 # Use it in your project
 Derive4J is available via Jcenter. It should be declared as a compile-time only dependency (not needed at runtime).
 ## Maven:
@@ -220,7 +257,9 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
   <optional>true</optional>
 </dependency>
 ```
-##Gradle
+## Gradle
 ```
 compile(group: 'org.derive4j', name: 'derive4j', version: '0.3', ext: 'jar')
 ```
+## Contact
+jb@giraudeau.info or use github issues.
