@@ -201,7 +201,7 @@ Language like haskell provide lazyness by default, which simplify a lot of algor
   }
 ```
 ## Flavours
-In the exemple, we have use the default ```JDK```, also available is ```FJ``` ([Functional Java](https://github.com/functionaljava/) and ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue) flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
+In the example above, we have use the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)) and ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)) flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
 
 ## Optics (functional lenses)
 If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
