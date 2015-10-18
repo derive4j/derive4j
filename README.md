@@ -12,12 +12,18 @@
     - [First class lazyness](#first-class-lazyness)
     - [Flavours](#flavours)
     - [Optics (functional lenses)](#optics-functional-lenses)
-- [Updating deeply nested immutable datastructure](updating-deeply-nested-immutable-datastructure)
+- [Updating deeply nested immutable datastructure](#updating-deeply-nested-immutable-datastructure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
-Caution: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page: https://en.wikipedia.org/wiki/Algebraic_data_type and https://en.wikipedia.org/wiki/Tagged_union
+**Caution*:* if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page:
+- https://en.wikipedia.org/wiki/Algebraic_data_type
+- https://en.wikipedia.org/wiki/Tagged_union
+- http://tomasp.net/blog/types-and-math.aspx/
+- http://fsharpforfunandprofit.com/posts/type-size-and-design/
+- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
+- http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
 
 This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
 
