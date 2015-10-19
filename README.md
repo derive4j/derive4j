@@ -17,7 +17,8 @@
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
-**Caution**: if you are not familiar with Algebraic Data Types  then you should learn a bit about them before further reading of this page:
+**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you should learn a bit about them before further reading of this page:
+- http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
 - http://tomasp.net/blog/types-and-math.aspx/
