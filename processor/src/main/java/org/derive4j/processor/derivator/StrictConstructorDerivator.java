@@ -100,7 +100,8 @@ public final class StrictConstructorDerivator {
 
     NameAllocator nameAllocator = new NameAllocator();
     nameAllocator.newName(adt.typeConstructor().declaredType().asElement().getSimpleName().toString(), "Type Element");
-    constructor.arguments().stream().forEach(da -> nameAllocator.newName(deriveUtils.types().asElement(da.type()).getSimpleName().toString(), da.fieldName()));
+    constructor.arguments().stream().filter(da -> da.type().getKind() == TypeKind.DECLARED)
+        .forEach(da -> nameAllocator.newName(deriveUtils.types().asElement(da.type()).getSimpleName().toString(), da.fieldName()));
 
     String className = nameAllocator.newName(Utils.capitalize(constructor.name()), "Impl Element");
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(className)

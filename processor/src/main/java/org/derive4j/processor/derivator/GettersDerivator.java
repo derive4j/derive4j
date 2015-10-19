@@ -27,9 +27,9 @@ import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.*;
+import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -59,7 +59,7 @@ public final class GettersDerivator {
 
     Flavours.OptionType optionType = Flavours.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
-    DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type());
+    DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type().accept(Utils.asBoxedType, deriveUtils.types()));
 
     MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder("get" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
@@ -90,7 +90,7 @@ public final class GettersDerivator {
 
             Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
                 deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                    ? Optional.of(deriveUtils.types().getDeclaredType(Flavours.findOptionType(deriveContext.flavour(), deriveUtils.elements()).typeElement(), field.type()))
+                    ? Optional.of(returnType)
                     : Optional.<TypeMirror>empty();
 
             Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());

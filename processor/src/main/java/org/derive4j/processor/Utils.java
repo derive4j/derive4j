@@ -25,13 +25,8 @@ import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.util.SimpleElementVisitor6;
-import javax.lang.model.util.SimpleElementVisitor8;
-import javax.lang.model.util.SimpleTypeVisitor8;
-import javax.lang.model.util.Types;
+import javax.lang.model.type.*;
+import javax.lang.model.util.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,6 +87,19 @@ public class Utils {
       return Optional.of(e);
     }
 
+  };
+
+  public static TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>(){
+
+    @Override
+    protected TypeMirror defaultAction(TypeMirror e, Types types) {
+      return e;
+    }
+
+    @Override
+    public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
+      return types.boxedClass(t).asType();
+    }
   };
 
   public static String capitalize(final String s) {

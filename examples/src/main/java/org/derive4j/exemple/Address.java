@@ -26,13 +26,18 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
+import org.derive4j.Derive;
 import org.derive4j.FieldNames;
 
 import java.util.function.BiFunction;
 
-@Data
+@Data(@Derive(inClass = "Addresses"))
 public abstract class Address {
 
-  public abstract <R> R match(@FieldNames({"number", "street"}) BiFunction<Integer, String, R> Address);
+  interface Cases<R> {
+    R Address(int number, String street);
+  }
+
+  public abstract <R> R match(Cases<R> cases);
 
 }

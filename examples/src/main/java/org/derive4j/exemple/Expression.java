@@ -33,7 +33,7 @@ import static org.derive4j.exemple.Expressions.*;
 public abstract class Expression {
 
 	interface Cases<R> {
-		R Const(Integer value);
+		R Const(int value);
 		R Add(Expression left, Expression right);
 		R Mult(Expression left, Expression right);
 		R Neg(Expression expr);

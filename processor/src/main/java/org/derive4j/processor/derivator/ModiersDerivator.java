@@ -29,6 +29,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,8 @@ public final class ModiersDerivator {
         .findFirst()
         .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()));
 
+    TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
+
     String modMethodName = "mod" + Utils.capitalize(field.fieldName());
     MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
@@ -72,7 +75,7 @@ public final class ModiersDerivator {
             .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()))
             .collect(Collectors.toList()))
         .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(ClassName.get(f1),
-            TypeName.get(field.type()), deriveUtils.resolveToTypeName(field.type(), polymorphism)), moderArg).build())
+            TypeName.get(boxedFieldType), deriveUtils.resolveToTypeName(boxedFieldType, polymorphism)), moderArg).build())
         .returns(ParameterizedTypeName.get(ClassName.get(f1),
             TypeName.get(adt.typeConstructor().declaredType()), deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)));
 
@@ -102,7 +105,7 @@ public final class ModiersDerivator {
         .addTypeVariables(uniqueTypeVariables.stream()
             .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()))
             .collect(Collectors.toList()))
-        .addParameter(ParameterSpec.builder(deriveUtils.resolveToTypeName(field.type(), polymorphism), setterArgName).build())
+        .addParameter(ParameterSpec.builder(deriveUtils.resolveToTypeName(boxedFieldType, polymorphism), setterArgName).build())
         .returns(ParameterizedTypeName.get(ClassName.get(f1),
             TypeName.get(adt.typeConstructor().declaredType()), deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)))
         .addStatement("return $L(__ -> $L)", modMethodName, setterArgName).build();

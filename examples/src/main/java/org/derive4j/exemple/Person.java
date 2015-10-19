@@ -32,9 +32,9 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static org.derive4j.exemple.Addresss.Address;
-import static org.derive4j.exemple.Addresss.getNumber;
-import static org.derive4j.exemple.Addresss.modNumber;
+import static org.derive4j.exemple.Addresses.Address;
+import static org.derive4j.exemple.Addresses.getNumber;
+import static org.derive4j.exemple.Addresses.modNumber;
 import static org.derive4j.exemple.Contacts.getPostalAddress;
 import static org.derive4j.exemple.Contacts.modPostalAddress;
 import static org.derive4j.exemple.Persons.Person;
