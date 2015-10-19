@@ -14,7 +14,7 @@
     - [Optics (functional lenses)](#optics-functional-lenses)
 - [Updating deeply nested immutable datastructure](#updating-deeply-nested-immutable-datastructure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
-- [But what exactly is generated??](but-what-exactly-is-generated)
+- [But what exactly is generated??](#but-what-exactly-is-generated)
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
 - [Use it in your project](#use-it-in-your-project)
