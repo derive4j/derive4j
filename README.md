@@ -1,6 +1,7 @@
 # Derive4J: Java 8 annotation processor for deriving algebraic data types constructors, pattern matching and more!
 
-[ ![Download](https://api.bintray.com/packages/derive4j/derive4j/derive4j/images/download.svg) ](https://bintray.com/derive4j/derive4j/derive4j/_latestVersion)
+[![Download](https://api.bintray.com/packages/derive4j/derive4j/derive4j/images/download.svg) ](https://bintray.com/derive4j/derive4j/derive4j/_latestVersion)
+[![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/derive4j/derive4j)
 
 ## Table of contents
 -  [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
