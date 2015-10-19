@@ -14,6 +14,8 @@
     - [Optics (functional lenses)](#optics-functional-lenses)
 - [Updating deeply nested immutable datastructure](#updating-deeply-nested-immutable-datastructure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
+- [Parametric polymorphism](#parametric-polymorphism)
+- [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
 - [Use it in your project](#use-it-in-your-project)
 - [Contact](#contact)
 
@@ -359,6 +361,29 @@ public abstract class Expression {
 	}
 }
 ```
+# Parametric polymorphism
+... works as expected. Eg. you can write the following:
+```java
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.derive4j.Data;
+
+@Data
+public abstract class Option<A> {
+
+    public abstract <X> X cata(Supplier<X> none, Function<A, X> some);
+
+    public final <B> Option<B> map(final Function<A, B> mapper) {
+        return Options.modSome(mapper).apply(this);
+    }
+}
+```
+=> The generated modifier method ```modSome``` allows polymorphic update and is incidentaly the functor for our ```Option```!
+
+# Generalized Algebraic Data Types (GADTs)
+
+GADTs are also supported out of the box by Derive4J (within the limitations of Java type system).
+Have a look at this gist to know how to defined GADT in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
 
 # Use it in your project
 Derive4J is available via Jcenter. It should be declared as a compile-time only dependency (not needed at runtime).
