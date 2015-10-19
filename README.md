@@ -380,7 +380,7 @@ public abstract class Option<A> {
 ```
 => The generated modifier method ```modSome``` allows polymorphic update and is incidentaly the functor for our ```Option```!
 
-# Generalized Algebraic Data Types (GADTs)
+# Generalized Algebraic Data Types
 
 GADTs are also supported out of the box by Derive4J (within the limitations of Java type system).
 Have a look at this gist to know how to defined GADT in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
