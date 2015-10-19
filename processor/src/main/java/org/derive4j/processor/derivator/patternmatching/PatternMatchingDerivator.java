@@ -49,15 +49,38 @@ public class PatternMatchingDerivator {
         DeriveResult.result(DerivedCodeSpec.none()),
         firstConstructor -> {
 
-          TypeName firstMatchBuilderTypeName = Utils.typeName(getClassName(deriveContext, TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor)),
+          ClassName totalMatchBuilderClassName = getClassName(deriveContext, TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor));
+
+          TypeName firstMatchBuilderTypeName = Utils.typeName(totalMatchBuilderClassName,
               adt.typeConstructor().typeVariables().stream().map(TypeName::get));
 
-          MethodSpec matchFactory = MethodSpec.methodBuilder(adt.matchMethod().element().getSimpleName().toString())
+          TypeName firstMatchBuilderObjectifiedTypeName = Utils.typeName(totalMatchBuilderClassName,
+              adt.typeConstructor().typeVariables().stream().map(__ -> ClassName.get(Object.class)));
+
+          String initialCasesStepFieldName = Utils.uncapitalize(TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor));
+
+          FieldSpec.Builder initialCasesStepField = FieldSpec.builder(firstMatchBuilderObjectifiedTypeName, initialCasesStepFieldName)
+              .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+              .initializer("new $T()",
+                  firstMatchBuilderObjectifiedTypeName);
+
+          MethodSpec.Builder matchFactory = MethodSpec.methodBuilder("cases")
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
               .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
-              .returns(firstMatchBuilderTypeName)
-              .addStatement("return new $T()", firstMatchBuilderTypeName)
-              .build();
+              .returns(firstMatchBuilderTypeName);
+
+
+          if (adt.typeConstructor().typeVariables().isEmpty()) {
+
+            matchFactory.addStatement("return $L", initialCasesStepFieldName);
+          } else {
+            initialCasesStepField
+                .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
+
+            matchFactory.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
+                .addStatement("return ($T) $L", firstMatchBuilderTypeName, initialCasesStepFieldName);
+
+          }
 
           return DeriveResult.result(DerivedCodeSpec.codeSpec(
               Stream.concat(
@@ -79,7 +102,9 @@ public class PatternMatchingDerivator {
 
               ).collect(Collectors.<TypeSpec>toList()),
 
-              matchFactory));
+              initialCasesStepField.build(),
+
+              matchFactory.build()));
 
         });
   }

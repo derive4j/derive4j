@@ -154,14 +154,14 @@ public abstract class Request {
   // which is Equivalent to:
   public static final Lens<Request, String> _pathPatternMatch = lens(
       // getter function:
-      Requests.match()
+      Requests.cases()
           .GET(path -> path)
           .DELETE(path -> path)
           .PUT((path, body) -> path)
           .POST((path, body) -> path),
       // setter function:
       newPath ->
-          Requests.match()
+          Requests.cases()
               .GET(path -> Requests.GET(newPath))
               .DELETE(path -> Requests.DELETE(newPath))
               .PUT((path, body) -> Requests.PUT(newPath, body))
@@ -175,13 +175,13 @@ public abstract class Request {
   // Equivalent to:
   private static final Optional<Request, String> _bodyPatternMatch = optional(
       // getter function:
-      Requests.match()
+      Requests.cases()
           .PUT((path, body) -> some(body))
           .POST((path, body) -> some(body))
           .otherwise(() -> none()),
       // setter function:
       newBody ->
-          Requests.match()
+          Requests.cases()
               .GET(path -> Requests.GET(path)) // or with method reference:
               .DELETE(Requests::DELETE)
               .PUT((path, body) -> Requests.PUT(path, newBody))
@@ -195,7 +195,7 @@ public abstract class Request {
    */
   private static final Prism<Request, String> _GET = prism(
       // Getter function
-      Requests.match()
+      Requests.cases()
           .GET(fj.data.Option::some)
           .otherwise(Option::none),
       // Reverse Get function (aka constructor)
@@ -204,7 +204,7 @@ public abstract class Request {
   // If there more than one field, we use a tuple as the prism target:
   private static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
-      Requests.match()
+      Requests.cases()
           .POST((path, body) -> some(p(path, body)))
           .otherwise(Option::none),
       // reverse get (construct a POST request given a P2<String, String>):

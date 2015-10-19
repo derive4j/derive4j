@@ -57,6 +57,11 @@ public abstract class DerivedCodeSpec {
     return codeSpec(classes, Collections.emptyList(), Collections.singletonList(method), Collections.emptyList(), Collections.emptyList());
   }
 
+  public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, FieldSpec field,  MethodSpec method) {
+    return codeSpec(classes, Collections.singletonList(field), Collections.singletonList(method), Collections.emptyList(), Collections.emptyList());
+  }
+
+
   public static DerivedCodeSpec none() {
     return methodSpecs(Collections.emptyList());
   }

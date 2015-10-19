@@ -49,7 +49,7 @@ public abstract class Term2<T> {
 
   public static <T> T eval(final Term2<T> term) {
 
-    Function<Term2<T>, T> eval = Term2s.<T>match().
+    Function<Term2<T>, T> eval = Term2s.<T>cases().
         Zero(__                    -> __.__(0)).
         Succ((t, __)               -> __.__(eval(t) + 1)).
         Pred((t, __)               -> __.__(eval(t) - 1)).

@@ -42,7 +42,7 @@ public abstract class Expression {
 	public abstract <R> R match(Cases<R> cases);
 
 	private static Function<Expression, Integer> eval = Expressions
-		.match()
+		.cases()
 			.Const(value        -> value)
 			.Add((left, right)  -> eval(left) + eval(right))
 			.Mult((left, right) -> eval(left) * eval(right))
