@@ -14,6 +14,7 @@
     - [Optics (functional lenses)](#optics-functional-lenses)
 - [Updating deeply nested immutable datastructure](#updating-deeply-nested-immutable-datastructure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
+- [But what exactly is generated??](but-what-exactly-is-generated)
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
 - [Use it in your project](#use-it-in-your-project)
@@ -361,6 +362,9 @@ public abstract class Expression {
 	}
 }
 ```
+# But what exactly is generated??
+This is a very legitimate question. Here is the [```Expressions.java```](https://gist.github.com/jbgi/3904e696fb27a2e33ae1) file that is genrated for the above ```@Data Expression``` class.
+
 # Parametric polymorphism
 ... works as expected. Eg. you can write the following:
 ```java
