@@ -404,13 +404,13 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>0.3</version>
+  <version>0.4</version>
   <optional>true</optional>
 </dependency>
 ```
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '0.3', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '0.4', ext: 'jar')
 ```
 ## Contact
 jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project github issues.
