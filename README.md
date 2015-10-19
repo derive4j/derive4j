@@ -382,4 +382,4 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
 compile(group: 'org.derive4j', name: 'derive4j', version: '0.3', ext: 'jar')
 ```
 ## Contact
-jb@giraudeau.info or use github issues.
+jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project github issues.
