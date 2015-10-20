@@ -8,10 +8,10 @@
 -  [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
     - [Constructors](#constructors)  
     - [equals, hashCode, toString?](#equals-hashcode-tostring)  
-    - [Pattern matching syntax](#pattern-matching-synthax)
+    - [Pattern matching syntax](#pattern-matching-syntax)
     - [Accessors (getters)](#accessors-getters)
     - [Functional setters ('withers')](#functional-setters-withers)
-    - [First class lazyness](#first-class-lazyness)
+    - [First class laziness](#first-class-laziness)
     - [Flavours](#flavours)
     - [Optics (functional lenses)](#optics-functional-lenses)
 - [Updating deeply nested immutable data structure](#updating-deeply-nested-immutable-data-structure)
@@ -33,8 +33,9 @@
 - http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
 
 This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
+I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
 
-So what can this project do for us, poor functional programmers stuck with a legacy language called Java?
+So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
 A good deal of what is available for free in better languages like Haskell: pattern matching, laziness...
 An example being worth a thousand words...
 
