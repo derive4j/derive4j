@@ -20,6 +20,7 @@
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
 - [Use it in your project](#use-it-in-your-project)
+- [Contributing](#contributing)
 - [Contact](#contact)
 
 **Caution**: if you are not familiar with Algebraic Data Types (aka "Sum Types" / "Tagged Unions") or the "visitor pattern" then you should learn a bit about them before further reading of this page:
@@ -413,5 +414,11 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
 ```
 compile(group: 'org.derive4j', name: 'derive4j', version: '0.4', ext: 'jar')
 ```
+## Contributing
+
+Bug reports and feature requests are welcomed, as well as contributions to improve documentation.
+
+Right now the codebase is not ready for external contribution (many blocks of codes are more complicated that should be). So you better wait for resolution of [#2](https://github.com/derive4j/derive4j/issues/2) before trying to dig into the codebase.
+
 ## Contact
 jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project github issues.
