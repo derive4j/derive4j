@@ -179,7 +179,7 @@ public final class AdtParser implements DeriveUtils {
         error(message("All parameters must be interfaces whose abstract methods must not have any type parameter and should all return the same type variable " + adtAcceptMethodReturnType, onElement(adtAcceptMethod))),
 
         ps -> findOnlyOne(ps)
-            .map(p -> p.<DeriveResult<DataConstruction>>match((ve, dt) -> parseDataConstructionOneArg(adtTypeVariables, ve, dt)))
+            .map(p -> p.<DeriveResult<DataConstruction>>match((ve, dt) -> parseDataConstructionOneArg(adtDeclaredType, adtTypeVariables, ve, dt)))
             .orElseGet(
                 () -> ps.isEmpty()
                     ? result(DataConstruction.noConstructor())
@@ -189,7 +189,7 @@ public final class AdtParser implements DeriveUtils {
   }
 
 
-  private DeriveResult<DataConstruction> parseDataConstructionOneArg(List<TypeVariable> adtTypeVariables, final VariableElement visitorArg, DeclaredType visitorType) {
+  private DeriveResult<DataConstruction> parseDataConstructionOneArg(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, final VariableElement visitorArg, DeclaredType visitorType) {
 
     final DeriveResult<DataConstruction> result;
 
@@ -199,7 +199,7 @@ public final class AdtParser implements DeriveUtils {
       result = error(message("All abstract methods of " + visitorType + " must have a unique name", onElement(visitorArg)));
     } else {
       Function<TypeVariable, Optional<TypeMirror>> typeArgs = typeArgs(visitorType);
-      result = Utils.traverseResults(abstractMethods, m -> parseDataConstructor(adtTypeVariables, deconstructor(visitorArg, visitorType, m), typeArgs))
+      result = Utils.traverseResults(abstractMethods, m -> parseDataConstructor(adtDeclaredType, adtTypeVariables, deconstructor(visitorArg, visitorType, m), typeArgs))
           .map(constructors -> constructors.isEmpty()
               ? noConstructor()
               : findOnlyOne(constructors)
@@ -267,7 +267,7 @@ public final class AdtParser implements DeriveUtils {
   private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, List<P2<VariableElement, DeclaredType>> caseHandlers) {
     return Utils.traverseResults(caseHandlers,
         p2 -> p2.match(
-            (visitorArg, visitorType) -> parseDataConstructionOneArg(adtTypeVariables, visitorArg, visitorType)
+            (visitorArg, visitorType) -> parseDataConstructionOneArg(adtDeclaredType, adtTypeVariables, visitorArg, visitorType)
                 .bind(construction -> construction.match(new Cases<DeriveResult<DataConstructor>>() {
                   @Override
                   public DeriveResult<DataConstructor> multipleConstructors(DataConstructors constructors) {
@@ -293,7 +293,7 @@ public final class AdtParser implements DeriveUtils {
 
   }
 
-  private DeriveResult<DataConstructor> parseDataConstructor(List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+  private DeriveResult<DataConstructor> parseDataConstructor(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
 
 
@@ -316,7 +316,15 @@ public final class AdtParser implements DeriveUtils {
       }
       seenVariables.addAll(typeVariablesIn(paramType).filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv))).collect(Collectors.toList()));
     }
-    String constructorName = visitorAbstractMethod.getSimpleName().toString();
+
+    String constructorName;
+    if (getAbstractMethods(deconstructor.visitorType().asElement().getEnclosedElements()).size() == 1 && !types().isSameType(adtDeclaredType, deconstructor.visitorType().asElement().getEnclosingElement().asType())) {
+      constructorName = deconstructor.visitorParam().getSimpleName().toString();
+    }
+    else {
+      constructorName = visitorAbstractMethod.getSimpleName().toString();
+    }
+
     return result(constructor(constructorName, constructorArguments, seenVariables, typeRestrictions, deconstructor)).bind(
         constructor -> {
           VariableElement visitorArg = deconstructor.visitorParam();
