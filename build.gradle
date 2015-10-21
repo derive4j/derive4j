@@ -33,8 +33,8 @@ allprojects {
     defaultTasks "build"
 
     ext {
-        isSnapshot = false
-        d4jBaseVersion = "0.4"
+        isSnapshot = true
+        d4jBaseVersion = "0.5"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
