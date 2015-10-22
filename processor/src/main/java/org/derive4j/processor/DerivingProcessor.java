@@ -97,6 +97,11 @@ public class DerivingProcessor extends AbstractProcessor {
           }
 
           @Override
+          public Visibility visibility() {
+            return dataAnnotation.value().withVisbility();
+          }
+
+          @Override
           public String targetPackage() {
             return Utils.getPackage.visit(element).getQualifiedName().toString();
           }

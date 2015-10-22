@@ -37,6 +37,7 @@ import static org.derive4j.exemple.Addresses.getNumber;
 import static org.derive4j.exemple.Addresses.modNumber;
 import static org.derive4j.exemple.Contacts.getPostalAddress;
 import static org.derive4j.exemple.Contacts.modPostalAddress;
+import static org.derive4j.exemple.PersonNames.Name;
 import static org.derive4j.exemple.Persons.Person;
 import static org.derive4j.exemple.Persons.getContact;
 import static org.derive4j.exemple.Persons.modContact;
@@ -44,11 +45,11 @@ import static org.derive4j.exemple.Persons.modContact;
 @Data
 public abstract class Person {
 
-  public abstract <R> R match(@FieldNames({"name", "contact"}) BiFunction<String, Contact, R> Person);
+  public abstract <R> R match(@FieldNames({"name", "contact"}) BiFunction<PersonName, Contact, R> Person);
 
   public static void main(String[] args) {
 
-    Person joe = Person("Joe", Contacts.byMail(Address(10, "Main St")));
+    Person joe = Person(Name("Joe"), Contacts.byMail(Address(10, "Main St")));
 
     // oups! there was a off my one error in the import process. We must increment all street numbers!!
 

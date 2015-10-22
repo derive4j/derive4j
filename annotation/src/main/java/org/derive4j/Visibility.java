@@ -20,8 +20,35 @@ package org.derive4j;
 
 public enum Visibility {
 
-  Same,
+  Same {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
+      return cases.Same();
+    }
+  },
 
-  Package
+  Package {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
+      return cases.Package();
+    }
+  },
+
+  Smart {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
+      return cases.Smart();
+    }
+  };
+
+  public abstract <R> R match(VisibilityCases<R> cases);
+
+  public interface VisibilityCases<R> {
+    R Same();
+
+    R Package();
+
+    R Smart();
+  }
 
 }

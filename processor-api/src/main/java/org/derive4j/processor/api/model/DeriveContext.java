@@ -19,10 +19,13 @@
 package org.derive4j.processor.api.model;
 
 import org.derive4j.Flavour;
+import org.derive4j.Visibility;
 
 public interface DeriveContext {
 
   Flavour flavour();
+
+  Visibility visibility();
 
   String targetPackage();
 

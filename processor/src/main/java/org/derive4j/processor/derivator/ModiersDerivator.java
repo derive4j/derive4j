@@ -19,6 +19,7 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import org.derive4j.Visibility;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -68,7 +69,7 @@ public final class ModiersDerivator {
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
     String modMethodName = "mod" + Utils.capitalize(field.fieldName());
-    MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
             .map(TypeVariableName::get).collect(Collectors.toList()))
         .addTypeVariables(uniqueTypeVariables.stream()
@@ -78,6 +79,10 @@ public final class ModiersDerivator {
             TypeName.get(boxedFieldType), deriveUtils.resolveToTypeName(boxedFieldType, polymorphism)), moderArg).build())
         .returns(ParameterizedTypeName.get(ClassName.get(f1),
             TypeName.get(adt.typeConstructor().declaredType()), deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)));
+
+    if (deriveContext.visibility() != Visibility.Smart) {
+      modBuilder.addModifiers(Modifier.PUBLIC);
+    }
 
     if (adt.dataConstruction().constructors().stream()
         .anyMatch(dc -> !dc.typeRestrictions().isEmpty())) {
@@ -99,7 +104,7 @@ public final class ModiersDerivator {
 
 
     String setterArgName = "new" + Utils.capitalize(field.fieldName());
-    MethodSpec setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    MethodSpec.Builder setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
             .map(TypeVariableName::get).collect(Collectors.toList()))
         .addTypeVariables(uniqueTypeVariables.stream()
@@ -108,8 +113,11 @@ public final class ModiersDerivator {
         .addParameter(ParameterSpec.builder(deriveUtils.resolveToTypeName(boxedFieldType, polymorphism), setterArgName).build())
         .returns(ParameterizedTypeName.get(ClassName.get(f1),
             TypeName.get(adt.typeConstructor().declaredType()), deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)))
-        .addStatement("return $L(__ -> $L)", modMethodName, setterArgName).build();
+        .addStatement("return $L(__ -> $L)", modMethodName, setterArgName);
 
+    if (deriveContext.visibility() != Visibility.Smart) {
+      setMethod.addModifiers(Modifier.PUBLIC);
+    }
 
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
@@ -122,7 +130,7 @@ public final class ModiersDerivator {
 
             String visitorVarName = Utils.uncapitalize(visitorType.asElement().getSimpleName());
 
-            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("$T $L = $T.$L($L)",
+            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("$T $L = $T.$L($L)",
                 deriveUtils.resolveToTypeName(visitorType, tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
                     ? Optional.of(deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
                     : Optional.<TypeName>empty()),
@@ -137,14 +145,14 @@ public final class ModiersDerivator {
 
           @Override
           public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
+            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
           }
         });
       }
 
       @Override
       public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod, modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
+        return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
       }
 
       @Override
