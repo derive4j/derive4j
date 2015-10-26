@@ -30,18 +30,25 @@ import org.derive4j.processor.api.model.TypeConstructor;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.codeSpec;
+import static org.derive4j.processor.api.DerivedCodeSpec.none;
 import static org.derive4j.processor.derivator.StrictConstructorDerivator.*;
 
 public final class LazyConstructorDerivator {
 
 
   public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+
+    // skip constructors for enums
+    if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.ENUM) {
+      return result(none());
+    }
 
     TypeConstructor typeConstructor = adt.typeConstructor();
     TypeElement lazyTypeElement = Flavours.findF0(deriveContext.flavour(), deriveUtils.elements());
