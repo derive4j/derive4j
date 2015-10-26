@@ -49,7 +49,7 @@ public class OtherwiseMatchingStepDerivator {
         .addTypeVariables(PatternMatchingDerivator.matcherVariables(adt).map(TypeVariableName::get).collect(Collectors.toList()))
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addFields(adt.dataConstruction().constructors().stream()
-            .map(dc -> FieldSpec.builder(mapperTypeName(adt, dc, deriveContext), mapperFieldName(dc))
+            .map(dc -> FieldSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils), mapperFieldName(dc))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .build())
             .collect(Collectors.toList()));
@@ -57,7 +57,7 @@ public class OtherwiseMatchingStepDerivator {
     MethodSpec.Builder otherwiseMatchConstructorBuilder = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PRIVATE)
         .addParameters(adt.dataConstruction().constructors().stream()
-            .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext), mapperFieldName(dc)).build())
+            .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils), mapperFieldName(dc)).build())
             .collect(Collectors.toList()));
 
     for (DataConstructor dc : adt.dataConstruction().constructors()) {
@@ -146,7 +146,7 @@ public class OtherwiseMatchingStepDerivator {
                               + ") -> otherwise.$4L()",
                           Stream.concat(
                               Stream.of(
-                                  mapperTypeName(adt, dc, deriveContext),
+                                  mapperTypeName(adt, dc, deriveContext, deriveUtils),
                                   nameAllocator.get("case var"),
                                   mapperFieldName(dc),
                                   getAbstractMethods(f0.getEnclosedElements()).get(0).getSimpleName().toString()),

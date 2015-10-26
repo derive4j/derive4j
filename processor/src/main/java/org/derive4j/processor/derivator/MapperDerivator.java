@@ -19,16 +19,17 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.Elements;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,7 +45,7 @@ public class MapperDerivator {
 
               @Override
               public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-                return createVisitorFactoryAndMappers(adt, visitorParam, visitorType, constructors, deriveUtils, deriveContext);
+                return createVisitorFactoryAndMappers(adt, visitorType, constructors, deriveUtils, deriveContext);
               }
 
               @Override
@@ -83,7 +84,7 @@ public class MapperDerivator {
         .build();
   }
 
-  static DerivedCodeSpec createVisitorFactoryAndMappers(AlgebraicDataType adt, VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors, DeriveUtils deriveUtils, DeriveContext deriveContext) {
+  static DerivedCodeSpec createVisitorFactoryAndMappers(AlgebraicDataType adt, DeclaredType visitorType, List<DataConstructor> constructors, DeriveUtils deriveUtils, DeriveContext deriveContext) {
 
     String lambdaVisitorClassName = "Lambda" + visitorType.asElement().getSimpleName().toString();
     final TypeSpec.Builder lambdaVisitorBuilder = TypeSpec.classBuilder(lambdaVisitorClassName)
@@ -92,7 +93,7 @@ public class MapperDerivator {
         .addTypeVariable(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))
         .addSuperinterface(TypeName.get(visitorType))
         .addFields(constructors.stream()
-            .map(dc -> FieldSpec.builder(mapperTypeName(adt, dc, deriveContext), mapperFieldName(dc))
+            .map(dc -> FieldSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils), mapperFieldName(dc))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .build())
             .collect(Collectors.toList()))
@@ -100,14 +101,14 @@ public class MapperDerivator {
             .map(dc -> deriveUtils.overrideMethodBuilder(dc.deconstructor().visitorMethod(), deriveUtils.typeArgs(visitorType))
                 .addStatement("return this.$L.$L($L)",
                     mapperFieldName(dc),
-                    dc.deconstructor().visitorMethod().getSimpleName().toString(),
+                    mapperApplyMethod(deriveUtils, deriveContext, dc),
                     Utils.asLambdaParametersString(dc.arguments(), dc.typeRestrictions())
                 ).build())
             .collect(Collectors.toList()));
 
 
     final MethodSpec.Builder lambdaVisitorConstructor = MethodSpec.constructorBuilder()
-        .addParameters(constructors.stream().map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext),
+        .addParameters(constructors.stream().map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils),
             mapperFieldName(dc)).build()).collect(Collectors.toList()));
 
     for (DataConstructor dc : constructors) {
@@ -121,7 +122,7 @@ public class MapperDerivator {
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
         .addTypeVariable(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))
-        .addParameters(constructors.stream().map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext),
+        .addParameters(constructors.stream().map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils),
             mapperFieldName(dc)).build()).collect(Collectors.toList()))
         .returns(TypeName.get(visitorType))
         .addStatement("return new $L<>($L)", lambdaVisitorClassName,
@@ -130,11 +131,20 @@ public class MapperDerivator {
 
     return DerivedCodeSpec.codeSpec(
         Stream.concat(
-            constructors.stream().map(dc -> mapperTypeSpec(adt, dc)),
+            constructors.stream().filter(dc -> dc.arguments().size() + dc.typeRestrictions().size() > 1).map(dc -> mapperTypeSpec(adt, dc)),
             Stream.of(lambdaVisitor))
             .collect(Collectors.toList()),
         lambdaVistorFactory);
 
+  }
+
+  private static String mapperApplyMethod(DeriveUtils deriveUtils, DeriveContext deriveContext, DataConstructor dc) {
+    int nbArgs = dc.arguments().size() + dc.typeRestrictions().size();
+    return nbArgs == 0
+        ? Utils.getAbstractMethods(Flavours.findF0(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
+        : nbArgs == 1
+        ? Utils.getAbstractMethods(Flavours.findF(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
+        : dc.deconstructor().visitorMethod().getSimpleName().toString();
   }
 
 
@@ -147,11 +157,22 @@ public class MapperDerivator {
     return Stream.concat(dc.typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable()));
   }
 
-  public static TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, DeriveContext deriveContext) {
-    return adt.dataConstruction().isVisitorDispatch()
-        ? ParameterizedTypeName.get(Utils.getClassName(deriveContext, mapperInterfaceName(dc)),
-        mapperVariables(adt, dc).map(TypeName::get).toArray(TypeName[]::new))
-        : TypeName.get(dc.deconstructor().visitorType());
+  public static TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+    TypeName[] argsTypeNames = Stream.concat(dc.arguments().stream().map(DataArgument::type),
+        dc.typeRestrictions().stream().map(TypeRestriction::dataArgument)
+            .map(DataArgument::type)).map(t -> Utils.asBoxedType.visit(t, deriveUtils.types())).map(TypeName::get).toArray(TypeName[]::new);
+    return
+        adt.dataConstruction().isVisitorDispatch()
+            ?
+            argsTypeNames.length == 0 ?
+                ParameterizedTypeName.get(ClassName.get(Flavours.findF0(deriveContext.flavour(), deriveUtils.elements())), TypeName.get(adt.matchMethod().returnTypeVariable()))
+                : argsTypeNames.length == 1
+                ? ParameterizedTypeName.get(ClassName.get(Flavours.findF(deriveContext.flavour(), deriveUtils.elements())),
+                argsTypeNames[0],
+                TypeName.get(adt.matchMethod().returnTypeVariable()))
+                : ParameterizedTypeName.get(Utils.getClassName(deriveContext, mapperInterfaceName(dc)),
+                mapperVariables(adt, dc).map(TypeName::get).toArray(TypeName[]::new))
+            : TypeName.get(dc.deconstructor().visitorType());
   }
 
   public static String mapperFieldName(DataConstructor dc) {

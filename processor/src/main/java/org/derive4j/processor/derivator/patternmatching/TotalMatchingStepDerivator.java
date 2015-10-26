@@ -19,11 +19,11 @@
 package org.derive4j.processor.derivator.patternmatching;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.*;
 import org.derive4j.processor.derivator.Flavours;
 import org.derive4j.processor.derivator.MapperDerivator;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
-import static org.derive4j.processor.derivator.MapperDerivator.mapperTypeName;
 import static org.derive4j.processor.Utils.getClassName;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
+import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
+import static org.derive4j.processor.derivator.MapperDerivator.mapperTypeName;
 
 public class TotalMatchingStepDerivator {
 
@@ -55,7 +55,7 @@ public class TotalMatchingStepDerivator {
 
     MethodSpec.Builder currentConstructorTotalMatchMethod = MethodSpec.methodBuilder(currentConstructor.name())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addParameter(mapperTypeName(adt, currentConstructor, deriveContext), mapperFieldName(currentConstructor));
+        .addParameter(mapperTypeName(adt, currentConstructor, deriveContext, deriveUtils), mapperFieldName(currentConstructor));
 
     final Stream<MethodSpec> partialMatchMethods;
 
@@ -66,7 +66,7 @@ public class TotalMatchingStepDerivator {
       totalMatchBuilder.addMethod(MethodSpec.constructorBuilder()
           .addModifiers(Modifier.PRIVATE).build());
 
-      partialMatchMethods = PatternMatchingDerivator.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors, deriveContext).map(mb -> mb.addTypeVariable(returnTypeVarName).build());
+      partialMatchMethods = PatternMatchingDerivator.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors, deriveContext, deriveUtils).map(mb -> mb.addTypeVariable(returnTypeVarName).build());
 
     } else {
 
@@ -76,7 +76,7 @@ public class TotalMatchingStepDerivator {
           .addMethod(MethodSpec.constructorBuilder()
               .addModifiers(Modifier.PRIVATE)
               .addParameters(previousConstructors.stream()
-                  .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext), mapperFieldName(dc)).build())
+                  .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc, deriveContext, deriveUtils), mapperFieldName(dc)).build())
                   .collect(Collectors.toList()))
               .addStatement("super($L)", joinStringsAsArguments(Stream.concat(
                   previousConstructors.stream().map(dc -> mapperFieldName(dc)),
@@ -84,7 +84,7 @@ public class TotalMatchingStepDerivator {
               )))
               .build());
 
-      partialMatchMethods = PatternMatchingDerivator.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors, deriveContext).map(MethodSpec.Builder::build);
+      partialMatchMethods = PatternMatchingDerivator.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors, deriveContext, deriveUtils).map(MethodSpec.Builder::build);
     }
 
     if (nextConstructors.isEmpty()) {
@@ -133,7 +133,7 @@ public class TotalMatchingStepDerivator {
                   for (DataConstructor dc : previousConstructors) {
                     nameAllocator.newName(mapperFieldName(dc), mapperFieldName(dc));
                     codeBlock.addStatement("$1T $2L = super.$2L",
-                        mapperTypeName(adt, dc, deriveContext),
+                        mapperTypeName(adt, dc, deriveContext, deriveUtils),
                         mapperFieldName(dc)
                     );
                   }
