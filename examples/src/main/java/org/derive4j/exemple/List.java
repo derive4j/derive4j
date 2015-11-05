@@ -28,8 +28,9 @@ package org.derive4j.exemple;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.*;
+
+import static org.derive4j.exemple.Lists.*;
 
 @Data
 public abstract class List<A> {
@@ -37,7 +38,98 @@ public abstract class List<A> {
   List() {
   }
 
+  public static List<Integer> naturals() {
+    return integersFrom(0);
+  }
+
+  public static List<Integer> integersFrom(final int s) {
+    return iterate(s, i -> i + 1);
+  }
+
+  public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
+    return lazy(() -> cons(seed, iterate(op.apply(seed), op)));
+  }
+
   public abstract <X> X list(Supplier<X> nil,
                              @FieldNames({"head", "tail"}) BiFunction<A, List<A>, X> cons);
+
+  public <B> List<B> map(Function<A, B> f) {
+    return lazy(() -> list(
+        () -> nil(),
+        (h, tail) -> cons(f.apply(h), tail.map(f))
+    ));
+  }
+
+  public List<A> append(final List<A> list) {
+    return lazy(() -> list(
+        () -> list,
+        (head, tail) -> cons(head, tail.append(list))
+    ));
+  }
+
+  public List<A> filter(Predicate<A> p) {
+    return lazy(() -> list(
+        () -> nil(),
+        (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)
+    ));
+  }
+
+  public <B> List<B> bind(Function<A, List<B>> f) {
+    return lazy(() -> list(
+        () -> nil(),
+        (h, t) -> f.apply(h).append(t.bind(f))
+    ));
+    // alternative implementation using foldRight:
+    // return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
+  }
+
+  public List<A> take(int n) {
+    return n <= 0
+        ? nil()
+        : lazy(() -> list(
+        () -> nil(),
+        (head, tail) -> cons(head, tail.take(n - 1))
+    ));
+  }
+
+  public void forEach(Consumer<A> effect) {
+    // a bit ugly due to lack of TCO
+    class ConsVisitor implements BiFunction<A, List<A>, Boolean> {
+      List<A> l = List.this;
+
+      @Override
+      public Boolean apply(A head, List<A> tail) {
+        effect.accept(head);
+        l = tail;
+        return true;
+      }
+    }
+    ConsVisitor consVisitor = new ConsVisitor();
+    while (consVisitor.l.list(() -> false, consVisitor)) {
+    }
+  }
+
+  public <B> B foldLeft(final BiFunction<B, A, B> f, final B zero) {
+    // again, ugly due to lack of TCO
+    class Acc implements Consumer<A> {
+      B acc = zero;
+
+      @Override
+      public void accept(A a) {
+        acc = f.apply(acc, a);
+      }
+    }
+    Acc acc = new Acc();
+    forEach(acc);
+    return acc.acc;
+  }
+
+  public <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
+    return list(
+        () -> zero,
+        (h, tail) -> f.apply(h, () -> tail.foldRight(f, zero))
+    );
+  }
+
 
 }
