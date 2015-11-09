@@ -27,6 +27,7 @@
 - http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
+- http://blog.higher-order.com/blog/2009/08/21/structural-pattern-matching-in-java/
 - http://tomasp.net/blog/types-and-math.aspx/
 - http://fsharpforfunandprofit.com/posts/type-size-and-design/
 - https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
