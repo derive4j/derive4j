@@ -5,7 +5,7 @@
 [![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/derive4j/derive4j)
 
 ## Table of contents
--  [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
+- [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
     - [Constructors](#constructors)  
     - [equals, hashCode, toString?](#equals-hashcode-tostring)  
     - [Pattern matching syntax](#pattern-matching-syntax)
@@ -20,6 +20,7 @@
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
 - [Use it in your project](#use-it-in-your-project)
+- [Changelog](https://github.com/derive4j/derive4j/milestones?state=closed)
 - [Contributing](#contributing)
 - [Contact](#contact)
 
@@ -410,13 +411,18 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
   <optional>true</optional>
 </dependency>
 ```
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '0.4', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '0.5', ext: 'jar')
+```
+or better using the [gradle-apt-plugin](https://github.com/tbroyer/gradle-apt-plugin):
+```
+compileOnly "org.derive4j:derive4j-annotation:0.5"
+apt "org.derive4j:derive4j:0.5"
 ```
 ## Contributing
 
