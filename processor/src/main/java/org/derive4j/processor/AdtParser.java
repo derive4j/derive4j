@@ -26,6 +26,7 @@ import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
@@ -87,8 +88,11 @@ public final class AdtParser implements DeriveUtils {
   }
 
   public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(final TypeElement adtTypeElement) {
-    return fold(adtTypeElement.asType().accept(Utils.asDeclaredType, Unit.unit),
-        error(message("Invalid annotated type", onElement(adtTypeElement))),
+    return fold(Utils.asDeclaredType.visit(adtTypeElement.asType()).filter(t ->t.asElement().getEnclosingElement().getKind() == ElementKind.PACKAGE
+            || t.asElement().getModifiers().contains(Modifier.STATIC)
+            || t.asElement().getKind() == ElementKind.ENUM
+            || t.asElement().getKind() == ElementKind.INTERFACE),
+        error(message("Invalid annotated class (only static classes are supported)", onElement(adtTypeElement))),
 
         declaredType ->
             fold(traverseOptional(declaredType.getTypeArguments(), ta -> asTypeVariable.visit(ta)
