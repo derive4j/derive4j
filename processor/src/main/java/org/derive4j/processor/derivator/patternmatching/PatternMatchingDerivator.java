@@ -54,15 +54,13 @@ public class PatternMatchingDerivator {
           TypeName firstMatchBuilderTypeName = Utils.typeName(totalMatchBuilderClassName,
               adt.typeConstructor().typeVariables().stream().map(TypeName::get));
 
-          TypeName firstMatchBuilderObjectifiedTypeName = Utils.typeName(totalMatchBuilderClassName,
-              adt.typeConstructor().typeVariables().stream().map(__ -> ClassName.get(Object.class)));
+          TypeName firstMatchBuilderWildcardTypeName = Utils.typeName(totalMatchBuilderClassName,
+              adt.typeConstructor().typeVariables().stream().map(__ -> WildcardTypeName.subtypeOf(Object.class)));
 
           String initialCasesStepFieldName = Utils.uncapitalize(TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor));
 
-          FieldSpec.Builder initialCasesStepField = FieldSpec.builder(firstMatchBuilderObjectifiedTypeName, initialCasesStepFieldName)
-              .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-              .initializer("new $T()",
-                  firstMatchBuilderObjectifiedTypeName);
+          FieldSpec.Builder initialCasesStepField = FieldSpec.builder(firstMatchBuilderWildcardTypeName, initialCasesStepFieldName)
+              .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
           MethodSpec.Builder matchFactory = MethodSpec.methodBuilder("cases")
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -71,10 +69,13 @@ public class PatternMatchingDerivator {
 
 
           if (adt.typeConstructor().typeVariables().isEmpty()) {
+            initialCasesStepField
+                .initializer("new $L()", totalMatchBuilderClassName.simpleName());
 
             matchFactory.addStatement("return $L", initialCasesStepFieldName);
           } else {
             initialCasesStepField
+                .initializer("new $L<>()", totalMatchBuilderClassName.simpleName())
                 .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
 
             matchFactory.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())

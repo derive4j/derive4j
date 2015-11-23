@@ -95,9 +95,8 @@ public final class AdtParser implements DeriveUtils {
         error(message("Invalid annotated class (only static classes are supported)", onElement(adtTypeElement))),
 
         declaredType ->
-            fold(traverseOptional(declaredType.getTypeArguments(), ta -> asTypeVariable.visit(ta)
-                    .filter(tv -> types.isSameType(elements.getTypeElement("java.lang.Object").asType(), tv.getUpperBound()))),
-                error(message("Please use only type variable without bounds as type parameter", onElement(adtTypeElement))),
+            fold(traverseOptional(declaredType.getTypeArguments(), asTypeVariable::visit),
+                error(message("Please use only type variable as type parameter", onElement(adtTypeElement))),
 
                 adtTypeVariables ->
                     fold(findOnlyOne(getAbstractMethods(adtTypeElement.getEnclosedElements()).stream()
