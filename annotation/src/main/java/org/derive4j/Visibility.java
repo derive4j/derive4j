@@ -18,6 +18,7 @@
  */
 package org.derive4j;
 
+@Data(@Derive(inClass = "Visibilities"))
 public enum Visibility {
 
   Same {

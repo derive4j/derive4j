@@ -18,49 +18,40 @@
  */
 package org.derive4j.processor.api;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 
+import static org.derive4j.Visibility.Smart;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class MessageLocalization {
 
-  private MessageLocalization(){}
+  MessageLocalization(){}
 
   public interface Cases<R> {
-    R onElement(Element e);
+    R onElement(Element element);
 
-    R onAnnotation(Element e, AnnotationMirror a);
+    R onAnnotation(Element element, AnnotationMirror annotation);
 
-    R onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v);
+    R onAnnotationValue(Element element, AnnotationMirror annotation, AnnotationValue annotationValue);
   }
 
   public abstract <R> R match(Cases<R> cases);
 
   public static MessageLocalization onElement(Element e) {
-    return new MessageLocalization() {
-      @Override
-      public <R> R match(Cases<R> cases) {
-        return cases.onElement(e);
-      }
-    };
+    return MessageLocalizations.onElement(e);
   }
 
   public static MessageLocalization onAnnotation(Element e, AnnotationMirror a) {
-    return new MessageLocalization() {
-      @Override
-      public <R> R match(Cases<R> cases) {
-        return cases.onAnnotation(e,a);
-      }
-    };
+    return MessageLocalizations.onAnnotation(e, a);
   }
 
   public static MessageLocalization onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
-    return new MessageLocalization() {
-      @Override
-      public <R> R match(Cases<R> cases) {
-        return cases.onAnnotation(e,a);
-      }
-    };
+    return MessageLocalizations.onAnnotationValue(e, a, v);
   }
 
 }

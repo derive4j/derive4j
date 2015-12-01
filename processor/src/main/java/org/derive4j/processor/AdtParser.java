@@ -26,7 +26,6 @@ import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
@@ -47,12 +46,12 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.MessageLocalization.onAnnotation;
 import static org.derive4j.processor.api.MessageLocalization.onElement;
 import static org.derive4j.processor.api.model.AlgebraicDataType.adt;
-import static org.derive4j.processor.api.model.DataArgument.argument;
+import static org.derive4j.processor.api.model.DataArgument.dataArgument;
 import static org.derive4j.processor.api.model.DataConstruction.*;
 import static org.derive4j.processor.api.model.DataConstructor.constructor;
-import static org.derive4j.processor.api.model.DataConstructors.visitorDispatch;
 import static org.derive4j.processor.api.model.DataDeconstructor.deconstructor;
 import static org.derive4j.processor.api.model.MatchMethod.matchMethod;
+import static org.derive4j.processor.api.model.MultipleConstructors.visitorDispatch;
 import static org.derive4j.processor.api.model.TypeConstructor.typeConstructor;
 import static org.derive4j.processor.api.model.TypeRestriction.typeRestriction;
 
@@ -88,7 +87,7 @@ public final class AdtParser implements DeriveUtils {
   }
 
   public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(final TypeElement adtTypeElement) {
-    return fold(Utils.asDeclaredType.visit(adtTypeElement.asType()).filter(t ->t.asElement().getEnclosingElement().getKind() == ElementKind.PACKAGE
+    return fold(Utils.asDeclaredType.visit(adtTypeElement.asType()).filter(t -> t.asElement().getEnclosingElement().getKind() == ElementKind.PACKAGE
             || t.asElement().getModifiers().contains(Modifier.STATIC)
             || t.asElement().getKind() == ElementKind.ENUM
             || t.asElement().getKind() == ElementKind.INTERFACE),
@@ -120,46 +119,32 @@ public final class AdtParser implements DeriveUtils {
   }
 
   public DeriveResult<List<DataArgument>> validateFieldTypeUniformity(DataConstruction construction) {
-    return construction.match(new Cases<DeriveResult<List<DataArgument>>>() {
-      @Override
-      public DeriveResult<List<DataArgument>> multipleConstructors(DataConstructors constructors) {
-        List<DataConstructor> allConstructors = constructors.match(new DataConstructors.Cases<List<DataConstructor>>() {
-          @Override
-          public List<DataConstructor> visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-            return constructors;
+    return DataConstructions.cases()
 
+        .multipleConstructors(multipleConstructors -> {
+
+          Map<String, List<DataArgument>> fieldsMap = multipleConstructors.constructors().stream()
+              .flatMap(c -> c.arguments().stream()).collect(Collectors.groupingBy(DataArgument::fieldName));
+
+          List<String> fieldsWithNonUniformType = fieldsMap.entrySet().stream()
+              .filter(e -> e.getValue().stream().anyMatch(da -> !types.isSameType(da.type(), e.getValue().get(0).type())))
+              .map(Map.Entry::getKey)
+              .collect(Collectors.toList());
+
+          DeriveResult<List<DataArgument>> res;
+          if (!fieldsWithNonUniformType.isEmpty()) {
+            res = error(message("Field(s) " + fieldsWithNonUniformType + " should have uniform type across all constructors"));
+          } else {
+            res = result(multipleConstructors.constructors().stream().flatMap(c -> c.arguments().stream().map(DataArgument::fieldName)).distinct().map(fieldName -> fieldsMap.get(fieldName).get(0)).collect(Collectors.toList()));
           }
+          return res;
+        })
 
-          @Override
-          public List<DataConstructor> functionsDispatch(List<DataConstructor> constructors) {
-            return constructors;
-          }
-        });
+        .oneConstructor(constructor -> result(constructor.arguments()))
 
-        Map<String, List<DataArgument>> fieldsMap = allConstructors.stream().flatMap(c -> c.arguments().stream()).collect(Collectors.groupingBy(DataArgument::fieldName));
-        List<String> fieldsWithNonUniformType = fieldsMap.entrySet().stream()
-            .filter(e -> e.getValue().stream().anyMatch(da -> !types.isSameType(da.type(), e.getValue().get(0).type())))
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toList());
-        DeriveResult<List<DataArgument>> res;
-        if (!fieldsWithNonUniformType.isEmpty()) {
-          res = error(message("Field(s) " + fieldsWithNonUniformType + " should have uniform type across all constructors"));
-        } else {
-          res = result(allConstructors.stream().flatMap(c -> c.arguments().stream().map(DataArgument::fieldName)).distinct().map(fieldName -> fieldsMap.get(fieldName).get(0)).collect(Collectors.toList()));
-        }
-        return res;
-      }
+        .noConstructor(() -> result(emptyList()))
 
-      @Override
-      public DeriveResult<List<DataArgument>> oneConstructor(DataConstructor constructor) {
-        return result(constructor.arguments());
-      }
-
-      @Override
-      public DeriveResult<List<DataArgument>> noConstructor() {
-        return result(emptyList());
-      }
-    });
+        .apply(construction);
   }
 
   private DeriveResult<DataConstruction> parseDataConstruction(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, ExecutableElement adtAcceptMethod, TypeVariable adtAcceptMethodReturnType) {
@@ -245,8 +230,8 @@ public final class AdtParser implements DeriveUtils {
   @Override
   public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
     return tv -> typeRestrictions.stream()
-        .filter(tr -> types.isSameType(tr.restrictedTypeParameter(), tv))
-        .findFirst().map(TypeRestriction::type);
+        .filter(tr -> types.isSameType(tr.restrictedTypeVariable(), tv))
+        .findFirst().map(TypeRestriction::refinementType);
   }
 
   public MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
@@ -269,31 +254,21 @@ public final class AdtParser implements DeriveUtils {
   }
 
   private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, List<P2<VariableElement, DeclaredType>> caseHandlers) {
-    return Utils.traverseResults(caseHandlers,
-        p2 -> p2.match(
-            (visitorArg, visitorType) -> parseDataConstructionOneArg(adtTypeVariables, visitorArg, visitorType)
-                .bind(construction -> construction.match(new Cases<DeriveResult<DataConstructor>>() {
-                  @Override
-                  public DeriveResult<DataConstructor> multipleConstructors(DataConstructors constructors) {
-                    return error(message("Either use one visitor with multiple dispatch method or multiple functions.", onElement(visitorArg)));
-                  }
+    return Utils.traverseResults(caseHandlers, p2 -> p2.match(
+        (visitorArg, visitorType) -> parseDataConstructionOneArg(adtTypeVariables, visitorArg, visitorType)
+            .bind(DataConstructions.cases()
 
-                  @Override
-                  public DeriveResult<DataConstructor> oneConstructor(DataConstructor constructor) {
-                    return result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
-                        constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
-                            ? constructor.arguments()
-                            : constructor.arguments().stream().map(da -> da.match((name, type) -> argument(visitorArg.getSimpleName().toString(), type))).collect(Collectors.toList()),
-                        constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor()));
-                  }
+                .multipleConstructors(__ -> DeriveResult.<DataConstructor>error(message("Either use one visitor with multiple dispatch method or multiple functions.", onElement(visitorArg))))
 
-                  @Override
-                  public DeriveResult<DataConstructor> noConstructor() {
-                    return error(message("No abstract method found!", onElement(visitorArg)));
-                  }
-                }))))
-        .map(DataConstructors::functionsDispatch)
-        .map(DataConstruction::multipleConstructors);
+                .oneConstructor(constructor -> result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
+                    constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
+                        ? constructor.arguments()
+                        : constructor.arguments().stream().map(da -> da.match((name, type) -> dataArgument(visitorArg.getSimpleName().toString(), type))).collect(Collectors.toList()),
+                    constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor())))
+
+                .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg))))
+            )
+    )).map(MultipleConstructors::functionsDispatch).map(DataConstruction::multipleConstructors);
 
   }
 
@@ -308,14 +283,14 @@ public final class AdtParser implements DeriveUtils {
       TypeMirror paramType = resolve(parameter.asType(), typeArgs);
 
       Optional<TypeRestriction> gadtConstraint = parseGadtConstraint(parameter.getSimpleName().toString(), paramType, adtTypeParameters, typeArgs)
-          .filter(tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeParameter())));
+          .filter(tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
 
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
         if (!typeRestrictions.isEmpty()) {
           return error(message("Please put type constraints exclusively at the end of parameter list", onElement(visitorAbstractMethod)));
         }
-        constructorArguments.add(argument(parameter.getSimpleName().toString(), paramType));
+        constructorArguments.add(dataArgument(parameter.getSimpleName().toString(), paramType));
       }
       seenVariables.addAll(typeVariablesIn(paramType).filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv))).collect(Collectors.toList()));
     }
@@ -335,7 +310,7 @@ public final class AdtParser implements DeriveUtils {
               : result(
               DataConstructor.constructor(visitorArg.getSimpleName().toString(),
                   IntStream.range(0, constructorArguments.size())
-                      .mapToObj(i -> argument(fieldNames.value()[i], constructorArguments.get(i).type()))
+                      .mapToObj(i -> dataArgument(fieldNames.value()[i], constructorArguments.get(i).type()))
                       .collect(Collectors.toList()),
 
                   seenVariables,
@@ -343,8 +318,8 @@ public final class AdtParser implements DeriveUtils {
                   IntStream.range(constructorArguments.size(), totalNbArgs)
                       .mapToObj(i -> {
                         TypeRestriction typeRestriction = typeRestrictions.get(i - constructorArguments.size());
-                        return typeRestriction(typeRestriction.restrictedTypeParameter(), typeRestriction.type(),
-                            argument(fieldNames.value()[i], typeRestriction.dataArgument().type()));
+                        return typeRestriction(typeRestriction.restrictedTypeVariable(), typeRestriction.refinementType(),
+                            dataArgument(fieldNames.value()[i], typeRestriction.idFunction().type()));
                       })
                       .collect(Collectors.toList())
                   , deconstructor));
@@ -373,7 +348,7 @@ public final class AdtParser implements DeriveUtils {
                     .flatMap(t ->
                         IntStream.range(0, adtTypeVariables.size())
                             .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
-                            .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), resolve(t, typeArgs(dt)), argument(argName, paramType)))
+                            .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), resolve(t, typeArgs(dt)), dataArgument(argName, paramType)))
                             .findFirst()
                     )
             )));

@@ -28,8 +28,6 @@ import org.derive4j.processor.Utils;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.*;
-import javax.lang.model.util.SimpleTypeVisitor6;
-import javax.lang.model.util.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -44,7 +42,7 @@ public final class GettersDerivator {
     return result(
         adt.fields().stream()
             .map(da -> deriveGetter(da, adt, deriveContext, deriveUtils))
-            .reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs)
+            .reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append)
     );
   }
 
@@ -57,7 +55,7 @@ public final class GettersDerivator {
 
     String arg = Utils.uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString());
 
-    Flavours.OptionType optionType = Flavours.findOptionType(deriveContext.flavour(), deriveUtils.elements());
+    FlavourImpl.OptionType optionType = FlavourImpl.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
     DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type().accept(Utils.asBoxedType, deriveUtils.types()));
 
@@ -69,7 +67,7 @@ public final class GettersDerivator {
 
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
-      public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
+      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
 
         CodeBlock lambdas = constructors.constructors().stream()
             .map(constructor -> {
@@ -84,7 +82,7 @@ public final class GettersDerivator {
             .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
             .orElse(CodeBlock.builder().build());
 
-        return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
+        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
           @Override
           public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 
@@ -171,10 +169,10 @@ public final class GettersDerivator {
 
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
-      public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
+      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
 
 
-        return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
+        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
           @Override
           public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 

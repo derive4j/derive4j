@@ -30,7 +30,6 @@ import org.derive4j.processor.api.model.TypeConstructor;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,7 +50,7 @@ public final class LazyConstructorDerivator {
     }
 
     TypeConstructor typeConstructor = adt.typeConstructor();
-    TypeElement lazyTypeElement = Flavours.findF0(deriveContext.flavour(), deriveUtils.elements());
+    TypeElement lazyTypeElement = FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements());
     TypeName lazyArgTypeName = TypeName.get(deriveUtils.types().getDeclaredType(lazyTypeElement, typeConstructor.declaredType()));
     String lazyArgName = Utils.uncapitalize(typeConstructor.typeElement().getSimpleName());
     TypeName typeName = TypeName.get(typeConstructor.declaredType());

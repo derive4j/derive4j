@@ -34,7 +34,7 @@ import org.derive4j.Visibility;
 import java.util.Optional;
 import java.util.function.Function;
 
-@Data(@Derive(withVisbility = Visibility.Smart))
+@Data(@Derive(withVisibility = Visibility.Smart))
 public abstract class PersonName {
 
   PersonName() {

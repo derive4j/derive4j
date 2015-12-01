@@ -47,14 +47,14 @@ public final class ModiersDerivator {
     return result(
         adt.fields().stream()
             .map(da -> generateModfier(da, adt, deriveContext, deriveUtils))
-            .reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs)
+            .reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append)
     );
   }
 
   private static DerivedCodeSpec generateModfier(DataArgument field, AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
     String moderArg = field.fieldName() + "Mod";
-    TypeElement f1 = Flavours.findF(deriveContext.flavour(), deriveUtils.elements());
+    TypeElement f1 = FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements());
     String f1Apply = Utils.getAbstractMethods(f1.getEnclosedElements()).get(0).getSimpleName().toString();
 
     String adtArg = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
@@ -121,10 +121,10 @@ public final class ModiersDerivator {
 
     return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
-      public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
+      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
 
 
-        return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
+        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
           @Override
           public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 

@@ -18,35 +18,39 @@
  */
 package org.derive4j.processor.api;
 
-import java.util.Arrays;
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
+import static org.derive4j.Visibility.Smart;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class DeriveMessage {
 
-  private DeriveMessage() {}
-
-  public abstract <R> R match(Case<R> message);
-
-  public interface Case<R> {
-      R message(String msg, List<MessageLocalization> localizations);
+  DeriveMessage() {
   }
 
   public static DeriveMessage message(String msg, List<MessageLocalization> localizations) {
-    return new DeriveMessage() {
-      @Override
-      public <R> R match(Case<R> message) {
-        return message.message(msg, localizations);
-      }
-    };
+    return DeriveMessages.message(msg, unmodifiableList(new ArrayList<>(localizations)));
   }
 
   public static DeriveMessage message(String msg, MessageLocalization localization) {
-    return message(msg, Arrays.asList(localization));
+    return message(msg, singletonList(localization));
   }
 
   public static DeriveMessage message(String msg) {
     return message(msg, Collections.emptyList());
+  }
+
+  public abstract <R> R match(Case<R> message);
+
+  public interface Case<R> {
+    R message(String text, List<MessageLocalization> localizations);
   }
 
 }

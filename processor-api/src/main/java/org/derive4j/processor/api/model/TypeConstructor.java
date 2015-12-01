@@ -18,40 +18,45 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
+import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.unmodifiableList;
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.TypeConstructors.*;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class TypeConstructor {
 
-  private TypeConstructor() {}
+  TypeConstructor() {
+  }
 
-  public interface Case<R> {
-    R typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables);
+  public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables) {
+    return TypeConstructors.typeConstructor(typeElement, declaredType, unmodifiableList(new ArrayList<>(typeVariables)));
   }
 
   public abstract <R> R match(Case<R> typeConstructor);
 
-  public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables) {
-    return new TypeConstructor() {
-      @Override
-      public <R> R match(Case<R> typeConstructor) {
-        return typeConstructor.typeConstructor(typeElement, declaredType, typeVariables);
-      }
-    };
-  }
-
   public TypeElement typeElement() {
-    return match((typeElement, declaredType, typeVariables) -> typeElement);
+    return getTypeElement(this);
   }
 
   public DeclaredType declaredType() {
-    return match((typeElement, declaredType, typeVariables) -> declaredType);
+    return getDeclaredType(this);
   }
 
   public List<TypeVariable> typeVariables() {
-    return match((typeElement, declaredType, typeVariables) -> typeVariables);
+    return getTypeVariables(this);
+  }
+
+  public interface Case<R> {
+    R typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables);
   }
 
 }

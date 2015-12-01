@@ -29,7 +29,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.Elements;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,8 +39,8 @@ public class MapperDerivator {
     return DeriveResult.result(
         adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
           @Override
-          public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
-            return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
+          public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
+            return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
 
               @Override
               public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
@@ -76,7 +75,7 @@ public class MapperDerivator {
         .addTypeVariables(mapperVariables(adt, dc).map(TypeVariableName::get).collect(Collectors.toList()))
         .addMethod(MethodSpec.methodBuilder(dc.deconstructor().visitorMethod().getSimpleName().toString())
             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-            .addParameters(Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::dataArgument))
+            .addParameters(Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
                 .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build()).collect(Collectors.toList()))
             .returns(TypeName.get(adt.matchMethod().returnTypeVariable()))
             .build()
@@ -141,9 +140,9 @@ public class MapperDerivator {
   private static String mapperApplyMethod(DeriveUtils deriveUtils, DeriveContext deriveContext, DataConstructor dc) {
     int nbArgs = dc.arguments().size() + dc.typeRestrictions().size();
     return nbArgs == 0
-        ? Utils.getAbstractMethods(Flavours.findF0(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
+        ? Utils.getAbstractMethods(FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
         : nbArgs == 1
-        ? Utils.getAbstractMethods(Flavours.findF(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
+        ? Utils.getAbstractMethods(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements()).getEnclosedElements()).get(0).getSimpleName().toString()
         : dc.deconstructor().visitorMethod().getSimpleName().toString();
   }
 
@@ -159,15 +158,16 @@ public class MapperDerivator {
 
   public static TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, DeriveContext deriveContext, DeriveUtils deriveUtils) {
     TypeName[] argsTypeNames = Stream.concat(dc.arguments().stream().map(DataArgument::type),
-        dc.typeRestrictions().stream().map(TypeRestriction::dataArgument)
+        dc.typeRestrictions().stream().map(TypeRestriction::idFunction)
             .map(DataArgument::type)).map(t -> Utils.asBoxedType.visit(t, deriveUtils.types())).map(TypeName::get).toArray(TypeName[]::new);
+
     return
         adt.dataConstruction().isVisitorDispatch()
             ?
             argsTypeNames.length == 0 ?
-                ParameterizedTypeName.get(ClassName.get(Flavours.findF0(deriveContext.flavour(), deriveUtils.elements())), TypeName.get(adt.matchMethod().returnTypeVariable()))
+                ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements())), TypeName.get(adt.matchMethod().returnTypeVariable()))
                 : argsTypeNames.length == 1
-                ? ParameterizedTypeName.get(ClassName.get(Flavours.findF(deriveContext.flavour(), deriveUtils.elements())),
+                ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements())),
                 argsTypeNames[0],
                 TypeName.get(adt.matchMethod().returnTypeVariable()))
                 : ParameterizedTypeName.get(Utils.getClassName(deriveContext, mapperInterfaceName(dc)),

@@ -22,11 +22,14 @@ import java.lang.annotation.Target;
 
 import static org.derive4j.Visibility.Same;
 
-@Target(value = {})
+@Target({})
 public @interface Derive {
 
   String inClass() default ":auto";
 
+  Visibility withVisibility() default Same;
+
+  @Deprecated
   Visibility withVisbility() default Same;
 
   Instances[] value() default {};

@@ -18,6 +18,7 @@
  */
 package org.derive4j;
 
+@Data
 public enum Flavour {
 
   JDK {
@@ -33,7 +34,6 @@ public enum Flavour {
       return cases.Fj();
     }
   },
-
 
   Fugue {
     @Override

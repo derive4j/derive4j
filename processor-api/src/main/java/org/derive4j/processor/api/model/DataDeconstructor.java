@@ -18,34 +18,36 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.DataDeconstructors.*;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class DataDeconstructor {
 
-  private DataDeconstructor() {
+  DataDeconstructor() {
   }
 
   public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod) {
-    return new DataDeconstructor() {
-      @Override
-      public <R> R match(Case<R> deconstructor) {
-        return deconstructor.deconstructor(visitorParam, visitorType, visitorMethod);
-      }
-    };
+    return DataDeconstructors.deconstructor(visitorParam, visitorType, visitorMethod);
   }
 
   public ExecutableElement visitorMethod() {
-    return match((visitorParam, visitorType, visitorMethod) -> visitorMethod);
+    return getVisitorMethod(this);
   }
 
   public VariableElement visitorParam() {
-    return match((visitorParam, visitorType, visitorMethod) -> visitorParam);
+    return getVisitorParam(this);
   }
 
   public DeclaredType visitorType() {
-    return match((visitorParam, visitorType, visitorMethod) -> visitorType);
+    return getVisitorType(this);
   }
 
   public abstract <R> R match(Case<R> deconstructor);

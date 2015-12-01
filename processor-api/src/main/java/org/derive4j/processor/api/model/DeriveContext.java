@@ -31,5 +31,4 @@ public interface DeriveContext {
 
   String targetClassName();
 
-
 }

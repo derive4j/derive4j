@@ -22,7 +22,7 @@ import com.squareup.javapoet.*;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.*;
-import org.derive4j.processor.derivator.Flavours;
+import org.derive4j.processor.derivator.FlavourImpl;
 import org.derive4j.processor.derivator.MapperDerivator;
 
 import javax.lang.model.element.Modifier;
@@ -89,12 +89,12 @@ public class TotalMatchingStepDerivator {
 
     if (nextConstructors.isEmpty()) {
       currentConstructorTotalMatchMethod
-          .returns(TypeName.get(deriveUtils.types().getDeclaredType(Flavours.findF(deriveContext.flavour(), deriveUtils.elements()),
+          .returns(TypeName.get(deriveUtils.types().getDeclaredType(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements()),
               adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
           .addCode(adt.dataConstruction().match(new DataConstruction.Cases<CodeBlock>() {
             @Override
-            public CodeBlock multipleConstructors(DataConstructors constructors) {
-              return constructors.match(new DataConstructors.Cases<CodeBlock>() {
+            public CodeBlock multipleConstructors(MultipleConstructors constructors) {
+              return constructors.match(new MultipleConstructors.Cases<CodeBlock>() {
                 @Override
                 public CodeBlock visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 

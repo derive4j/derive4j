@@ -18,87 +18,54 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.DataConstructions.cases;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class DataConstruction {
 
-  private DataConstruction() {
+  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases()
+      .multipleConstructors(MultipleConstructorsSupport::getConstructors)
+      .oneConstructor(Collections::singletonList)
+      .noConstructor(Collections::emptyList);
+
+  DataConstruction() {
   }
 
-  ;
-
-  public static DataConstruction multipleConstructors(DataConstructors constructors) {
-    return new DataConstruction() {
-      @Override
-      public <R> R match(final Cases<R> cases) {
-        return cases.multipleConstructors(constructors);
-      }
-    };
+  public static DataConstruction multipleConstructors(MultipleConstructors constructors) {
+    return DataConstructions.multipleConstructors(constructors);
   }
 
   public static DataConstruction oneConstructor(final DataConstructor constructor) {
-    return new DataConstruction() {
-      @Override
-      public <R> R match(final Cases<R> cases) {
-        return cases.oneConstructor(constructor);
-      }
-    };
+    return DataConstructions.oneConstructor(constructor);
   }
 
   public static DataConstruction noConstructor() {
-    return new DataConstruction() {
-      @Override
-      public <R> R match(final Cases<R> cases) {
-        return cases.noConstructor();
-      }
-    };
+    return DataConstructions.noConstructor();
   }
 
   public abstract <R> R match(Cases<R> cases);
 
   public List<DataConstructor> constructors() {
-    return match(new Cases<List<DataConstructor>>() {
-      @Override
-      public List<DataConstructor> multipleConstructors(DataConstructors constructors) {
-        return constructors.constructors();
-      }
-
-      @Override
-      public List<DataConstructor> oneConstructor(DataConstructor constructor) {
-        return Collections.singletonList(constructor);
-      }
-
-      @Override
-      public List<DataConstructor> noConstructor() {
-        return Collections.emptyList();
-      }
-    });
+    return getConstructors.apply(this);
   }
 
   public boolean isVisitorDispatch() {
-    return match(new Cases<Boolean>() {
-      @Override
-      public Boolean multipleConstructors(DataConstructors constructors) {
-        return constructors.isVisitorDispatch();
-      }
-
-      @Override
-      public Boolean oneConstructor(DataConstructor constructor) {
-        return false;
-      }
-
-      @Override
-      public Boolean noConstructor() {
-        return false;
-      }
-    });
+    return DataConstructions.getConstructors(this)
+        .map(MultipleConstructors::isVisitorDispatch)
+        .orElse(false);
   }
-
 
   public interface Cases<R> {
 
-    R multipleConstructors(DataConstructors constructors);
+    R multipleConstructors(MultipleConstructors constructors);
 
     R oneConstructor(DataConstructor constructor);
 

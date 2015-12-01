@@ -55,8 +55,8 @@ public final class StrictConstructorDerivator {
 
     return result(adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
       @Override
-      public DerivedCodeSpec multipleConstructors(DataConstructors constructors) {
-        return constructors.match(new DataConstructors.Cases<DerivedCodeSpec>() {
+      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
+        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
           @Override
           public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
             return functionsDispatch(constructors);
@@ -64,7 +64,7 @@ public final class StrictConstructorDerivator {
 
           @Override
           public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return constructors.stream().map(dc -> constructorSpec(adt, dc, deriveContext, deriveUtils)).reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs);
+            return constructors.stream().map(dc -> constructorSpec(adt, dc, deriveContext, deriveUtils)).reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append);
           }
         });
       }
@@ -89,7 +89,7 @@ public final class StrictConstructorDerivator {
         deriveUtils.typeRestrictions(constructor.typeRestrictions())));
 
     List<TypeVariableName> typeVariableNames = adt.typeConstructor().typeVariables().stream()
-        .filter(tv -> constructor.typeRestrictions().stream().map(TypeRestriction::restrictedTypeParameter)
+        .filter(tv -> constructor.typeRestrictions().stream().map(TypeRestriction::restrictedTypeVariable)
             .noneMatch(rtv -> deriveUtils.types().isSameType(rtv, tv)))
         .map(TypeVariableName::get).collect(Collectors.toList());
 
@@ -102,7 +102,7 @@ public final class StrictConstructorDerivator {
       constructorBuilder.addStatement("this.$N = $N", argument.fieldName(), argument.fieldName());
     }
 
-    Function<TypeVariable, Optional<TypeMirror>> typesRestrictions = tv -> constructor.typeRestrictions().stream().filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeParameter(), tv)).map(TypeRestriction::type).findFirst();
+    Function<TypeVariable, Optional<TypeMirror>> typesRestrictions = tv -> constructor.typeRestrictions().stream().filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv)).map(TypeRestriction::refinementType).findFirst();
 
     NameAllocator nameAllocator = new NameAllocator();
     nameAllocator.newName(adt.typeConstructor().declaredType().asElement().getSimpleName().toString(), "Type Element");
@@ -194,8 +194,8 @@ public final class StrictConstructorDerivator {
 
           return adt.dataConstruction().match(new DataConstruction.Cases<MethodSpec>() {
             @Override
-            public MethodSpec multipleConstructors(DataConstructors constructors) {
-              return constructors.match(new DataConstructors.Cases<MethodSpec>() {
+            public MethodSpec multipleConstructors(MultipleConstructors constructors) {
+              return constructors.match(new MultipleConstructors.Cases<MethodSpec>() {
                 @Override
                 public MethodSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 
@@ -203,8 +203,8 @@ public final class StrictConstructorDerivator {
                       objectParam.getSimpleName().toString(),
                       TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
                       TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeParameter(), tv))
-                          .map(TypeRestriction::type).findFirst())),
+                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                          .map(TypeRestriction::refinementType).findFirst())),
                       adt.matchMethod().element().getSimpleName(),
                       ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
                       MapperDerivator.visitorLambdaFactoryName(adt),
@@ -218,8 +218,8 @@ public final class StrictConstructorDerivator {
                       objectParam.getSimpleName().toString(),
                       TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
                       TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeParameter(), tv))
-                          .map(TypeRestriction::type).findFirst())),
+                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                          .map(TypeRestriction::refinementType).findFirst())),
                       adt.matchMethod().element().getSimpleName(),
                       lambdas)
                       .build();
@@ -233,8 +233,8 @@ public final class StrictConstructorDerivator {
                   objectParam.getSimpleName().toString(),
                   TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
                   TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                      .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeParameter(), tv))
-                      .map(TypeRestriction::type).findFirst())),
+                      .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                      .map(TypeRestriction::refinementType).findFirst())),
                   adt.matchMethod().element().getSimpleName(),
                   lambdas)
                   .build();

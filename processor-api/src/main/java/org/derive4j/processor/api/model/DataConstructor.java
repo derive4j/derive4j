@@ -18,48 +18,52 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import javax.lang.model.type.TypeVariable;
+import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.unmodifiableList;
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.DataConstructors.*;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class DataConstructor {
 
-  private DataConstructor() {
+  DataConstructor() {
   }
 
   public static DataConstructor constructor(String name, List<DataArgument> arguments,
                                             List<TypeVariable> typeVariables, List<TypeRestriction> typeRestrictions,
                                             DataDeconstructor deconstructor) {
-    return new DataConstructor() {
-      @Override
-      public <R> R match(Case<R> dataConstructor) {
-        return dataConstructor.constructor(name, arguments, typeVariables, typeRestrictions, deconstructor);
-      }
-    };
+
+    return DataConstructors.constructor(name, unmodifiableList(new ArrayList<>(arguments)),
+        unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(typeRestrictions)),
+        deconstructor);
   }
 
   public abstract <R> R match(Case<R> constructor);
 
   public String name() {
-    return match((name, arguments, typeVariables, typeRestrictions, deconstructor) -> name);
+    return getName(this);
   }
-
 
   public List<DataArgument> arguments() {
-    return match((name, arguments, typeVariables, typeRestrictions, deconstructor) -> arguments);
+    return getArguments(this);
   }
 
-
   public List<TypeVariable> typeVariables() {
-    return match((name, arguments, typeVariables, typeRestrictions, deconstructor) -> typeVariables);
+    return getTypeVariables(this);
   }
 
   public DataDeconstructor deconstructor() {
-    return match((name, arguments, typeVariables, typeRestrictions, deconstructor) -> deconstructor);
+    return getDeconstructor(this);
   }
 
-
   public List<TypeRestriction> typeRestrictions() {
-    return match((name, arguments, typeVariables, typeRestrictions, deconstructor) -> typeRestrictions);
+    return getTypeRestrictions(this);
   }
 
   public interface Case<R> {

@@ -8,6 +8,7 @@ dependencies {
     compile project(":annotation")
     compile dependencyJavaPoet
     testCompile dependencyJunit
+    apt dependencyPreviousDerive4J
 }
 
 configureUpload(lgplLicenseName)

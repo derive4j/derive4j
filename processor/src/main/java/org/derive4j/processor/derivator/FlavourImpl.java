@@ -19,120 +19,57 @@
 package org.derive4j.processor.derivator;
 
 import org.derive4j.Flavour;
+import org.derive4j.Flavours;
 
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.derive4j.processor.derivator.Flavours.EitherType.eitherType;
-import static org.derive4j.processor.derivator.Flavours.OptionType.optionTye;
+import static org.derive4j.processor.derivator.FlavourImpl.EitherType.eitherType;
+import static org.derive4j.processor.derivator.FlavourImpl.OptionType.optionTye;
 
-public final class Flavours {
+public final class FlavourImpl {
 
   public static TypeElement findF0(Flavour flavour, Elements elements) {
-    return elements.getTypeElement(flavour.match(new Flavour.Cases<String>() {
-
-      @Override
-      public String Jdk() {
-        return Supplier.class.getName();
-      }
-
-      @Override
-      public String Fj() {
-        return "fj.F0";
-      }
-
-      @Override
-      public String Fugue() {
-        return Jdk();
-      }
-
-      @Override
-      public String Fugue2() {
-        return "com.google.common.base.Supplier";
-      }
-    }));
+    return elements.getTypeElement(
+        Flavours.cases()
+            .Jdk(() -> Supplier.class.getName())
+            .Fj(() -> "fj.F0")
+            .Fugue(() -> Supplier.class.getName())
+            .Fugue2(() -> "com.google.common.base.Supplier")
+            .apply(flavour)
+    );
   }
 
   public static TypeElement findF(Flavour flavour, Elements elements) {
-    return elements.getTypeElement(flavour.match(new Flavour.Cases<String>() {
-
-      @Override
-      public String Jdk() {
-        return Function.class.getName();
-      }
-
-      @Override
-      public String Fj() {
-        return "fj.F";
-      }
-
-      @Override
-      public String Fugue() {
-        return Jdk();
-      }
-
-      @Override
-      public String Fugue2() {
-        return "com.google.common.base.Function";
-      }
-    }));
+    return elements.getTypeElement(
+        Flavours.cases()
+            .Jdk(() -> Function.class.getName())
+            .Fj(() -> "fj.F")
+            .Fugue(() -> Function.class.getName())
+            .Fugue2(() -> "com.google.common.base.Function")
+            .apply(flavour)
+    );
   }
 
   public static OptionType findOptionType(Flavour flavour, Elements elements) {
-    return flavour.match(new Flavour.Cases<OptionType>() {
-
-      @Override
-      public OptionType Jdk() {
-        return optionTye(elements.getTypeElement(Optional.class.getName()), "empty", "of");
-      }
-
-      @Override
-      public OptionType Fj() {
-        return optionTye(elements.getTypeElement("fj.data.Option"), "none", "some");
-      }
-
-      @Override
-      public OptionType Fugue() {
-        return optionTye(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some");
-      }
-
-      @Override
-      public OptionType Fugue2() {
-        return optionTye(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some");
-      }
-    });
+    return Flavours.cases()
+        .Jdk(() -> optionTye(elements.getTypeElement(Optional.class.getName()), "empty", "of"))
+        .Fj(() -> optionTye(elements.getTypeElement("fj.data.Option"), "none", "some"))
+        .Fugue(() -> optionTye(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some"))
+        .Fugue2(() -> optionTye(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
+        .apply(flavour);
   }
 
   public static Optional<EitherType> findEitherType(Flavour flavour, Elements elements) {
-    return flavour.match(new Flavour.Cases<Optional<EitherType>>() {
-
-      @Override
-      public Optional<EitherType> Jdk() {
-        return Optional.empty();
-      }
-
-      @Override
-      public Optional<EitherType> Fj() {
-        return Optional.of(eitherType(elements.getTypeElement("fj.data.Either"), "left", "right"));
-      }
-
-      @Override
-      public Optional<EitherType> Fugue() {
-        return Optional.of(eitherType(elements.getTypeElement("io.atlassian.fugue.Either"), "left", "right"));
-      }
-
-      @Override
-      public Optional<EitherType> Fugue2() {
-        return Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right"));
-      }
-
-    });
+    return Flavours.cases()
+        .Jdk(() -> Optional.<EitherType>empty())
+        .Fj(() -> Optional.of(eitherType(elements.getTypeElement("fj.data.Either"), "left", "right")))
+        .Fugue(() -> Optional.of(eitherType(elements.getTypeElement("io.atlassian.fugue.Either"), "left", "right")))
+        .Fugue2(() -> Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right")))
+        .apply(flavour);
   }
 
   public static abstract class OptionType {
@@ -147,10 +84,6 @@ public final class Flavours {
 
     public abstract <R> R optionType(Case<R> optionType);
 
-    public interface Case<R> {
-      R optionType(TypeElement typeElement, String noneConstructor, String someConstructor);
-    }
-
     public TypeElement typeElement() {
       return optionType((typeElement, noneConstructor, someConstructor) -> typeElement);
     }
@@ -161,6 +94,10 @@ public final class Flavours {
 
     public String someConstructor() {
       return optionType((typeElement, noneConstructor, someConstructor) -> someConstructor);
+    }
+
+    public interface Case<R> {
+      R optionType(TypeElement typeElement, String noneConstructor, String someConstructor);
     }
   }
 

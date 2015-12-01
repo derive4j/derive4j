@@ -18,39 +18,41 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.TypeRestrictions.*;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class TypeRestriction {
 
-  private TypeRestriction() {
+  TypeRestriction() {
   }
 
-  public static TypeRestriction typeRestriction(TypeVariable typeParameter, TypeMirror type, DataArgument idFunction) {
-    return new TypeRestriction() {
-      @Override
-      public <R> R match(Case<R> typeRestriction) {
-        return typeRestriction.typeRestriction(typeParameter, type, idFunction);
-      }
-    };
+  public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument idFunction) {
+    return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, idFunction);
   }
 
-  public TypeVariable restrictedTypeParameter() {
-    return match((typeParameter, type, idFunction) -> typeParameter);
+  public TypeVariable restrictedTypeVariable() {
+    return getRestrictedTypeVariable(this);
   }
 
-  public TypeMirror type() {
-    return match((typeParameter, type, idFunction) -> type);
+  public TypeMirror refinementType() {
+    return getRefinementType(this);
   }
 
-  public DataArgument dataArgument() {
-    return match((typeParameter, type, idFunction) -> idFunction);
+  public DataArgument idFunction() {
+    return getIdFunction(this);
   }
 
   public abstract <R> R match(Case<R> typeRestriction);
 
   public interface Case<R> {
-    R typeRestriction(TypeVariable typeParameter, TypeMirror type, DataArgument idFunction);
+    R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument idFunction);
   }
 
 }

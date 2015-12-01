@@ -18,7 +18,6 @@
  */
 package org.derive4j.processor.derivator;
 
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
@@ -30,7 +29,7 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.derive4j.processor.Utils.traverseResults;
-import static org.derive4j.processor.api.DeriveResult.lazy;
+import static org.derive4j.processor.api.DeriveResults.lazy;
 
 public class BuiltinDerivator {
 
@@ -43,7 +42,7 @@ public class BuiltinDerivator {
             lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)),
             lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)),
             lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils))
-        )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), Utils::appendCodeSpecs));
+        )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
 }

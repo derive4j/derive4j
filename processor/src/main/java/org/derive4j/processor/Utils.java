@@ -21,7 +21,6 @@ package org.derive4j.processor;
 import com.squareup.javapoet.*;
 import org.derive4j.processor.api.DeriveMessage;
 import org.derive4j.processor.api.DeriveResult;
-import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.*;
@@ -120,10 +119,6 @@ public class Utils {
     return as.size() == 1 ? Optional.of(as.get(0)) : Optional.empty();
   }
 
-  public static <A> String showList(List<A> as, Function<A, String> showA) {
-    return "List(" + as.stream().map(showA).reduce((a1, a2) -> a1 + ", " + a2).orElse("") + ")";
-  }
-
   public static <A> Stream<A> optionalAsStream(Optional<A> o) {
     return fold(o, Stream.<A>empty(), a -> Stream.of(a));
   }
@@ -165,7 +160,7 @@ public class Utils {
 
     return Stream.concat(
         arguments.stream().map(a -> "this." + a.fieldName()),
-        restrictions.stream().map(tr -> uncapitalize(tr.restrictedTypeParameter().toString()) + " -> " + uncapitalize(tr.restrictedTypeParameter().toString())))
+        restrictions.stream().map(tr -> uncapitalize(tr.restrictedTypeVariable().toString()) + " -> " + uncapitalize(tr.restrictedTypeVariable().toString())))
         .reduce((s1, s2) -> s1 + ", " + s2)
         .orElse("");
   }
@@ -174,7 +169,7 @@ public class Utils {
 
     return joinStringsAsArguments(Stream.concat(
         arguments.stream().map(DataArgument::fieldName),
-        restrictions.stream().map(TypeRestriction::dataArgument).map(DataArgument::fieldName)));
+        restrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)));
   }
 
   public static String asArgumentsString(List<DataArgument> arguments) {
@@ -197,8 +192,8 @@ public class Utils {
   public static TypeName typeName(TypeConstructor typeConstructor, List<TypeRestriction> restrictions, Types types) {
     TypeName[] typeArgs = typeConstructor.typeVariables().stream()
         .map(tv -> restrictions.stream()
-            .filter(tr -> types.isSameType(tr.restrictedTypeParameter(), tv))
-            .findFirst().map(TypeRestriction::type).orElse(tv))
+            .filter(tr -> types.isSameType(tr.restrictedTypeVariable(), tv))
+            .findFirst().map(TypeRestriction::refinementType).orElse(tv))
         .map(TypeName::get).toArray(TypeName[]::new);
 
     return typeArgs.length == 0 ? TypeName.get(typeConstructor.declaredType()) : ParameterizedTypeName.get(
@@ -243,77 +238,6 @@ public class Utils {
   }
 
 
-  public static String show(AlgebraicDataType adt) {
-    return "adt(" + adt.match((typeConstructor, matchMethod, dataConstruction, fields) ->
-        show(typeConstructor) + ","
-            + show(matchMethod) + ","
-            + show(dataConstruction) + ","
-            + showList(fields, Utils::show)
-    )
-        + ")";
-  }
-
-  private static String show(MatchMethod matchMethod) {
-    return "matchMethod(" + matchMethod.match((method, returnTypeVariable) -> method + "," + returnTypeVariable) + ")";
-  }
-
-  private static String show(TypeConstructor constructor) {
-    return "typeConstructor(" + constructor.match((typeElement, declaredType, typeVariables) -> typeElement + "," + declaredType + "," + showList(typeVariables, TypeVariable::toString)) + ")";
-  }
-
-  public static String show(DataConstruction construction) {
-    return construction.match(new DataConstruction.Cases<String>() {
-
-      @Override
-      public String multipleConstructors(DataConstructors constructors) {
-        return show(constructors);
-      }
-
-      @Override
-      public String oneConstructor(DataConstructor constructor) {
-        return show(constructor);
-      }
-
-      @Override
-      public String noConstructor() {
-        return "noConstructor";
-      }
-    });
-  }
-
-  public static String show(DataConstructor dataConstructor) {
-    return "constructor(" + dataConstructor.match((name, arguments, typeVariables, typeRestrictions, deconstructor) ->
-        name + ", "
-            + showList(arguments, Utils::show) + ", "
-            + showList(typeVariables, TypeVariable::toString) + ", "
-            + showList(typeRestrictions, Utils::show))
-        + ")";
-  }
-
-  public static String show(DataConstructors constructors) {
-    return constructors.match(new DataConstructors.Cases<String>() {
-      @Override
-      public String visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-        return "visitorDispatch(" + visitorParam.toString() + ", " + visitorType.toString() + ", " + showList(constructors, Utils::show) + ")";
-      }
-
-      @Override
-      public String functionsDispatch(List<DataConstructor> constructors) {
-        return "functionsDispatch(" + showList(constructors, Utils::show) + ")";
-      }
-
-    });
-  }
-
-  public static String show(DataArgument arg) {
-    return "argument(" + arg.match((fieldName, type) -> fieldName + "," + type.toString()) + ")";
-  }
-
-  public static String show(TypeRestriction typeRestriction) {
-    return "typeRestriction(" + typeRestriction.match((typeParameter, type, idFunction) -> typeParameter.toString() + "," + type.toString() + show(idFunction)) + ")";
-  }
-
-
   public static <A, B> DeriveResult<List<B>> traverseResults(List<A> as, Function<A, DeriveResult<B>> f) {
     return traverseResults(as.stream().map(f).collect(Collectors.toList()));
   }
@@ -334,25 +258,6 @@ public class Utils {
     return DeriveResult.result(results);
   }
 
-  public static DerivedCodeSpec appendCodeSpecs(DerivedCodeSpec codeSpec1, DerivedCodeSpec codeSpec2) {
-    return DerivedCodeSpec.codeSpec(
-        concat(codeSpec1.classes(), codeSpec2.classes()),
-        concat(codeSpec1.fields(), codeSpec2.fields()),
-        concat(codeSpec1.methods(), codeSpec2.methods()),
-        concat(codeSpec1.infos(), codeSpec2.infos()),
-        concat(codeSpec1.warnings(), codeSpec2.warnings())
-    );
-  }
-
-
-  public static final <A> List<A> concat(List<A> as1, List<A> as2) {
-    return Stream.concat(as1.stream(), as2.stream()).collect(Collectors.toList());
-  }
-
-
-  public static <A, B> String show(P2<A, B> p2, Function<A, String> showA, Function<B, String> showB) {
-    return "p2(" + p2.match((a, b) -> showA.apply(a) + ", " + showB.apply(b)) + ")";
-  }
 
 
 }

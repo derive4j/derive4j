@@ -29,6 +29,7 @@ buildscript {
 allprojects {
 
     apply plugin: 'com.jfrog.artifactory-upload'
+    apply plugin: "idea"
 
     defaultTasks "build"
 
@@ -50,7 +51,8 @@ allprojects {
 
         primaryEmail = "jb@giraudeau.info"
 
-        dependencyJavaPoet = "com.squareup:javapoet:1.3.0"
+        dependencyJavaPoet = "com.squareup:javapoet:1.4.0"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.5"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
 

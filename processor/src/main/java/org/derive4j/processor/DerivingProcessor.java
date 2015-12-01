@@ -96,9 +96,12 @@ public class DerivingProcessor extends AbstractProcessor {
             return dataAnnotation.flavour();
           }
 
+          @SuppressWarnings("deprecation")
           @Override
           public Visibility visibility() {
-            return dataAnnotation.value().withVisbility();
+            return dataAnnotation.value().withVisibility() == Visibility.Same
+                ? dataAnnotation.value().withVisbility()
+                : dataAnnotation.value().withVisibility() ;
           }
 
           @Override
@@ -144,7 +147,7 @@ public class DerivingProcessor extends AbstractProcessor {
                 codeSpec -> () -> {
                   TypeSpec classSpec = codeSpec.match((classes, fields, methods, infos, warnings) ->
                       TypeSpec.classBuilder(deriveContext.targetClassName())
-                          .addModifiers(Modifier.FINAL, dataAnnotation.value().withVisbility() == Visibility.Package
+                          .addModifiers(Modifier.FINAL, dataAnnotation.value().withVisibility() == Visibility.Package
                               ? Modifier.FINAL : element.getModifiers().contains(Modifier.PUBLIC) ? Modifier.PUBLIC : Modifier.FINAL)
                           .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
                           .addTypes(classes)

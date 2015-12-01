@@ -18,42 +18,46 @@
  */
 package org.derive4j.processor.api.model;
 
+import org.derive4j.Data;
+import org.derive4j.Derive;
+
+import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.unmodifiableList;
+import static org.derive4j.Visibility.Smart;
+import static org.derive4j.processor.api.model.AlgebraicDataTypes.*;
+
+@Data(@Derive(withVisibility = Smart))
 public abstract class AlgebraicDataType {
 
-  private AlgebraicDataType() {
+  AlgebraicDataType() {
   }
 
   public static AlgebraicDataType adt(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction, List<DataArgument> fields) {
-    return new AlgebraicDataType() {
-      @Override
-      public <R> R match(Case<R> algebraicDataType) {
-        return algebraicDataType.algebraicDataType(typeConstructor, matchMethod, dataConstruction, fields);
-      }
-    };
+    return AlgebraicDataTypes.adt(typeConstructor, matchMethod, dataConstruction, unmodifiableList(new ArrayList<>(fields)));
   }
 
-  public abstract <R> R match(Case<R> algebraicDataType);
+  public abstract <R> R match(Case<R> adt);
 
   public TypeConstructor typeConstructor() {
-    return match((typeConstructor, matchMethod, dataConstruction, fields) -> typeConstructor);
+    return getTypeConstructor(this);
   }
 
   public MatchMethod matchMethod() {
-    return match((typeConstructor, matchMethod, dataConstruction, fields) -> matchMethod);
+    return getMatchMethod(this);
   }
 
   public DataConstruction dataConstruction() {
-    return match((typeConstructor, matchMethod, dataConstruction, fields) -> dataConstruction);
+    return getDataConstruction(this);
   }
 
   public List<DataArgument> fields() {
-    return match((typeConstructor, matchMethod, dataConstruction, fields) -> fields);
+    return getFields(this);
   }
 
   public interface Case<R> {
-    R algebraicDataType(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction, List<DataArgument> fields);
+    R adt(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction, List<DataArgument> fields);
   }
 
 }
