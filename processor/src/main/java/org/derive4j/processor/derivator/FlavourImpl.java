@@ -28,7 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.derive4j.processor.derivator.FlavourImpl.EitherType.eitherType;
-import static org.derive4j.processor.derivator.FlavourImpl.OptionType.optionTye;
+import static org.derive4j.processor.derivator.FlavourImpl.OptionType.optionType;
 
 public final class FlavourImpl {
 
@@ -39,6 +39,7 @@ public final class FlavourImpl {
             .Fj(() -> "fj.F0")
             .Fugue(() -> Supplier.class.getName())
             .Fugue2(() -> "com.google.common.base.Supplier")
+            .Javaslang(() -> Supplier.class.getName())
             .apply(flavour)
     );
   }
@@ -50,16 +51,18 @@ public final class FlavourImpl {
             .Fj(() -> "fj.F")
             .Fugue(() -> Function.class.getName())
             .Fugue2(() -> "com.google.common.base.Function")
+            .Javaslang(() -> Function.class.getName())
             .apply(flavour)
     );
   }
 
   public static OptionType findOptionType(Flavour flavour, Elements elements) {
     return Flavours.cases()
-        .Jdk(() -> optionTye(elements.getTypeElement(Optional.class.getName()), "empty", "of"))
-        .Fj(() -> optionTye(elements.getTypeElement("fj.data.Option"), "none", "some"))
-        .Fugue(() -> optionTye(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some"))
-        .Fugue2(() -> optionTye(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
+        .Jdk(() -> optionType(elements.getTypeElement(Optional.class.getName()), "empty", "of"))
+        .Fj(() -> optionType(elements.getTypeElement("fj.data.Option"), "none", "some"))
+        .Fugue(() -> optionType(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some"))
+        .Fugue2(() -> optionType(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
+        .Javaslang(() -> optionType(elements.getTypeElement("javaslang.control.Option"), "none", "some"))
         .apply(flavour);
   }
 
@@ -69,11 +72,12 @@ public final class FlavourImpl {
         .Fj(() -> Optional.of(eitherType(elements.getTypeElement("fj.data.Either"), "left", "right")))
         .Fugue(() -> Optional.of(eitherType(elements.getTypeElement("io.atlassian.fugue.Either"), "left", "right")))
         .Fugue2(() -> Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right")))
+        .Javaslang(() -> Optional.of(eitherType(elements.getTypeElement("javaslang.control.Either"), "left", "right")))
         .apply(flavour);
   }
 
   public static abstract class OptionType {
-    public static OptionType optionTye(TypeElement typeElement, String noneConstructor, String someConstructor) {
+    public static OptionType optionType(TypeElement typeElement, String noneConstructor, String someConstructor) {
       return new OptionType() {
         @Override
         public <R> R optionType(Case<R> optionType) {

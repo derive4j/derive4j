@@ -26,8 +26,9 @@
 package org.derive4j.exemple;
 
 import org.derive4j.Data;
+import org.derive4j.Flavour;
 
-@Data
+@Data(flavour = Flavour.Javaslang)
 public abstract class Event<T> {
 
   interface Cases<T, R> {
