@@ -19,22 +19,23 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
+import static org.derive4j.processor.api.DeriveResult.result;
 
 public final class GettersDerivator {
 
@@ -53,198 +54,172 @@ public final class GettersDerivator {
   private static DerivedCodeSpec generateOptionalGetter(DataArgument field, AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
 
-    String arg = Utils.uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString());
+    String arg = asParameterName(adt);
 
     FlavourImpl.OptionType optionType = FlavourImpl.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
     DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type().accept(Utils.asBoxedType, deriveUtils.types()));
 
-    MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder("get" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    return DataConstructions
+        .cases()
+        .multipleConstructors(
+            MultipleConstructorsSupport.cases()
+                .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchOptionalGetterImpl(deriveUtils, deriveContext, optionType, adt, visitorType, constructors, arg, field, returnType))
+                .functionsDispatch(constructors -> functionsDispatchOptionalGetterImpl(optionType, adt, arg, constructors, field, returnType))
+        )
+        .otherwise(() -> DerivedCodeSpec.none())
+        .apply(adt.dataConstruction());
+  }
+
+  private static DerivedCodeSpec functionsDispatchOptionalGetterImpl(FlavourImpl.OptionType optionType, AlgebraicDataType adt, String arg, List<DataConstructor> constructors, DataArgument field, DeclaredType returnType) {
+    return DerivedCodeSpec.methodSpec(
+        getterBuilder(adt, arg, field, returnType)
+            .addCode(CodeBlock.builder()
+                .add("return $L.$L(", arg, adt.matchMethod().element().getSimpleName())
+                .add(optionalGetterLambdas(optionType, constructors, field))
+                .add(");")
+                .build())
+            .build()
+    );
+  }
+
+  private static DerivedCodeSpec visitorDispatchOptionalGetterImpl(DeriveUtils deriveUtils, DeriveContext deriveContext, FlavourImpl.OptionType optionType, AlgebraicDataType adt, DeclaredType visitorType, List<DataConstructor> constructors, String arg, DataArgument field, DeclaredType returnType) {
+
+    Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
+        deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
+            ? Optional.of(returnType)
+            : Optional.<TypeMirror>empty();
+
+    Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());
+
+    FieldSpec getterField = FieldSpec.builder(TypeName.get(deriveUtils.resolve(deriveUtils.resolve(visitorType, returnTypeArg), otherTypeArgs)), Utils.uncapitalize(field.fieldName() + "Getter"))
+        .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        .initializer("$T.$L($L)",
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+            MapperDerivator.visitorLambdaFactoryName(adt),
+            optionalGetterLambdas(optionType, constructors, field)).build();
+
+    MethodSpec getter;
+
+    if (adt.typeConstructor().typeVariables().isEmpty()) {
+      getter = getterBuilder(adt, arg, field, returnType)
+          .addStatement("return $L.$L($L)",
+              arg,
+              adt.matchMethod().element().getSimpleName(),
+              getterField.name)
+          .build();
+    } else {
+      getter = getterBuilder(adt, arg, field, returnType)
+          .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "unchecked", "rawtypes").build())
+          .addStatement("return ($T) $L.$L(($T) $L)",
+              TypeName.get(returnType),
+              arg,
+              adt.matchMethod().element().getSimpleName(),
+              TypeName.get(deriveUtils.types().erasure(visitorType)),
+              getterField.name)
+          .build();
+
+    }
+
+    return DerivedCodeSpec.codeSpec(getterField, getter);
+  }
+
+  private static MethodSpec.Builder getterBuilder(AlgebraicDataType adt, String arg, DataArgument field, TypeMirror type) {
+    return MethodSpec.methodBuilder("get" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
             .map(TypeVariableName::get).collect(Collectors.toList()))
         .addParameter(TypeName.get(adt.typeConstructor().declaredType()), arg)
-        .returns(TypeName.get(returnType));
+        .returns(TypeName.get(type));
+  }
 
-    return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
-      @Override
-      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
-
-        CodeBlock lambdas = constructors.constructors().stream()
-            .map(constructor -> {
-              CodeBlock.Builder caseImplBuilder = CodeBlock.builder().add("($L) -> $T.", Utils.asLambdaParametersString(constructor.arguments(), constructor.typeRestrictions()), ClassName.get(optionType.typeElement()));
-              if (constructor.arguments().stream().anyMatch(da -> da.fieldName().equals(field.fieldName()))) {
-                caseImplBuilder.add("$L($L)", optionType.someConstructor(), field.fieldName());
-              } else {
-                caseImplBuilder.add("$L()", optionType.noneConstructor());
-              }
-              return caseImplBuilder.build();
-            })
-            .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
-            .orElse(CodeBlock.builder().build());
-
-        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
-          @Override
-          public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-
-            Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
-                deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                    ? Optional.of(returnType)
-                    : Optional.<TypeMirror>empty();
-
-            Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());
-
-            String getterFieldName = field.fieldName() + "Getter";
-
-            FieldSpec.Builder getterField = FieldSpec.builder(TypeName.get(deriveUtils.resolve(deriveUtils.resolve(visitorType, returnTypeArg), otherTypeArgs)), getterFieldName)
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-                .initializer("$T.$L($L)",
-                    ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                    MapperDerivator.visitorLambdaFactoryName(adt),
-                    lambdas);
-
-            if (adt.typeConstructor().typeVariables().isEmpty()) {
-              getterBuilder
-                  .addStatement("return $L.$L($L)",
-                      arg,
-                      adt.matchMethod().element().getSimpleName(),
-                      getterFieldName);
-            } else {
-
-
-              getterBuilder
-                  .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "unchecked", "rawtypes").build())
-                  .addStatement("return ($T) $L.$L(($T) $L)",
-                      TypeName.get(returnType),
-                      arg,
-                      adt.matchMethod().element().getSimpleName(),
-                      TypeName.get(deriveUtils.types().erasure(visitorType)),
-                      getterFieldName);
-
-            }
-
-            return DerivedCodeSpec.codeSpec(
-
-                getterField.build(),
-
-                getterBuilder.build()
-
-            );
+  private static CodeBlock optionalGetterLambdas(FlavourImpl.OptionType optionType, List<DataConstructor> constructors, DataArgument field) {
+    return constructors.stream()
+        .map(constructor -> {
+          CodeBlock.Builder caseImplBuilder = CodeBlock.builder().add("($L) -> $T.", Utils.asLambdaParametersString(constructor.arguments(), constructor.typeRestrictions()), ClassName.get(optionType.typeElement()));
+          if (constructor.arguments().stream().anyMatch(da -> da.fieldName().equals(field.fieldName()))) {
+            caseImplBuilder.add("$L($L)", optionType.someConstructor(), field.fieldName());
+          } else {
+            caseImplBuilder.add("$L()", optionType.noneConstructor());
           }
-
-          @Override
-          public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            CodeBlock.Builder implBuilder = CodeBlock.builder().add("return $L.$L(", arg, adt.matchMethod().element().getSimpleName());
-
-            return DerivedCodeSpec.methodSpec(getterBuilder.addCode(implBuilder.add(lambdas).add(");").build()).build());
-          }
-        });
-      }
-
-      @Override
-      public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.none();
-      }
-
-      @Override
-      public DerivedCodeSpec noConstructor() {
-        return DerivedCodeSpec.none();
-      }
-    });
+          return caseImplBuilder.build();
+        })
+        .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
+        .orElse(CodeBlock.builder().build());
   }
 
 
   private static DerivedCodeSpec generateLensGetter(DataArgument field, AlgebraicDataType adt, DeriveUtils deriveUtils, DeriveContext deriveContext) {
 
-    String arg = Utils.uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString());
+    String arg = asParameterName(adt);
 
-    MethodSpec.Builder getterBuilder = MethodSpec.methodBuilder("get" + Utils.capitalize(field.fieldName())).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .addTypeVariables(adt.typeConstructor().typeVariables().stream()
-            .map(TypeVariableName::get).collect(Collectors.toList()))
-        .addParameter(TypeName.get(adt.typeConstructor().declaredType()), arg)
-        .returns(TypeName.get(field.type()));
+    return DataConstructions.cases()
+        .multipleConstructors(
+            MultipleConstructorsSupport.cases()
+                .visitorDispatch((visitorParam, visitorType, constructors) ->
+                    visitorDispatchLensGetterImpl(deriveUtils, deriveContext, adt, arg, visitorType, field))
+                .functionsDispatch(constructors -> functionsDispatchLensGetterImpl(adt, arg, field))
+        )
+        .oneConstructor(constructor -> functionsDispatchLensGetterImpl(adt, arg, field))
+        .noConstructor(() -> DerivedCodeSpec.none())
+        .apply(adt.dataConstruction());
+  }
 
+  private static DerivedCodeSpec functionsDispatchLensGetterImpl(AlgebraicDataType adt, String arg, DataArgument field) {
+    return DerivedCodeSpec.methodSpec(getterBuilder(adt, arg, field, field.type()).addStatement("return $L.$L($L)",
+        arg,
+        adt.matchMethod().element().getSimpleName(),
+        lensGetterLambda(adt, field)
+    ).build());
+  }
 
-    String lambdas = joinStringsAsArguments(adt.dataConstruction().constructors().stream()
+  private static DerivedCodeSpec visitorDispatchLensGetterImpl(DeriveUtils deriveUtils, DeriveContext deriveContext, AlgebraicDataType adt, String arg, DeclaredType visitorType, DataArgument field) {
+    Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
+        deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
+            ? Optional.of(field.type())
+            : Optional.<TypeMirror>empty();
+
+    Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());
+
+    FieldSpec getterField = FieldSpec.builder(TypeName.get(deriveUtils.resolve(deriveUtils.resolve(visitorType, returnTypeArg), otherTypeArgs)), Utils.uncapitalize(field.fieldName() + "Getter"))
+        .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+        .initializer("$T.$L($L)",
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+            MapperDerivator.visitorLambdaFactoryName(adt),
+            lensGetterLambda(adt, field)).build();
+
+    final MethodSpec getter;
+
+    if (adt.typeConstructor().typeVariables().isEmpty()) {
+      getter = getterBuilder(adt, arg, field, field.type())
+          .addStatement("return $L.$L($L)",
+              arg,
+              adt.matchMethod().element().getSimpleName(),
+              getterField.name)
+          .build();
+    } else {
+
+      getter = getterBuilder(adt, arg, field, field.type())
+          .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "unchecked", "rawtypes").build())
+          .addStatement("return ($T) $L.$L(($T) $L)",
+              TypeName.get(field.type()),
+              arg,
+              adt.matchMethod().element().getSimpleName(),
+              TypeName.get(deriveUtils.types().erasure(visitorType)),
+              getterField.name)
+          .build();
+
+    }
+
+    return DerivedCodeSpec.codeSpec(getterField, getter);
+  }
+
+  private static String lensGetterLambda(AlgebraicDataType adt, DataArgument field) {
+    return joinStringsAsArguments(adt.dataConstruction().constructors().stream()
         .map(dc -> "(" + Utils.asLambdaParametersString(dc.arguments(), dc.typeRestrictions()) + ") -> " + field.fieldName()));
+  }
 
-    return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
-      @Override
-      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
-
-
-        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
-          @Override
-          public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-
-            Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv ->
-                deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                    ? Optional.of(field.type())
-                    : Optional.<TypeMirror>empty();
-
-            Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(deriveUtils.elements().getTypeElement(Object.class.getName()).asType());
-
-            String getterFieldName = Utils.uncapitalize(field.fieldName() + "Getter");
-
-            FieldSpec.Builder getterField = FieldSpec.builder(TypeName.get(deriveUtils.resolve(deriveUtils.resolve(visitorType, returnTypeArg), otherTypeArgs)), getterFieldName)
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-                .initializer("$T.$L($L)",
-                    ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                    MapperDerivator.visitorLambdaFactoryName(adt),
-                    lambdas);
-
-            if (adt.typeConstructor().typeVariables().isEmpty()) {
-              getterBuilder
-                  .addStatement("return $L.$L($L)",
-                      arg,
-                      adt.matchMethod().element().getSimpleName(),
-                      getterFieldName);
-            } else {
-
-              getterBuilder
-                  .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "unchecked", "rawtypes").build())
-                  .addStatement("return ($T) $L.$L(($T) $L)",
-                      TypeName.get(field.type()),
-                      arg,
-                      adt.matchMethod().element().getSimpleName(),
-                      TypeName.get(deriveUtils.types().erasure(visitorType)),
-                      getterFieldName);
-
-            }
-
-            return DerivedCodeSpec.codeSpec(
-
-                getterField.build(),
-
-                getterBuilder.build()
-
-            );
-          }
-
-          @Override
-          public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return DerivedCodeSpec.methodSpec(getterBuilder.addStatement("return $L.$L($L)",
-                arg,
-                adt.matchMethod().element().getSimpleName(),
-                lambdas
-            ).build());
-          }
-        });
-      }
-
-      @Override
-      public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.methodSpec(getterBuilder.addStatement("return $L.$L($L)",
-            arg,
-            adt.matchMethod().element().getSimpleName(),
-            lambdas
-        ).build());
-      }
-
-      @Override
-      public DerivedCodeSpec noConstructor() {
-        return DerivedCodeSpec.none();
-      }
-    });
+  private static String asParameterName(AlgebraicDataType adt) {
+    return Utils.uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString());
   }
 
   private static boolean isLens(DataArgument field, List<DataConstructor> constructors) {

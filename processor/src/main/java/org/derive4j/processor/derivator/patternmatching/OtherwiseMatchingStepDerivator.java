@@ -19,11 +19,11 @@
 package org.derive4j.processor.derivator.patternmatching;
 
 import com.squareup.javapoet.*;
+import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.*;
 import org.derive4j.processor.derivator.FlavourImpl;
 import org.derive4j.processor.derivator.MapperDerivator;
-import org.derive4j.processor.Utils;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -34,10 +34,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
-import static org.derive4j.processor.derivator.MapperDerivator.mapperTypeName;
 import static org.derive4j.processor.Utils.getAbstractMethods;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
+import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
+import static org.derive4j.processor.derivator.MapperDerivator.mapperTypeName;
 
 public class OtherwiseMatchingStepDerivator {
 
@@ -76,111 +76,103 @@ public class OtherwiseMatchingStepDerivator {
             )
             .returns(TypeName.get(deriveUtils.types().getDeclaredType(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements()),
                 adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
-            .addCode(adt.dataConstruction().match(new DataConstruction.Cases<CodeBlock>() {
-              @Override
-              public CodeBlock multipleConstructors(MultipleConstructors constructors) {
-                return constructors.match(new MultipleConstructors.Cases<CodeBlock>() {
-                  @Override
-                  public CodeBlock visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-
-                    String visitorVarName = visitorParam.getSimpleName().toString();
-                    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-
-                    CodeBlock lambdaArgs = adt.dataConstruction().constructors().stream().map(dc -> {
-                      NameAllocator nameAllocator = new NameAllocator();
-                      nameAllocator.newName("otherwise", "otherwise arg");
-                      nameAllocator.newName(adtLambdaParam, "adt var");
-                      nameAllocator.newName(visitorVarName, "visitor var");
-                      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
-                          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
-
-                      return CodeBlock.builder().add("this.$1L != null ? this.$1L : (" +
-                          joinStringsAsArguments(IntStream.range(3, 3 + dc.arguments().size() + dc.typeRestrictions().size())
-                              .mapToObj(i -> "$" + i + "L"))
-                          + ") -> otherwise.$2L()", (Object[])
-                          Stream.concat(Stream.of(
-                              mapperFieldName(dc),
-                              getAbstractMethods(f0.getEnclosedElements()).get(0).getSimpleName().toString()),
-                              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
-                                  .map(DataArgument::fieldName)
-                                  .map(daName -> nameAllocator.get(daName))
-                          ).toArray(String[]::new)).build();
-                    }).reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build()).orElse(CodeBlock.builder().build());
-
-
-                    NameAllocator nameAllocator = new NameAllocator();
-                    nameAllocator.newName("otherwise", "otherwise arg");
-                    nameAllocator.newName(adtLambdaParam, "adt var");
-                    nameAllocator.newName(visitorVarName, "visitor var");
-
-                    return CodeBlock.builder()
-                        .addStatement("$T $L = $T.$L($L)",
-                            TypeName.get(visitorType),
-                            nameAllocator.get("visitor var"),
-                            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                            MapperDerivator.visitorLambdaFactoryName(adt),
-                            lambdaArgs)
-                        .addStatement("return $1L -> $1L.$2L($3L)",
-                            nameAllocator.get("adt var"),
-                            adt.matchMethod().element().getSimpleName(),
-                            nameAllocator.get("visitor var")
-                        )
-                        .build();
-                  }
-
-                  @Override
-                  public CodeBlock functionsDispatch(List<DataConstructor> constructors) {
-
-                    CodeBlock.Builder codeBlock = CodeBlock.builder();
-
-                    for (DataConstructor dc : constructors) {
-                      NameAllocator nameAllocator = new NameAllocator();
-                      nameAllocator.newName("otherwise", "otherwise arg");
-                      nameAllocator.newName(mapperFieldName(dc), "case var");
-                      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
-                          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
-
-                      codeBlock.addStatement("$1T $2L = (this.$3L != null) ? this.$3L : (" +
-                              joinStringsAsArguments(IntStream.range(5, 5 + dc.arguments().size() + dc.typeRestrictions().size())
-                                  .mapToObj(i -> "$" + i + "L"))
-                              + ") -> otherwise.$4L()",
-                          Stream.concat(
-                              Stream.of(
-                                  mapperTypeName(adt, dc, deriveContext, deriveUtils),
-                                  nameAllocator.get("case var"),
-                                  mapperFieldName(dc),
-                                  getAbstractMethods(f0.getEnclosedElements()).get(0).getSimpleName().toString()),
-                              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
-                                  .map(DataArgument::fieldName)
-                                  .map(daName -> nameAllocator.get(daName))
-                          ).toArray(Object[]::new)
-                      );
-                    }
-
-                    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-
-                    return codeBlock
-                        .addStatement("return $1L -> $1L.$2L($3L)",
-                            adtLambdaParam,
-                            adt.matchMethod().element().getSimpleName(),
-                            joinStringsAsArguments(constructors.stream().map(dc -> mapperFieldName(dc))))
-                        .build();
-                  }
-                });
-              }
-
-              @Override
-              public CodeBlock oneConstructor(DataConstructor constructor) {
-                throw new IllegalStateException();
-              }
-
-              @Override
-              public CodeBlock noConstructor() {
-                throw new IllegalStateException();
-              }
-            })).build())
+            .addCode(
+                DataConstructions.cases()
+                    .multipleConstructors(
+                        MultipleConstructorsSupport.cases()
+                            .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchImpl(deriveContext, f0, adt, visitorType, visitorParam))
+                            .functionsDispatch(constructors -> functionsDispatchImpl(deriveUtils, deriveContext, f0, adt, constructors))
+                    )
+                    .otherwise(() -> {
+                      throw new IllegalArgumentException();
+                    })
+                    .apply(adt.dataConstruction())
+            ).build())
         .build();
 
+  }
+
+  private static CodeBlock functionsDispatchImpl(DeriveUtils deriveUtils, DeriveContext deriveContext, TypeElement f0, AlgebraicDataType adt, List<DataConstructor> constructors) {
+    CodeBlock.Builder codeBlock = CodeBlock.builder();
+
+    for (DataConstructor dc : constructors) {
+      NameAllocator nameAllocator = new NameAllocator();
+      nameAllocator.newName("otherwise", "otherwise arg");
+      nameAllocator.newName(mapperFieldName(dc), "case var");
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
+
+      codeBlock.addStatement("$1T $2L = (this.$3L != null) ? this.$3L : (" +
+              joinStringsAsArguments(IntStream.range(5, 5 + dc.arguments().size() + dc.typeRestrictions().size())
+                  .mapToObj(i -> "$" + i + "L"))
+              + ") -> otherwise.$4L()",
+          Stream.concat(
+              Stream.of(
+                  mapperTypeName(adt, dc, deriveContext, deriveUtils),
+                  nameAllocator.get("case var"),
+                  mapperFieldName(dc),
+                  getAbstractMethods(f0.getEnclosedElements()).get(0).getSimpleName().toString()),
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+                  .map(DataArgument::fieldName)
+                  .map(daName -> nameAllocator.get(daName))
+          ).toArray(Object[]::new)
+      );
+    }
+
+    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
+
+    return codeBlock
+        .addStatement("return $1L -> $1L.$2L($3L)",
+            adtLambdaParam,
+            adt.matchMethod().element().getSimpleName(),
+            joinStringsAsArguments(constructors.stream().map(dc -> mapperFieldName(dc))))
+        .build();
+  }
+
+  private static CodeBlock visitorDispatchImpl(DeriveContext deriveContext, TypeElement f0, AlgebraicDataType adt, DeclaredType visitorType, VariableElement visitorParam) {
+    String visitorVarName = visitorParam.getSimpleName().toString();
+    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
+
+    CodeBlock lambdaArgs = adt.dataConstruction().constructors().stream().map(dc -> {
+      NameAllocator nameAllocator = new NameAllocator();
+      nameAllocator.newName("otherwise", "otherwise arg");
+      nameAllocator.newName(adtLambdaParam, "adt var");
+      nameAllocator.newName(visitorVarName, "visitor var");
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
+
+      return CodeBlock.builder().add("this.$1L != null ? this.$1L : (" +
+          joinStringsAsArguments(IntStream.range(3, 3 + dc.arguments().size() + dc.typeRestrictions().size())
+              .mapToObj(i -> "$" + i + "L"))
+          + ") -> otherwise.$2L()", (Object[])
+          Stream.concat(Stream.of(
+              mapperFieldName(dc),
+              getAbstractMethods(f0.getEnclosedElements()).get(0).getSimpleName().toString()),
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+                  .map(DataArgument::fieldName)
+                  .map(daName -> nameAllocator.get(daName))
+          ).toArray(String[]::new)).build();
+    }).reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build()).orElse(CodeBlock.builder().build());
+
+
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName("otherwise", "otherwise arg");
+    nameAllocator.newName(adtLambdaParam, "adt var");
+    nameAllocator.newName(visitorVarName, "visitor var");
+
+    return CodeBlock.builder()
+        .addStatement("$T $L = $T.$L($L)",
+            TypeName.get(visitorType),
+            nameAllocator.get("visitor var"),
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+            MapperDerivator.visitorLambdaFactoryName(adt),
+            lambdaArgs)
+        .addStatement("return $1L -> $1L.$2L($3L)",
+            nameAllocator.get("adt var"),
+            adt.matchMethod().element().getSimpleName(),
+            nameAllocator.get("visitor var")
+        )
+        .build();
   }
 
   static String otherwiseBuilderClassName() {

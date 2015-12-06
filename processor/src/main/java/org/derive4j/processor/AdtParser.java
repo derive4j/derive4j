@@ -263,7 +263,7 @@ public final class AdtParser implements DeriveUtils {
                 .oneConstructor(constructor -> result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
                     constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
                         ? constructor.arguments()
-                        : constructor.arguments().stream().map(da -> da.match((name, type) -> dataArgument(visitorArg.getSimpleName().toString(), type))).collect(Collectors.toList()),
+                        : constructor.arguments().stream().map(da -> dataArgument(visitorArg.getSimpleName().toString(), da.type())).collect(Collectors.toList()),
                     constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor())))
 
                 .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg))))

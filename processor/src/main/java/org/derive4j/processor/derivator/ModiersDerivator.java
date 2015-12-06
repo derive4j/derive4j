@@ -28,8 +28,6 @@ import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import java.util.Arrays;
@@ -69,6 +67,7 @@ public final class ModiersDerivator {
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
     String modMethodName = "mod" + Utils.capitalize(field.fieldName());
+
     MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
             .map(TypeVariableName::get).collect(Collectors.toList()))
@@ -119,47 +118,35 @@ public final class ModiersDerivator {
       setMethod.addModifiers(Modifier.PUBLIC);
     }
 
-    return adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
-      @Override
-      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
+    return DataConstructions.cases().multipleConstructors(
+        MultipleConstructorsSupport.cases()
+            .visitorDispatch((visitorParam, visitorType, constructors) -> {
 
+              String visitorVarName = Utils.uncapitalize(visitorType.asElement().getSimpleName());
 
-        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
-          @Override
-          public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-
-            String visitorVarName = Utils.uncapitalize(visitorType.asElement().getSimpleName());
-
-            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("$T $L = $T.$L($L)",
-                deriveUtils.resolveToTypeName(visitorType, tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                    ? Optional.of(deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
-                    : Optional.<TypeName>empty()),
-                visitorVarName,
-                ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                MapperDerivator.visitorLambdaFactoryName(adt),
-                lambdas)
-                .addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), visitorVarName)
-                .build()));
-
-          }
-
-          @Override
-          public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
-          }
-        });
-      }
-
-      @Override
-      public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()));
-      }
-
-      @Override
-      public DerivedCodeSpec noConstructor() {
-        return DerivedCodeSpec.none();
-      }
-    });
+              return DerivedCodeSpec.methodSpecs(Arrays.asList(
+                  setMethod.build(),
+                  modBuilder
+                      .addStatement("$T $L = $T.$L($L)",
+                          deriveUtils.resolveToTypeName(visitorType, tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
+                              ? Optional.of(deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
+                              : Optional.<TypeName>empty()),
+                          visitorVarName,
+                          ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+                          MapperDerivator.visitorLambdaFactoryName(adt),
+                          lambdas)
+                      .addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), visitorVarName)
+                      .build()
+              ));
+            })
+            .functionsDispatch(constructors -> DerivedCodeSpec.methodSpecs(Arrays.asList(
+                setMethod.build(),
+                modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build())
+            ))
+    )
+        .oneConstructor(constructor -> DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build())))
+        .noConstructor(() -> DerivedCodeSpec.none())
+        .apply(adt.dataConstruction());
   }
 
 

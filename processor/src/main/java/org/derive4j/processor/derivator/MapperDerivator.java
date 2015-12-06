@@ -26,7 +26,6 @@ import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.*;
 
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
 import java.util.List;
@@ -37,33 +36,14 @@ public class MapperDerivator {
 
   public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
     return DeriveResult.result(
-        adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
-          @Override
-          public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
-            return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
-
-              @Override
-              public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-                return createVisitorFactoryAndMappers(adt, visitorType, constructors, deriveUtils, deriveContext);
-              }
-
-              @Override
-              public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-                return DerivedCodeSpec.none();
-              }
-            });
-          }
-
-          @Override
-          public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-            return DerivedCodeSpec.none();
-          }
-
-          @Override
-          public DerivedCodeSpec noConstructor() {
-            return DerivedCodeSpec.none();
-          }
-        })
+        DataConstructions.cases()
+            .multipleConstructors(
+                MultipleConstructorsSupport.cases()
+                    .visitorDispatch((visitorParam, visitorType, constructors) -> createVisitorFactoryAndMappers(adt, visitorType, constructors, deriveUtils, deriveContext))
+                    .otherwise(() -> DerivedCodeSpec.none())
+            )
+            .otherwise(() -> DerivedCodeSpec.none())
+            .apply(adt.dataConstruction())
     );
   }
 

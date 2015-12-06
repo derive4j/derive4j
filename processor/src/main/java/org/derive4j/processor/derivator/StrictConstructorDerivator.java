@@ -48,37 +48,23 @@ public final class StrictConstructorDerivator {
 
   public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
+    DerivedCodeSpec codeSpec;
     // skip constructors for enums
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.ENUM) {
-      return result(none());
+      codeSpec = none();
+    } else {
+      codeSpec = DataConstructions.cases()
+          .multipleConstructors(
+              constructors -> constructors.constructors().stream()
+                  .map(dc -> constructorSpec(adt, dc, deriveContext, deriveUtils))
+                  .reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append)
+          )
+          .oneConstructor(constructor -> constructorSpec(adt, constructor, deriveContext, deriveUtils))
+          .noConstructor(() -> DerivedCodeSpec.none())
+          .apply(adt.dataConstruction());
     }
 
-    return result(adt.dataConstruction().match(new DataConstruction.Cases<DerivedCodeSpec>() {
-      @Override
-      public DerivedCodeSpec multipleConstructors(MultipleConstructors constructors) {
-        return constructors.match(new MultipleConstructors.Cases<DerivedCodeSpec>() {
-          @Override
-          public DerivedCodeSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-            return functionsDispatch(constructors);
-          }
-
-          @Override
-          public DerivedCodeSpec functionsDispatch(List<DataConstructor> constructors) {
-            return constructors.stream().map(dc -> constructorSpec(adt, dc, deriveContext, deriveUtils)).reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append);
-          }
-        });
-      }
-
-      @Override
-      public DerivedCodeSpec oneConstructor(DataConstructor constructor) {
-        return constructorSpec(adt, constructor, deriveContext, deriveUtils);
-      }
-
-      @Override
-      public DerivedCodeSpec noConstructor() {
-        return DerivedCodeSpec.none();
-      }
-    }));
+    return result(codeSpec);
 
   }
 
@@ -174,81 +160,69 @@ public final class StrictConstructorDerivator {
 
   private static Optional<MethodSpec> deriveEquals(AlgebraicDataType adt, DataConstructor constructor, DeriveContext deriveContext, DeriveUtils deriveUtils) {
     return findAbstractEquals(adt.typeConstructor().typeElement(), deriveUtils.elements()).map(abstractEquals -> {
-          VariableElement objectParam = abstractEquals.getParameters().get(0);
+      VariableElement objectParam = abstractEquals.getParameters().get(0);
 
-          CodeBlock lambdas = adt.dataConstruction().constructors().stream()
-              .map(c ->
-                  CodeBlock.builder().add("($L) -> $L",
-                      Utils.asLambdaParametersString(c.arguments(), c.typeRestrictions()),
-                      c.name().equals(constructor.name())
-                          ? constructor.arguments().stream().map(da -> equalityTest(da)).reduce((s1, s2) -> s1 + " && " + s2)
-                          .orElse("true")
-                          : "false").build())
-              .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
-              .orElse(CodeBlock.builder().build());
+      CodeBlock lambdas = adt.dataConstruction().constructors().stream()
+          .map(c ->
+              CodeBlock.builder().add("($L) -> $L",
+                  Utils.asLambdaParametersString(c.arguments(), c.typeRestrictions()),
+                  c.name().equals(constructor.name())
+                      ? constructor.arguments().stream().map(da -> equalityTest(da)).reduce((s1, s2) -> s1 + " && " + s2)
+                      .orElse("true")
+                      : "false").build())
+          .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
+          .orElse(CodeBlock.builder().build());
 
-          MethodSpec.Builder equalBuilder = deriveUtils.overrideMethodBuilder(abstractEquals, __ -> Optional.<TypeMirror>empty());
-          if (!adt.typeConstructor().typeVariables().isEmpty()) {
-            equalBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
-          }
+      MethodSpec.Builder equalBuilder = deriveUtils.overrideMethodBuilder(abstractEquals, __ -> Optional.<TypeMirror>empty());
+      if (!adt.typeConstructor().typeVariables().isEmpty()) {
+        equalBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
+      }
 
-          return adt.dataConstruction().match(new DataConstruction.Cases<MethodSpec>() {
-            @Override
-            public MethodSpec multipleConstructors(MultipleConstructors constructors) {
-              return constructors.match(new MultipleConstructors.Cases<MethodSpec>() {
-                @Override
-                public MethodSpec visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
+      return DataConstructions.cases()
+          .multipleConstructors(
+              MultipleConstructorsSupport.cases()
+                  .visitorDispatch((visitorParam, visitorType, constructors) ->
 
-                  return equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5T.$6L($7L))",
-                      objectParam.getSimpleName().toString(),
-                      TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
-                      TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
-                          .map(TypeRestriction::refinementType).findFirst())),
-                      adt.matchMethod().element().getSimpleName(),
-                      ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                      MapperDerivator.visitorLambdaFactoryName(adt),
-                      lambdas)
-                      .build();
-                }
+                      equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5T.$6L($7L))",
+                          objectParam.getSimpleName().toString(),
+                          TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
+                          TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
+                              .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                              .map(TypeRestriction::refinementType).findFirst())),
+                          adt.matchMethod().element().getSimpleName(),
+                          ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+                          MapperDerivator.visitorLambdaFactoryName(adt),
+                          lambdas)
+                          .build()
 
-                @Override
-                public MethodSpec functionsDispatch(List<DataConstructor> constructors) {
-                  return equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5L)",
-                      objectParam.getSimpleName().toString(),
-                      TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
-                      TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                          .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
-                          .map(TypeRestriction::refinementType).findFirst())),
-                      adt.matchMethod().element().getSimpleName(),
-                      lambdas)
-                      .build();
-                }
-              });
-            }
 
-            @Override
-            public MethodSpec oneConstructor(DataConstructor constructor) {
-              return equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5L)",
-                  objectParam.getSimpleName().toString(),
-                  TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
-                  TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
-                      .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
-                      .map(TypeRestriction::refinementType).findFirst())),
-                  adt.matchMethod().element().getSimpleName(),
-                  lambdas)
-                  .build();
-            }
-
-            @Override
-            public MethodSpec noConstructor() {
-              throw new IllegalStateException();
-            }
-          });
-
-        }
-
-    );
+                  )
+                  .functionsDispatch(constructors ->
+                      equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5L)",
+                          objectParam.getSimpleName().toString(),
+                          TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
+                          TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> constructor.typeRestrictions().stream()
+                              .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                              .map(TypeRestriction::refinementType).findFirst())),
+                          adt.matchMethod().element().getSimpleName(),
+                          lambdas)
+                          .build()
+                  )
+          )
+          .oneConstructor(c -> equalBuilder.addStatement("return ($1L instanceof $2T) && (($3T) $1L).$4L($5L)",
+              objectParam.getSimpleName().toString(),
+              TypeName.get(deriveUtils.types().erasure(adt.typeConstructor().declaredType())),
+              TypeName.get(deriveUtils.resolve(adt.typeConstructor().declaredType(), tv -> c.typeRestrictions().stream()
+                  .filter(tr -> deriveUtils.types().isSameType(tr.restrictedTypeVariable(), tv))
+                  .map(TypeRestriction::refinementType).findFirst())),
+              adt.matchMethod().element().getSimpleName(),
+              lambdas)
+              .build())
+          .noConstructor(() -> {
+            throw new IllegalArgumentException();
+          })
+          .apply(adt.dataConstruction());
+    });
   }
 
   private static Optional<MethodSpec> deriveHashCode(AlgebraicDataType adt, DataConstructor constructor, DeriveContext deriveContext, DeriveUtils deriveUtils) {

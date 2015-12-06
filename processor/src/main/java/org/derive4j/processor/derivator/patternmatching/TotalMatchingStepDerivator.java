@@ -91,90 +91,18 @@ public class TotalMatchingStepDerivator {
       currentConstructorTotalMatchMethod
           .returns(TypeName.get(deriveUtils.types().getDeclaredType(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements()),
               adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
-          .addCode(adt.dataConstruction().match(new DataConstruction.Cases<CodeBlock>() {
-            @Override
-            public CodeBlock multipleConstructors(MultipleConstructors constructors) {
-              return constructors.match(new MultipleConstructors.Cases<CodeBlock>() {
-                @Override
-                public CodeBlock visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
-
-                  String visitorVarName = visitorParam.getSimpleName().toString();
-                  String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-
-                  NameAllocator nameAllocator = new NameAllocator();
-                  nameAllocator.newName(mapperFieldName(currentConstructor), "case arg");
-                  nameAllocator.newName(adtLambdaParam, "adt var");
-                  nameAllocator.newName(visitorVarName, "visitor var");
-
-                  return CodeBlock.builder()
-                      .addStatement("$T $L = $T.$L($L)",
-                          TypeName.get(visitorType),
-                          nameAllocator.get("visitor var"),
-                          ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
-                          MapperDerivator.visitorLambdaFactoryName(adt),
-                          joinStringsAsArguments(Stream.concat(previousConstructors.stream().map(dc -> "super." + mapperFieldName(dc)),
-                              Stream.of(mapperFieldName(currentConstructor)))))
-                      .addStatement("return $1L -> $1L.$2L($3L)",
-                          nameAllocator.get("adt var"),
-                          adt.matchMethod().element().getSimpleName(),
-                          nameAllocator.get("visitor var")
-                      )
-                      .build();
-                }
-
-                @Override
-                public CodeBlock functionsDispatch(List<DataConstructor> constructors) {
-
-                  CodeBlock.Builder codeBlock = CodeBlock.builder();
-
-                  NameAllocator nameAllocator = new NameAllocator();
-                  nameAllocator.newName(mapperFieldName(currentConstructor), mapperFieldName(currentConstructor));
-
-                  for (DataConstructor dc : previousConstructors) {
-                    nameAllocator.newName(mapperFieldName(dc), mapperFieldName(dc));
-                    codeBlock.addStatement("$1T $2L = super.$2L",
-                        mapperTypeName(adt, dc, deriveContext, deriveUtils),
-                        mapperFieldName(dc)
-                    );
-                  }
-
-                  String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-
-                  nameAllocator.newName(adtLambdaParam, "adt var");
-
-                  return codeBlock
-                      .addStatement("return $1L -> $1L.$2L($3L)",
-                          nameAllocator.get("adt var"),
-                          adt.matchMethod().element().getSimpleName(),
-                          joinStringsAsArguments(Stream.concat(previousConstructors.stream().map(dc -> mapperFieldName(dc)),
-                              Stream.of(mapperFieldName(currentConstructor)))))
-                      .build();
-                }
-              });
-            }
-
-            @Override
-            public CodeBlock oneConstructor(DataConstructor constructor) {
-
-              NameAllocator nameAllocator = new NameAllocator();
-              nameAllocator.newName(mapperFieldName(currentConstructor), mapperFieldName(currentConstructor));
-
-              String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-              nameAllocator.newName(adtLambdaParam, "adt var");
-
-              return CodeBlock.builder().addStatement(
-                  "return $1L -> $1L.$2L($3L)",
-                  nameAllocator.get("adt var"),
-                  adt.matchMethod().element().getSimpleName(),
-                  mapperFieldName(currentConstructor)
-              ).build();
-            }
-
-            @Override
-            public CodeBlock noConstructor() {
-              throw new IllegalStateException();
-            }
-          })).build();
+          .addCode(
+              DataConstructions.cases()
+                  .multipleConstructors(MultipleConstructorsSupport.cases()
+                      .visitorDispatch((visitorParam, visitorType, constructors) -> vistorDispatchImpl(deriveContext, adt, visitorType, visitorParam, previousConstructors, currentConstructor))
+                      .functionsDispatch(constructors1 -> functionDispatchImpl(deriveUtils, deriveContext, adt, previousConstructors, currentConstructor))
+                  )
+                  .oneConstructor(constructor -> oneConstructorImpl(currentConstructor, adt))
+                  .noConstructor(() -> {
+                    throw new IllegalArgumentException();
+                  })
+                  .apply(adt.dataConstruction()))
+          .build();
 
     } else {
 
@@ -194,6 +122,73 @@ public class TotalMatchingStepDerivator {
         .addMethods(partialMatchMethods.collect(Collectors.toList()))
         .build();
 
+  }
+
+  private static CodeBlock oneConstructorImpl(DataConstructor currentConstructor, AlgebraicDataType adt) {
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName(mapperFieldName(currentConstructor), mapperFieldName(currentConstructor));
+
+    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
+    nameAllocator.newName(adtLambdaParam, "adt var");
+
+    return CodeBlock.builder().addStatement(
+        "return $1L -> $1L.$2L($3L)",
+        nameAllocator.get("adt var"),
+        adt.matchMethod().element().getSimpleName(),
+        mapperFieldName(currentConstructor)
+    ).build();
+  }
+
+  private static CodeBlock functionDispatchImpl(DeriveUtils deriveUtils, DeriveContext deriveContext, AlgebraicDataType adt, List<DataConstructor> previousConstructors, DataConstructor currentConstructor) {
+    CodeBlock.Builder codeBlock = CodeBlock.builder();
+
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName(mapperFieldName(currentConstructor), mapperFieldName(currentConstructor));
+
+    for (DataConstructor dc : previousConstructors) {
+      nameAllocator.newName(mapperFieldName(dc), mapperFieldName(dc));
+      codeBlock.addStatement("$1T $2L = super.$2L",
+          mapperTypeName(adt, dc, deriveContext, deriveUtils),
+          mapperFieldName(dc)
+      );
+    }
+
+    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
+
+    nameAllocator.newName(adtLambdaParam, "adt var");
+
+    return codeBlock
+        .addStatement("return $1L -> $1L.$2L($3L)",
+            nameAllocator.get("adt var"),
+            adt.matchMethod().element().getSimpleName(),
+            joinStringsAsArguments(Stream.concat(previousConstructors.stream().map(dc -> mapperFieldName(dc)),
+                Stream.of(mapperFieldName(currentConstructor)))))
+        .build();
+  }
+
+  private static CodeBlock vistorDispatchImpl(DeriveContext deriveContext, AlgebraicDataType adt, DeclaredType visitorType, VariableElement visitorParam, List<DataConstructor> previousConstructors, DataConstructor currentConstructor) {
+    String visitorVarName = visitorParam.getSimpleName().toString();
+    String adtLambdaParam = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
+
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName(mapperFieldName(currentConstructor), "case arg");
+    nameAllocator.newName(adtLambdaParam, "adt var");
+    nameAllocator.newName(visitorVarName, "visitor var");
+
+    return CodeBlock.builder()
+        .addStatement("$T $L = $T.$L($L)",
+            TypeName.get(visitorType),
+            nameAllocator.get("visitor var"),
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()),
+            MapperDerivator.visitorLambdaFactoryName(adt),
+            joinStringsAsArguments(Stream.concat(previousConstructors.stream().map(dc -> "super." + mapperFieldName(dc)),
+                Stream.of(mapperFieldName(currentConstructor)))))
+        .addStatement("return $1L -> $1L.$2L($3L)",
+            nameAllocator.get("adt var"),
+            adt.matchMethod().element().getSimpleName(),
+            nameAllocator.get("visitor var")
+        )
+        .build();
   }
 
 

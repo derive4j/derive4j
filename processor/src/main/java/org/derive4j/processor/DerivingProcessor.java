@@ -28,14 +28,15 @@ import org.derive4j.Visibility;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DerivedCodeSpec;
-import org.derive4j.processor.api.MessageLocalization;
+import org.derive4j.processor.api.MessageLocalizations;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.derivator.BuiltinDerivator;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.*;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.derive4j.processor.Unit.unit;
+import static org.derive4j.processor.api.DerivedCodeSpecs.*;
 
 @com.google.auto.service.AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -101,7 +103,7 @@ public class DerivingProcessor extends AbstractProcessor {
           public Visibility visibility() {
             return dataAnnotation.value().withVisibility() == Visibility.Same
                 ? dataAnnotation.value().withVisbility()
-                : dataAnnotation.value().withVisibility() ;
+                : dataAnnotation.value().withVisibility();
           }
 
           @Override
@@ -122,37 +124,31 @@ public class DerivingProcessor extends AbstractProcessor {
                   if (localizations.isEmpty()) {
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element);
                   } else {
-                    localizations.forEach(msgL -> msgL.match(new MessageLocalization.Cases<Unit>() {
-                      @Override
-                      public Unit onElement(Element e) {
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
-                        return unit;
-                      }
-
-                      @Override
-                      public Unit onAnnotation(Element e, AnnotationMirror a) {
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a);
-                        return unit;
-                      }
-
-                      @Override
-                      public Unit onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, a, v);
-                        return unit;
-                      }
-                    }));
+                    localizations.forEach(
+                        MessageLocalizations.cases()
+                            .onElement(e -> {
+                              processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e);
+                              return unit;
+                            })
+                            .onAnnotation((e, annotation) -> {
+                              processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation);
+                              return unit;
+                            })
+                            .onAnnotationValue((e, annotation, annotationValue) -> {
+                              processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation, annotationValue);
+                              return unit;
+                            })::apply);
                   }
                   return unit;
                 }),
                 codeSpec -> () -> {
-                  TypeSpec classSpec = codeSpec.match((classes, fields, methods, infos, warnings) ->
-                      TypeSpec.classBuilder(deriveContext.targetClassName())
-                          .addModifiers(Modifier.FINAL, dataAnnotation.value().withVisibility() == Visibility.Package
-                              ? Modifier.FINAL : element.getModifiers().contains(Modifier.PUBLIC) ? Modifier.PUBLIC : Modifier.FINAL)
-                          .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
-                          .addTypes(classes)
-                          .addFields(fields)
-                          .addMethods(methods).build());
+                  TypeSpec classSpec = TypeSpec.classBuilder(deriveContext.targetClassName())
+                      .addModifiers(Modifier.FINAL, deriveContext.visibility() == Visibility.Package
+                          ? Modifier.FINAL : element.getModifiers().contains(Modifier.PUBLIC) ? Modifier.PUBLIC : Modifier.FINAL)
+                      .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
+                      .addTypes(getClasses(codeSpec))
+                      .addFields(getFields(codeSpec))
+                      .addMethods(getMethods(codeSpec)).build();
                   JavaFile javaFile = JavaFile.builder(deriveContext.targetPackage(), classSpec).build();
                   try {
                     javaFile.writeTo(processingEnv.getFiler());
