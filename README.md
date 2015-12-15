@@ -1,7 +1,7 @@
 # Derive4J: Java 8 annotation processor for deriving algebraic data types constructors, pattern matching and more!
 
 [![Travis](https://travis-ci.org/derive4j/derive4j.svg?branch=master)](https://travis-ci.org/derive4j/derive4j)
-[![Download](https://api.bintray.com/packages/derive4j/derive4j/derive4j/images/download.svg) ](https://bintray.com/derive4j/derive4j/derive4j/_latestVersion)
+[![Maven Central](https://img.shields.io/maven-central/v/org.derive4j/derive4j.svg)][search.maven]
 [![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/derive4j/derive4j)
 
 ## Table of contents
@@ -398,16 +398,9 @@ GADTs are also supported out of the box by Derive4J (within the limitations of J
 Have a look at this gist to know how to defined GADT in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
 
 # Use it in your project
-Derive4J is available via Jcenter. It should be declared as a compile-time only dependency (not needed at runtime).
+Derive4J should be declared as a compile-time only dependency (not needed at runtime).
 ## Maven:
 ```xml
-<repositories>
-  <repository>
-    <id>bintray</id>
-    <url>http://jcenter.bintray.com</url>
-  </repository>
-</repositories>
-...
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
@@ -415,6 +408,8 @@ Derive4J is available via Jcenter. It should be declared as a compile-time only 
   <optional>true</optional>
 </dependency>
 ```
+[search.maven]: http://search.maven.org/#search|ga|1|org.derive4j.derive4j
+
 ## Gradle
 ```
 compile(group: 'org.derive4j', name: 'derive4j', version: '0.5', ext: 'jar')
