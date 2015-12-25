@@ -18,15 +18,14 @@
  */
 package org.derive4j.processor.derivator;
 
+import java.util.Arrays;
+import java.util.function.BiFunction;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
-
-import java.util.Arrays;
-import java.util.function.BiFunction;
 
 import static org.derive4j.processor.Utils.traverseResults;
 import static org.derive4j.processor.api.DeriveResults.lazy;
@@ -35,14 +34,15 @@ public class BuiltinDerivator {
 
   public static BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator(DeriveUtils deriveUtils) {
     return (adt, deriveContext) ->
-        traverseResults(Arrays.asList(
-            lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
-            lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
-            lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)),
-            lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)),
-            lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)),
-            lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils))
-        )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+       traverseResults(Arrays.asList(
+          lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
+          lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
+          lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)),
+          lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()),
+          lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)),
+          lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)),
+          lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils))
+          )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
 }

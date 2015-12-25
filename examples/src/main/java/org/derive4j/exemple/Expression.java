@@ -27,34 +27,40 @@ package org.derive4j.exemple;
 
 import java.util.function.Function;
 import org.derive4j.Data;
-import static org.derive4j.exemple.Expressions.*;
+
+import static org.derive4j.exemple.Expressions.Add;
+import static org.derive4j.exemple.Expressions.Const;
+import static org.derive4j.exemple.Expressions.Mult;
 
 @Data
 public abstract class Expression {
 
-	interface Cases<R> {
-		R Const(int value);
-		R Add(Expression left, Expression right);
-		R Mult(Expression left, Expression right);
-		R Neg(Expression expr);
-	}
-	
-	public abstract <R> R match(Cases<R> cases);
+  private static Function<Expression, Integer> eval = Expressions
+     .cata(
+        value -> value,
+        (left, right) -> left.get() + right.get(),
+        (left, right) -> left.get() * right.get(),
+        expr -> -expr.get()
+     );
 
-	private static Function<Expression, Integer> eval = Expressions
-		.cases()
-			.Const(value        -> value)
-			.Add((left, right)  -> eval(left) + eval(right))
-			.Mult((left, right) -> eval(left) * eval(right))
-			.Neg(expr           -> -eval(expr));
-			
+  public static Integer eval(Expression expression) {
+    return eval.apply(expression);
+  }
 
-	public static Integer eval(Expression expression) {
-		return eval.apply(expression);
-	}
+  public static void main(String[] args) {
+    Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
+    System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
+  }
 
-	public static void main(String[] args) {
-		Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
-		System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
-	}
+  public abstract <R> R match(Cases<R> cases);
+
+  interface Cases<R> {
+    R Const(int value);
+
+    R Add(Expression left, Expression right);
+
+    R Mult(Expression left, Expression right);
+
+    R Neg(Expression expr);
+  }
 }

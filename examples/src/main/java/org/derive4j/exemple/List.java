@@ -25,12 +25,18 @@
  */
 package org.derive4j.exemple;
 
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-import java.util.function.*;
-
-import static org.derive4j.exemple.Lists.*;
+import static org.derive4j.exemple.Lists.cons;
+import static org.derive4j.exemple.Lists.lazy;
+import static org.derive4j.exemple.Lists.nil;
 
 @Data
 public abstract class List<A> {
@@ -51,45 +57,45 @@ public abstract class List<A> {
   }
 
   public abstract <X> X list(Supplier<X> nil,
-                             @FieldNames({"head", "tail"}) BiFunction<A, List<A>, X> cons);
+     @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
 
   public <B> List<B> map(Function<A, B> f) {
     return lazy(() -> list(
-        () -> nil(),
-        (h, tail) -> cons(f.apply(h), tail.map(f))
+       () -> nil(),
+       (h, tail) -> cons(f.apply(h), tail.map(f))
     ));
   }
 
   public List<A> append(final List<A> list) {
     return lazy(() -> list(
-        () -> list,
-        (head, tail) -> cons(head, tail.append(list))
+       () -> list,
+       (head, tail) -> cons(head, tail.append(list))
     ));
   }
 
   public List<A> filter(Predicate<A> p) {
     return lazy(() -> list(
-        () -> nil(),
-        (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)
+       () -> nil(),
+       (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)
     ));
   }
 
   public <B> List<B> bind(Function<A, List<B>> f) {
-    return lazy(() -> list(
-        () -> nil(),
-        (h, t) -> f.apply(h).append(t.bind(f))
+    lazy(() -> list(
+       () -> nil(),
+       (h, t) -> f.apply(h).append(t.bind(f))
     ));
     // alternative implementation using foldRight:
-    // return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
+    //return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
   }
 
   public List<A> take(int n) {
     return n <= 0
-        ? nil()
-        : lazy(() -> list(
-        () -> nil(),
-        (head, tail) -> cons(head, tail.take(n - 1))
-    ));
+           ? nil()
+           : lazy(() -> list(
+              () -> nil(),
+              (head, tail) -> cons(head, tail.take(n - 1))
+           ));
   }
 
   public void forEach(Consumer<A> effect) {
@@ -125,11 +131,7 @@ public abstract class List<A> {
   }
 
   public <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
-    return list(
-        () -> zero,
-        (h, tail) -> f.apply(h, () -> tail.foldRight(f, zero))
-    );
+    return Lists.cata(() -> zero, f).apply(this);
   }
-
 
 }
