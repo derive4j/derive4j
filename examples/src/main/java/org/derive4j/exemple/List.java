@@ -81,7 +81,7 @@ public abstract class List<A> {
   }
 
   public <B> List<B> bind(Function<A, List<B>> f) {
-    lazy(() -> list(
+    return lazy(() -> list(
        () -> nil(),
        (h, t) -> f.apply(h).append(t.bind(f))
     ));
