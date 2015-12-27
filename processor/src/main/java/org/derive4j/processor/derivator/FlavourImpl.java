@@ -23,14 +23,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
+import org.derive4j.Data;
 import org.derive4j.Flavour;
 import org.derive4j.Flavours;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.DeriveContext;
 
-import static org.derive4j.processor.derivator.FlavourImpl.EitherType.eitherType;
-import static org.derive4j.processor.derivator.FlavourImpl.OptionType.optionType;
+import static org.derive4j.processor.derivator.EitherTypes.eitherType;
+import static org.derive4j.processor.derivator.OptionTypes.optionType;
 
 public final class FlavourImpl {
 
@@ -88,28 +89,21 @@ public final class FlavourImpl {
        .toString();
   }
 
+  @Data
   public static abstract class OptionType {
-    public static OptionType optionType(TypeElement typeElement, String noneConstructor, String someConstructor) {
-      return new OptionType() {
-        @Override
-        public <R> R optionType(Case<R> optionType) {
-          return optionType.optionType(typeElement, noneConstructor, someConstructor);
-        }
-      };
-    }
 
     public abstract <R> R optionType(Case<R> optionType);
 
     public TypeElement typeElement() {
-      return optionType((typeElement, noneConstructor, someConstructor) -> typeElement);
+      return OptionTypes.getTypeElement(this);
     }
 
     public String noneConstructor() {
-      return optionType((typeElement, noneConstructor, someConstructor) -> noneConstructor);
+      return OptionTypes.getNoneConstructor(this);
     }
 
     public String someConstructor() {
-      return optionType((typeElement, noneConstructor, someConstructor) -> someConstructor);
+      return OptionTypes.getSomeConstructor(this);
     }
 
     public interface Case<R> {
@@ -117,15 +111,8 @@ public final class FlavourImpl {
     }
   }
 
+  @Data
   public static abstract class EitherType {
-    public static EitherType eitherType(TypeElement typeElement, String leftConstructor, String rightConstructor) {
-      return new EitherType() {
-        @Override
-        public <R> R eitherType(Case<R> eitherType) {
-          return eitherType.eitherType(typeElement, leftConstructor, rightConstructor);
-        }
-      };
-    }
 
     public abstract <R> R eitherType(Case<R> optionType);
 

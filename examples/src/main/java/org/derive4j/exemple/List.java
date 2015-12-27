@@ -25,6 +25,9 @@
  */
 package org.derive4j.exemple;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Ordering;
+import io.atlassian.fugue.Pair;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -134,4 +137,8 @@ public abstract class List<A> {
     return Lists.cata(() -> zero, f).apply(this);
   }
 
+  public static void main(String[] args) {
+    Ordering<com.atlassian.fugue.Pair<Integer, ?>> pairOrdering = Ordering.natural().onResultOf(com.atlassian.fugue.Pair.<Integer>leftValue());
+    pairOrdering.sortedCopy(ImmutableSet.of(com.atlassian.fugue.Pair.pair(1, "A")));
+  }
 }

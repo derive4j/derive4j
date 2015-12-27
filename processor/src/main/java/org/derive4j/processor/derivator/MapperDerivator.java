@@ -138,7 +138,7 @@ public class MapperDerivator {
 
   }
 
-  static String mapperApplyMethod(DeriveUtils deriveUtils, DeriveContext deriveContext, DataConstructor dc) {
+  public static String mapperApplyMethod(DeriveUtils deriveUtils, DeriveContext deriveContext, DataConstructor dc) {
     int nbArgs = dc.arguments().size() + dc.typeRestrictions().size();
     return nbArgs == 0
            ? FlavourImpl.supplierApplyMethod(deriveUtils, deriveContext)
@@ -172,6 +172,11 @@ public class MapperDerivator {
   }
 
   public static TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+    return mapperTypeName(adt,  dc, deriveContext, deriveUtils, TypeVariableName.get(adt.matchMethod().returnTypeVariable()));
+  }
+
+  public static TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, DeriveContext deriveContext, DeriveUtils deriveUtils,
+     TypeName returnType) {
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
        dc.typeRestrictions().stream().map(TypeRestriction::idFunction)
           .map(DataArgument::type)).map(t -> Utils.asBoxedType.visit(t, deriveUtils.types())).map(TypeName::get).toArray(TypeName[]::new);
@@ -179,19 +184,19 @@ public class MapperDerivator {
     return
        adt.dataConstruction().isVisitorDispatch()
        ? argsTypeNames.length == 0
-         ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements())),
-          TypeName.get(adt.matchMethod().returnTypeVariable()))
+         ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements())), returnType)
          : argsTypeNames.length == 1
-           ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements())),
-            argsTypeNames[0], TypeName.get(adt.matchMethod().returnTypeVariable()))
+           ? ParameterizedTypeName
+              .get(ClassName.get(FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements())), argsTypeNames[0], returnType)
            : ParameterizedTypeName.get(Utils.getClassName(deriveContext, mapperInterfaceName(dc)),
               concat(concat(dc.typeVariables().stream().map(TypeVariableName::get),
                  Utils.fold(findInductiveArgument(deriveUtils, adt, dc),
                     Stream.<TypeName>of(),
                     tm -> Stream.of(TypeName.get(tm)))
                  ),
-                 Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))).toArray(TypeName[]::new))
-       : TypeName.get(dc.deconstructor().visitorType());
+                 Stream.of(returnType)).toArray(TypeName[]::new))
+       : deriveUtils.resolveToTypeName(dc.deconstructor().visitorType(),
+          tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable()) ? Optional.of(returnType) : Optional.empty());
   }
 
   static Optional<TypeMirror> findInductiveArgument(DeriveUtils deriveUtils, AlgebraicDataType adt, DataConstructor dc) {

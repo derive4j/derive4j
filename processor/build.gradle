@@ -10,6 +10,7 @@ dependencies {
     compile dependencyJavaPoet
     compileOnly dependencyAutoService
     apt dependencyAutoService
+    apt dependencyPreviousDerive4J
     testCompile dependencyJunit
 }
 

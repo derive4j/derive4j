@@ -176,9 +176,9 @@ public abstract class Request {
   private static final Optional<Request, String> _bodyPatternMatch = optional(
       // getter function:
       Requests.cases()
-          .PUT((path, body) -> some(body))
-          .POST((path, body) -> some(body))
-          .otherwise(() -> none()),
+          .PUT((path, body) -> body)
+          .POST((path, body) -> body)
+          .otherwiseNone(),
       // setter function:
       newBody ->
           Requests.cases()
@@ -205,8 +205,8 @@ public abstract class Request {
   private static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
       Requests.cases()
-          .POST((path, body) -> some(p(path, body)))
-          .otherwise(Option::none),
+          .POST((path, body) -> p(path, body))
+          .otherwiseNone(),
       // reverse get (construct a POST request given a P2<String, String>):
       p2 -> Requests.POST(p2._1(), p2._2()));
 
