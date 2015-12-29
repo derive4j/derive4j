@@ -33,6 +33,7 @@ import fj.data.Option;
 import fj.data.optic.Lens;
 import fj.data.optic.Optional;
 import fj.data.optic.Prism;
+import org.derive4j.ArgOption;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 import org.derive4j.Flavour;
@@ -45,7 +46,7 @@ import static fj.data.Option.some;
 import static fj.data.optic.Lens.lens;
 import static fj.data.optic.Optional.optional;
 import static fj.data.optic.Prism.prism;
-
+import static org.derive4j.ArgOption.checkedNotNull;
 
 /**
  * A data type to modelize an http request. Abstract because concrete implementation will be generated,
@@ -53,7 +54,7 @@ import static fj.data.optic.Prism.prism;
  * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
  * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
  */
-@Data(flavour = Flavour.FJ)
+@Data(flavour = Flavour.FJ, arguments = checkedNotNull)
 public abstract class Request {
 
   /**

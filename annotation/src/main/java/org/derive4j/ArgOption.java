@@ -18,18 +18,8 @@
  */
 package org.derive4j;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+public enum ArgOption {
 
-@Target(ElementType.TYPE)
-@Documented
-public @interface Data {
-
-  Flavour flavour() default Flavour.JDK;
-
-  Derive value() default @Derive();
-
-  ArgOption[] arguments() default {};
+  checkedNotNull
 
 }

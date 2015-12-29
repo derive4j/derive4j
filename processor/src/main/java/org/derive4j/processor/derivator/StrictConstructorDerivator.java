@@ -19,6 +19,9 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import java.util.EnumSet;
+import org.derive4j.ArgOption;
+import org.derive4j.Data;
 import org.derive4j.Visibility;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
@@ -124,6 +127,13 @@ public final class StrictConstructorDerivator {
         .addParameters(constructor.arguments().stream()
             .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build()).collect(Collectors.toList()))
         .returns(constructedType);
+
+    if (Arrays.asList(adt.typeConstructor().typeElement().getAnnotation(Data.class).arguments()).contains(ArgOption.checkedNotNull)) {
+      for (DataArgument argument : constructor.arguments()) {
+        factory.addStatement("if ($1L == null) throw new NullPointerException(\"$1L must not be null\")", argument.fieldName());
+      }
+
+    }
 
     if (deriveContext.visibility() != Visibility.Smart) {
       factory.addModifiers(Modifier.PUBLIC);
