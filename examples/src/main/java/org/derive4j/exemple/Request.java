@@ -54,7 +54,7 @@ import static org.derive4j.ArgOption.checkedNotNull;
  * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
  * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
  */
-@Data(flavour = Flavour.FJ, arguments = checkedNotNull)
+@Data(flavour = Flavour.FJ, arguments = ArgOption.checkedNotNull)
 public abstract class Request {
 
   /**
