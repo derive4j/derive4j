@@ -250,7 +250,8 @@ public final class AdtParser implements DeriveUtils {
             .map(ve -> ParameterSpec.builder(
                 TypeName.get(resolve(ve.asType(), typeArgs)),
                 ve.getSimpleName().toString()).build()
-            ).collect(Collectors.toList()));
+            ).collect(Collectors.toList()))
+       .varargs(abstractMethod.isVarArgs());
   }
 
   private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, List<P2<VariableElement, DeclaredType>> caseHandlers) {
