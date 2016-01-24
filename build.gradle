@@ -35,7 +35,7 @@ allprojects {
 
     ext {
         isSnapshot = true
-        d4jBaseVersion = "0.7"
+        d4jBaseVersion = "0.6.1"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
@@ -51,7 +51,7 @@ allprojects {
 
         primaryEmail = "jb@giraudeau.info"
 
-        dependencyJavaPoet = "com.squareup:javapoet:1.4.0"
+        dependencyJavaPoet = "com.squareup:javapoet:1.5.1"
         dependencyPreviousDerive4J = "org.derive4j:derive4j:0.6"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
