@@ -96,10 +96,13 @@ public class CataDerivator {
                    constructor.arguments().stream()
                       .map(DataArguments::getType)
                       .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-                   ? constructor.name()
-                   : CodeBlock.builder().add("($L) -> $L.$L($L)", Utils
-                         .asLambdaParametersString(constructor.arguments(),
-                            constructor.typeRestrictions()), constructor.name(),
+                   ? "\n" + constructor.name()
+                   : CodeBlock.builder().add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(Stream.concat(
+                      constructor.arguments().stream().map(DataArgument::fieldName)
+                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+                      constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
+                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))),
+                      constructor.name(),
                       MapperDerivator.mapperApplyMethod(utils, context, constructor),
                       Utils.joinStringsAsArguments(Stream.concat(
                          constructor.arguments().stream().map(
@@ -108,7 +111,7 @@ public class CataDerivator {
                                   adt.typeConstructor().declaredType())
                                ? "() -> this." + nameAllocator.get("cata")
                                   + "." + FlavourImpl.functionApplyMethod(utils, context)
-                                  + "(" + argument.fieldName() + ")"
+                                  + "(" + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + ")"
                                : argument.fieldName()),
                          constructor.typeRestrictions().stream()
                             .map(TypeRestriction::idFunction)
@@ -145,17 +148,19 @@ public class CataDerivator {
                    constructor.arguments().stream()
                       .map(DataArguments::getType)
                       .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-                   ? constructor.name()
-                   : CodeBlock.builder().add("($L) -> $L.$L($L)", Utils
-                         .asLambdaParametersString(constructor.arguments(),
-                            constructor.typeRestrictions()), constructor.name(),
+                   ? "\n" + constructor.name()
+                   : CodeBlock.builder().add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(Stream.concat(
+                      constructor.arguments().stream().map(DataArgument::fieldName)
+                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+                      constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
+                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
                       MapperDerivator.mapperApplyMethod(utils, context, constructor),
                       Utils.joinStringsAsArguments(Stream.concat(
                          constructor.arguments().stream().map(
                             argument ->
                                utils.types().isSameType(argument.type(),
                                   adt.typeConstructor().declaredType())
-                               ? "() -> " + argument.fieldName() + "."
+                               ? "() -> " + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + "."
                                   + adt.matchMethod().element().getSimpleName() + "(this."
                                   + nameAllocator.get("cata") + ")"
                                : argument.fieldName()),
