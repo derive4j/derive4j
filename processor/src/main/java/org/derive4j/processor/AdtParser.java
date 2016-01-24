@@ -18,28 +18,55 @@
  */
 package org.derive4j.processor;
 
-import com.squareup.javapoet.*;
-import org.derive4j.FieldNames;
-import org.derive4j.processor.api.DeriveResult;
-import org.derive4j.processor.api.DeriveUtils;
-import org.derive4j.processor.api.model.*;
-
-import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-import java.util.*;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeVariableName;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import org.derive4j.FieldNames;
+import org.derive4j.processor.api.DeriveResult;
+import org.derive4j.processor.api.DeriveUtils;
+import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.DataArgument;
+import org.derive4j.processor.api.model.DataConstruction;
+import org.derive4j.processor.api.model.DataConstructions;
+import org.derive4j.processor.api.model.DataConstructor;
+import org.derive4j.processor.api.model.DataDeconstructor;
+import org.derive4j.processor.api.model.MultipleConstructors;
+import org.derive4j.processor.api.model.TypeRestriction;
 
 import static java.util.Collections.emptyList;
 import static org.derive4j.processor.P2.p2;
-import static org.derive4j.processor.Utils.*;
+import static org.derive4j.processor.Utils.asDeclaredType;
+import static org.derive4j.processor.Utils.asTypeElement;
+import static org.derive4j.processor.Utils.asTypeVariable;
+import static org.derive4j.processor.Utils.findOnlyOne;
+import static org.derive4j.processor.Utils.fold;
+import static org.derive4j.processor.Utils.getAbstractMethods;
+import static org.derive4j.processor.Utils.traverseOptional;
 import static org.derive4j.processor.api.DeriveMessage.message;
 import static org.derive4j.processor.api.DeriveResult.error;
 import static org.derive4j.processor.api.DeriveResult.result;
@@ -47,7 +74,9 @@ import static org.derive4j.processor.api.MessageLocalization.onAnnotation;
 import static org.derive4j.processor.api.MessageLocalization.onElement;
 import static org.derive4j.processor.api.model.AlgebraicDataType.adt;
 import static org.derive4j.processor.api.model.DataArgument.dataArgument;
-import static org.derive4j.processor.api.model.DataConstruction.*;
+import static org.derive4j.processor.api.model.DataConstruction.multipleConstructors;
+import static org.derive4j.processor.api.model.DataConstruction.noConstructor;
+import static org.derive4j.processor.api.model.DataConstruction.oneConstructor;
 import static org.derive4j.processor.api.model.DataConstructor.constructor;
 import static org.derive4j.processor.api.model.DataDeconstructor.deconstructor;
 import static org.derive4j.processor.api.model.MatchMethod.matchMethod;
@@ -88,97 +117,106 @@ public final class AdtParser implements DeriveUtils {
 
   public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(final TypeElement adtTypeElement) {
     return fold(Utils.asDeclaredType.visit(adtTypeElement.asType()).filter(t -> t.asElement().getEnclosingElement().getKind() == ElementKind.PACKAGE
-            || t.asElement().getModifiers().contains(Modifier.STATIC)
-            || t.asElement().getKind() == ElementKind.ENUM
-            || t.asElement().getKind() == ElementKind.INTERFACE),
-        error(message("Invalid annotated class (only static classes are supported)", onElement(adtTypeElement))),
+          || t.asElement().getModifiers().contains(Modifier.STATIC)
+          || t.asElement().getKind() == ElementKind.ENUM
+          || t.asElement().getKind() == ElementKind.INTERFACE),
+       error(message("Invalid annotated class (only static classes are supported)", onElement(adtTypeElement))),
 
-        declaredType ->
-            fold(traverseOptional(declaredType.getTypeArguments(), ta -> asTypeVariable.visit(ta)
-                    .filter(tv -> types.isSameType(elements.getTypeElement("java.lang.Object").asType(), tv.getUpperBound()))),
-                error(message("Please use only type variable without bounds as type parameter", onElement(adtTypeElement))),
+       declaredType ->
+          fold(traverseOptional(declaredType.getTypeArguments(), ta -> asTypeVariable.visit(ta)
+                .filter(tv -> types.isSameType(elements.getTypeElement("java.lang.Object").asType(), tv.getUpperBound()))),
+             error(message("Please use only type variable without bounds as type parameter", onElement(adtTypeElement))),
 
-                adtTypeVariables ->
-                    fold(findOnlyOne(getAbstractMethods(adtTypeElement.getEnclosedElements()).stream()
-                            .filter(isEqualHashcodeToString(elements()).negate()).collect(Collectors.toList())),
-                        error(message("One, and only one, abstract method should be define on the data type", getAbstractMethods(adtTypeElement.getEnclosedElements()).stream().map(el -> onElement(el)).collect(Collectors.toList()))),
+             adtTypeVariables ->
+                fold(findOnlyOne(getAbstractMethods(adtTypeElement.getEnclosedElements()).stream()
+                      .filter(isEqualHashcodeToString(elements()).negate()).collect(Collectors.toList())),
+                   error(message("One, and only one, abstract method should be define on the data type",
+                      getAbstractMethods(adtTypeElement.getEnclosedElements()).stream().map(el -> onElement(el)).collect(Collectors.toList()))),
 
-                        adtAcceptMethod ->
-                            fold(findOnlyOne(adtAcceptMethod.getTypeParameters())
-                                    .filter(t -> findOnlyOne(t.getBounds()).filter(b -> types.isSameType(elements.getTypeElement("java.lang.Object").asType(), b)).isPresent())
-                                    .map(TypeParameterElement::asType).flatMap(asTypeVariable::visit)
-                                    .filter(tv -> types.isSameType(tv, adtAcceptMethod.getReturnType())),
-                                error(message("Method must have one, and only one, type variable (without bounds) that should also be the method return type.", onElement(adtAcceptMethod))),
+                   adtAcceptMethod ->
+                      fold(findOnlyOne(adtAcceptMethod.getTypeParameters())
+                            .filter(
+                               t -> findOnlyOne(t.getBounds()).filter(b -> types.isSameType(elements.getTypeElement("java.lang.Object").asType(), b))
+                                  .isPresent())
+                            .map(TypeParameterElement::asType).flatMap(asTypeVariable::visit)
+                            .filter(tv -> types.isSameType(tv, adtAcceptMethod.getReturnType())),
+                         error(
+                            message("Method must have one, and only one, type variable (without bounds) that should also be the method return type.",
+                               onElement(adtAcceptMethod))),
 
-                                expectedReturnType ->
-                                    parseDataConstruction(declaredType, adtTypeVariables, adtAcceptMethod, expectedReturnType).bind(dc ->
-                                        validateFieldTypeUniformity(dc)
-                                            .map(fields -> adt(typeConstructor(adtTypeElement, declaredType, adtTypeVariables), matchMethod(adtAcceptMethod, expectedReturnType), dc, fields))
-                                    )
-                            ))));
+                         expectedReturnType ->
+                            parseDataConstruction(declaredType, adtTypeVariables, adtAcceptMethod, expectedReturnType).bind(dc ->
+                               validateFieldTypeUniformity(dc)
+                                  .map(fields -> adt(typeConstructor(adtTypeElement, declaredType, adtTypeVariables),
+                                     matchMethod(adtAcceptMethod, expectedReturnType), dc, fields))
+                            )
+                      ))));
   }
 
   public DeriveResult<List<DataArgument>> validateFieldTypeUniformity(DataConstruction construction) {
     return DataConstructions.cases()
 
-        .multipleConstructors(multipleConstructors -> {
+       .multipleConstructors(multipleConstructors -> {
 
-          Map<String, List<DataArgument>> fieldsMap = multipleConstructors.constructors().stream()
-              .flatMap(c -> c.arguments().stream()).collect(Collectors.groupingBy(DataArgument::fieldName));
+         Map<String, List<DataArgument>> fieldsMap = multipleConstructors.constructors().stream()
+            .flatMap(c -> c.arguments().stream()).collect(Collectors.groupingBy(DataArgument::fieldName));
 
-          List<String> fieldsWithNonUniformType = fieldsMap.entrySet().stream()
-              .filter(e -> e.getValue().stream().anyMatch(da -> !types.isSameType(da.type(), e.getValue().get(0).type())))
-              .map(Map.Entry::getKey)
-              .collect(Collectors.toList());
+         List<String> fieldsWithNonUniformType = fieldsMap.entrySet().stream()
+            .filter(e -> e.getValue().stream().anyMatch(da -> !types.isSameType(da.type(), e.getValue().get(0).type())))
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
 
-          DeriveResult<List<DataArgument>> res;
-          if (!fieldsWithNonUniformType.isEmpty()) {
-            res = error(message("Field(s) " + fieldsWithNonUniformType + " should have uniform type across all constructors"));
-          } else {
-            res = result(multipleConstructors.constructors().stream().flatMap(c -> c.arguments().stream().map(DataArgument::fieldName)).distinct().map(fieldName -> fieldsMap.get(fieldName).get(0)).collect(Collectors.toList()));
-          }
-          return res;
-        })
+         DeriveResult<List<DataArgument>> res;
+         if (!fieldsWithNonUniformType.isEmpty()) {
+           res = error(message("Field(s) " + fieldsWithNonUniformType + " should have uniform type across all constructors"));
+         } else {
+           res = result(multipleConstructors.constructors().stream().flatMap(c -> c.arguments().stream().map(DataArgument::fieldName)).distinct()
+              .map(fieldName -> fieldsMap.get(fieldName).get(0)).collect(Collectors.toList()));
+         }
+         return res;
+       })
 
-        .oneConstructor(constructor -> result(constructor.arguments()))
+       .oneConstructor(constructor -> result(constructor.arguments()))
 
-        .noConstructor(() -> result(emptyList()))
+       .noConstructor(() -> result(emptyList()))
 
-        .apply(construction);
+       .apply(construction);
   }
 
-  private DeriveResult<DataConstruction> parseDataConstruction(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, ExecutableElement adtAcceptMethod, TypeVariable adtAcceptMethodReturnType) {
-
+  private DeriveResult<DataConstruction> parseDataConstruction(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables,
+     ExecutableElement adtAcceptMethod, TypeVariable adtAcceptMethodReturnType) {
 
     Optional<List<P2<VariableElement, DeclaredType>>> parameters = traverseOptional(adtAcceptMethod.getParameters(),
-        ve -> asDeclaredType.visit(ve.asType())
-            .flatMap(dt -> asTypeElement.visit(dt.asElement()).filter(te -> te.getKind() == ElementKind.INTERFACE).map(te -> p2(dt, te)))
-            .flatMap(visitor -> visitor.match(
-                (dt, te) -> IntStream.range(0, dt.getTypeArguments().size())
-                    .filter(i -> types.isSameType(adtAcceptMethodReturnType, dt.getTypeArguments().get(i)))
-                    .mapToObj(i -> p2(dt, te.getTypeParameters().get(i)))
-                    .findFirst()
-            ))
-            .filter(visitor -> visitor.match((dt, expectedReturnType) -> getAbstractMethods(dt.asElement().getEnclosedElements()).stream()
-                .allMatch(e -> types.isSameType(expectedReturnType.asType(), e.getReturnType()) && e.getTypeParameters().isEmpty())))
-            .map(visitor -> visitor.match((dt, __) -> p2(ve, dt)))
+       ve -> asDeclaredType.visit(ve.asType())
+          .flatMap(dt -> asTypeElement.visit(dt.asElement()).filter(te -> te.getKind() == ElementKind.INTERFACE).map(te -> p2(dt, te)))
+          .flatMap(visitor -> visitor.match(
+             (dt, te) -> IntStream.range(0, dt.getTypeArguments().size())
+                .filter(i -> types.isSameType(adtAcceptMethodReturnType, dt.getTypeArguments().get(i)))
+                .mapToObj(i -> p2(dt, te.getTypeParameters().get(i)))
+                .findFirst()
+          ))
+          .filter(visitor -> visitor.match((dt, expectedReturnType) -> getAbstractMethods(dt.asElement().getEnclosedElements()).stream()
+             .allMatch(e -> types.isSameType(expectedReturnType.asType(), e.getReturnType()) && e.getTypeParameters().isEmpty())))
+          .map(visitor -> visitor.match((dt, __) -> p2(ve, dt)))
     );
 
     return fold(parameters,
-        error(message("All parameters must be interfaces whose abstract methods must not have any type parameter and should all return the same type variable " + adtAcceptMethodReturnType, onElement(adtAcceptMethod))),
+       error(message(
+          "All parameters must be interfaces whose abstract methods must not have any type parameter and should all return the same type variable "
+             + adtAcceptMethodReturnType, onElement(adtAcceptMethod))),
 
-        ps -> findOnlyOne(ps)
-            .map(p -> p.<DeriveResult<DataConstruction>>match((ve, dt) -> parseDataConstructionOneArg(adtTypeVariables, ve, dt)))
-            .orElseGet(
-                () -> ps.isEmpty()
-                    ? result(DataConstruction.noConstructor())
-                    : parseDataConstructionMultipleAgs(adtDeclaredType, adtTypeVariables, ps)
-            )
+       ps -> findOnlyOne(ps)
+          .map(p -> p.<DeriveResult<DataConstruction>>match((ve, dt) -> parseDataConstructionOneArg(adtTypeVariables, ve, dt)))
+          .orElseGet(
+             () -> ps.isEmpty()
+                   ? result(DataConstruction.noConstructor())
+                   : parseDataConstructionMultipleAgs(adtDeclaredType, adtTypeVariables, ps)
+          )
     );
   }
 
-
-  private DeriveResult<DataConstruction> parseDataConstructionOneArg(List<TypeVariable> adtTypeVariables, final VariableElement visitorArg, DeclaredType visitorType) {
+  private DeriveResult<DataConstruction> parseDataConstructionOneArg(List<TypeVariable> adtTypeVariables, final VariableElement visitorArg,
+     DeclaredType visitorType) {
 
     final DeriveResult<DataConstruction> result;
 
@@ -188,12 +226,13 @@ public final class AdtParser implements DeriveUtils {
       result = error(message("All abstract methods of " + visitorType + " must have a unique name", onElement(visitorArg)));
     } else {
       Function<TypeVariable, Optional<TypeMirror>> typeArgs = typeArgs(visitorType);
-      result = Utils.traverseResults(abstractMethods, m -> parseDataConstructor(adtTypeVariables, deconstructor(visitorArg, visitorType, m), typeArgs))
-          .map(constructors -> constructors.isEmpty()
-              ? noConstructor()
-              : findOnlyOne(constructors)
-              .map(c -> oneConstructor(c))
-              .orElseGet(() -> multipleConstructors(visitorDispatch(visitorArg, visitorType, constructors))));
+      result = Utils
+         .traverseResults(abstractMethods, m -> parseDataConstructor(adtTypeVariables, deconstructor(visitorArg, visitorType, m), typeArgs))
+         .map(constructors -> constructors.isEmpty()
+                              ? noConstructor()
+                              : findOnlyOne(constructors)
+                                 .map(c -> oneConstructor(c))
+                                 .orElseGet(() -> multipleConstructors(visitorDispatch(visitorArg, visitorType, constructors))));
     }
 
     return result;
@@ -203,78 +242,83 @@ public final class AdtParser implements DeriveUtils {
   @Override
   public TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
     return asDeclaredType.visit(typeMirror)
-        .map(dt -> dt.getTypeArguments().isEmpty()
-            ? dt
-            : types.getDeclaredType(asTypeElement.visit(dt.asElement()).get(),
-            dt.getTypeArguments().stream().map(ta -> resolve(ta, typeArgs)).toArray(TypeMirror[]::new))).<TypeMirror>map(dt -> dt)
-        .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(typeMirror));
+       .map(dt -> dt.getTypeArguments().isEmpty()
+                  ? dt
+                  : types.getDeclaredType(asTypeElement.visit(dt.asElement()).get(),
+                     dt.getTypeArguments().stream().map(ta -> resolve(ta, typeArgs)).toArray(TypeMirror[]::new))).<TypeMirror>map(dt -> dt)
+       .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(typeMirror));
   }
 
   @Override
   public TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs) {
     return asDeclaredType.visit(typeMirror)
-        .map(dt -> dt.getTypeArguments().isEmpty()
-            ? TypeName.get(dt)
-            : ParameterizedTypeName.get(ClassName.get(asTypeElement.visit(dt.asElement()).get()), dt.getTypeArguments().stream().map(ta -> resolveToTypeName(ta, typeArgs)).toArray(TypeName[]::new)))
-        .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(TypeName.get(typeMirror)));
+       .map(dt -> dt.getTypeArguments().isEmpty()
+                  ? TypeName.get(dt)
+                  : ParameterizedTypeName.get(ClassName.get(asTypeElement.visit(dt.asElement()).get()),
+                     dt.getTypeArguments().stream().map(ta -> resolveToTypeName(ta, typeArgs)).toArray(TypeName[]::new)))
+       .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(TypeName.get(typeMirror)));
   }
-
 
   public Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt) {
     return tv -> IntStream.range(0, dt.getTypeArguments().size())
-        .filter(i -> types.isSameType(tv, asTypeElement.visit(dt.asElement()).get().getTypeParameters().get(i).asType()))
-        .mapToObj(i -> dt.getTypeArguments().get(i))
-        .findFirst().map(tm -> tm);
+       .filter(i -> types.isSameType(tv, asTypeElement.visit(dt.asElement()).get().getTypeParameters().get(i).asType()))
+       .mapToObj(i -> dt.getTypeArguments().get(i))
+       .findFirst().map(tm -> tm);
   }
 
   @Override
   public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
     return tv -> typeRestrictions.stream()
-        .filter(tr -> types.isSameType(tr.restrictedTypeVariable(), tv))
-        .findFirst().map(TypeRestriction::refinementType);
+       .filter(tr -> types.isSameType(tr.restrictedTypeVariable(), tv))
+       .findFirst().map(TypeRestriction::refinementType);
   }
 
   public MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
     return MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())
-        .addAnnotation(Override.class)
-        .addModifiers(abstractMethod.getModifiers().stream().filter(m -> m != Modifier.ABSTRACT).collect(Collectors.toList()))
-        .addTypeVariables(abstractMethod.getTypeParameters().stream()
-            .map(TypeParameterElement::asType)
-            .map(asTypeVariable::visit)
-            .flatMap(tvOpt -> tvOpt.map(Collections::singleton).orElse(Collections.<TypeVariable>emptySet()).stream())
-            .map(TypeVariableName::get)
-            .collect(Collectors.toList()))
-        .returns(TypeName.get(resolve(abstractMethod.getReturnType(), typeArgs)))
-        .addParameters(abstractMethod.getParameters().stream()
-            .map(ve -> ParameterSpec.builder(
-                TypeName.get(resolve(ve.asType(), typeArgs)),
-                ve.getSimpleName().toString()).build()
-            ).collect(Collectors.toList()))
+       .addAnnotation(Override.class)
+       .addModifiers(abstractMethod.getModifiers().stream().filter(m -> m != Modifier.ABSTRACT).collect(Collectors.toList()))
+       .addTypeVariables(abstractMethod.getTypeParameters().stream()
+          .map(TypeParameterElement::asType)
+          .map(asTypeVariable::visit)
+          .flatMap(tvOpt -> tvOpt.map(Collections::singleton).orElse(Collections.<TypeVariable>emptySet()).stream())
+          .map(TypeVariableName::get)
+          .collect(Collectors.toList()))
+       .returns(TypeName.get(resolve(abstractMethod.getReturnType(), typeArgs)))
+       .addParameters(abstractMethod.getParameters().stream()
+          .map(ve -> ParameterSpec.builder(
+             TypeName.get(resolve(ve.asType(), typeArgs)),
+             ve.getSimpleName().toString()).build()
+          ).collect(Collectors.toList()))
        .varargs(abstractMethod.isVarArgs());
   }
 
-  private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables, List<P2<VariableElement, DeclaredType>> caseHandlers) {
+  private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeVariables,
+     List<P2<VariableElement, DeclaredType>> caseHandlers) {
     return Utils.traverseResults(caseHandlers, p2 -> p2.match(
-        (visitorArg, visitorType) -> parseDataConstructionOneArg(adtTypeVariables, visitorArg, visitorType)
-            .bind(DataConstructions.cases()
+       (visitorArg, visitorType) -> parseDataConstructionOneArg(adtTypeVariables, visitorArg, visitorType)
+          .bind(DataConstructions.cases()
 
-                .multipleConstructors(__ -> DeriveResult.<DataConstructor>error(message("Either use one visitor with multiple dispatch method or multiple functions.", onElement(visitorArg))))
+             .multipleConstructors(__ -> DeriveResult.<DataConstructor>error(
+                message("Either use one visitor with multiple dispatch method or multiple functions.", onElement(visitorArg))))
 
-                .oneConstructor(constructor -> result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
-                    constructor.arguments().size() > 1 || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
-                        ? constructor.arguments()
-                        : constructor.arguments().stream().map(da -> dataArgument(visitorArg.getSimpleName().toString(), da.type())).collect(Collectors.toList()),
-                    constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor())))
+             .oneConstructor(constructor -> result(DataConstructor.constructor(visitorArg.getSimpleName().toString(),
+                constructor.arguments().size() > 1
+                   || types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType)
+                   || fieldNamesAnnotation(visitorArg).isPresent()
+                ? constructor.arguments()
+                : constructor.arguments().stream().map(da -> dataArgument(visitorArg.getSimpleName().toString(), da.type()))
+                   .collect(Collectors.toList()),
+                constructor.typeVariables(), constructor.typeRestrictions(), constructor.deconstructor())))
 
-                .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg))))
-            )
+             .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg))))
+          )
     )).map(MultipleConstructors::functionsDispatch).map(DataConstruction::multipleConstructors);
 
   }
 
-  private DeriveResult<DataConstructor> parseDataConstructor(List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
-
+  private DeriveResult<DataConstructor> parseDataConstructor(List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor,
+     Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
     ExecutableElement visitorAbstractMethod = deconstructor.visitorMethod();
     List<DataArgument> constructorArguments = new ArrayList<>();
@@ -284,7 +328,7 @@ public final class AdtParser implements DeriveUtils {
       TypeMirror paramType = resolve(parameter.asType(), typeArgs);
 
       Optional<TypeRestriction> gadtConstraint = parseGadtConstraint(parameter.getSimpleName().toString(), paramType, adtTypeParameters, typeArgs)
-          .filter(tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
+         .filter(tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
 
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
@@ -293,65 +337,70 @@ public final class AdtParser implements DeriveUtils {
         }
         constructorArguments.add(dataArgument(parameter.getSimpleName().toString(), paramType));
       }
-      seenVariables.addAll(typeVariablesIn(paramType).filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv))).collect(Collectors.toList()));
+      seenVariables.addAll(typeVariablesIn(paramType).filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv)))
+         .collect(Collectors.toList()));
     }
 
     VariableElement visitorArg = deconstructor.visitorParam();
-    Optional<AnnotationMirror> fieldNamesAnnotationMirror = visitorArg.getAnnotationMirrors().stream()
-        .filter(am -> types.isSameType(types.getDeclaredType(elements.getTypeElement(FieldNames.class.getName())), am.getAnnotationType()))
-        .findFirst().map(Function.<AnnotationMirror>identity());
+    Optional<AnnotationMirror> fieldNamesAnnotationMirror = fieldNamesAnnotation(visitorArg);
 
     return fold(fieldNamesAnnotationMirror,
-        result(constructor(visitorAbstractMethod.getSimpleName().toString(), constructorArguments, seenVariables, typeRestrictions, deconstructor)),
-        am -> {
-          FieldNames fieldNames = visitorArg.getAnnotation(FieldNames.class);
-          int totalNbArgs = constructorArguments.size() + typeRestrictions.size();
-          return fieldNames.value().length != totalNbArgs
-              ? error(message("wrong number of field names specified: " + totalNbArgs + " expected.", onAnnotation(visitorArg, am)))
-              : result(
-              DataConstructor.constructor(visitorArg.getSimpleName().toString(),
-                  IntStream.range(0, constructorArguments.size())
-                      .mapToObj(i -> dataArgument(fieldNames.value()[i], constructorArguments.get(i).type()))
-                      .collect(Collectors.toList()),
+       result(constructor(visitorAbstractMethod.getSimpleName().toString(), constructorArguments, seenVariables, typeRestrictions, deconstructor)),
+       am -> {
+         FieldNames fieldNames = visitorArg.getAnnotation(FieldNames.class);
+         int totalNbArgs = constructorArguments.size() + typeRestrictions.size();
+         return fieldNames.value().length != totalNbArgs
+                ? error(message("wrong number of field names specified: " + totalNbArgs + " expected.", onAnnotation(visitorArg, am)))
+                : result(
+                   DataConstructor.constructor(visitorArg.getSimpleName().toString(),
+                      IntStream.range(0, constructorArguments.size())
+                         .mapToObj(i -> dataArgument(fieldNames.value()[i], constructorArguments.get(i).type()))
+                         .collect(Collectors.toList()),
 
-                  seenVariables,
+                      seenVariables,
 
-                  IntStream.range(constructorArguments.size(), totalNbArgs)
-                      .mapToObj(i -> {
-                        TypeRestriction typeRestriction = typeRestrictions.get(i - constructorArguments.size());
-                        return typeRestriction(typeRestriction.restrictedTypeVariable(), typeRestriction.refinementType(),
-                            dataArgument(fieldNames.value()[i], typeRestriction.idFunction().type()));
-                      })
-                      .collect(Collectors.toList())
-                  , deconstructor));
-        }
+                      IntStream.range(constructorArguments.size(), totalNbArgs)
+                         .mapToObj(i -> {
+                           TypeRestriction typeRestriction = typeRestrictions.get(i - constructorArguments.size());
+                           return typeRestriction(typeRestriction.restrictedTypeVariable(), typeRestriction.refinementType(),
+                              dataArgument(fieldNames.value()[i], typeRestriction.idFunction().type()));
+                         })
+                         .collect(Collectors.toList())
+                      , deconstructor));
+       }
 
     );
+  }
+
+  private Optional<AnnotationMirror> fieldNamesAnnotation(VariableElement visitorArg) {
+    return visitorArg.getAnnotationMirrors().stream()
+       .filter(am -> types.isSameType(types.getDeclaredType(elements.getTypeElement(FieldNames.class.getName())), am.getAnnotationType()))
+       .findFirst().map(Function.<AnnotationMirror>identity());
   }
 
   @Override
   public Stream<TypeVariable> typeVariablesIn(TypeMirror typeMirror) {
     return asDeclaredType.visit(typeMirror)
-        .map(dt -> dt.getTypeArguments().stream().flatMap(this::typeVariablesIn))
-        .orElseGet(() -> asTypeVariable.visit(typeMirror).map(Stream::of)
-            .orElse(Stream.empty()));
+       .map(dt -> dt.getTypeArguments().stream().flatMap(this::typeVariablesIn))
+       .orElseGet(() -> asTypeVariable.visit(typeMirror).map(Stream::of)
+          .orElse(Stream.empty()));
   }
 
-
-  private Optional<TypeRestriction> parseGadtConstraint(String argName, TypeMirror paramType, List<TypeVariable> adtTypeVariables, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+  private Optional<TypeRestriction> parseGadtConstraint(String argName, TypeMirror paramType, List<TypeVariable> adtTypeVariables,
+     Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
     return asDeclaredType.visit(paramType).filter(dt -> dt.asElement().getKind() == ElementKind.INTERFACE)
-        .flatMap(dt -> findOnlyOne(getAbstractMethods(dt.asElement().getEnclosedElements()))
-            .filter(m -> m.getTypeParameters().isEmpty())
-            .flatMap(m -> asTypeVariable.visit(m.getReturnType()).flatMap(typeArgs(dt)).flatMap(asTypeVariable::visit).map(rt -> p2(m, rt)))
-            .flatMap(p2 -> p2.match((abstractMethod, rt) ->
-                findOnlyOne(abstractMethod.getParameters())
-                    .map(p -> p.asType())
-                    .flatMap(t ->
-                        IntStream.range(0, adtTypeVariables.size())
-                            .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
-                            .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), resolve(t, typeArgs(dt)), dataArgument(argName, paramType)))
-                            .findFirst()
-                    )
-            )));
+       .flatMap(dt -> findOnlyOne(getAbstractMethods(dt.asElement().getEnclosedElements()))
+          .filter(m -> m.getTypeParameters().isEmpty())
+          .flatMap(m -> asTypeVariable.visit(m.getReturnType()).flatMap(typeArgs(dt)).flatMap(asTypeVariable::visit).map(rt -> p2(m, rt)))
+          .flatMap(p2 -> p2.match((abstractMethod, rt) ->
+             findOnlyOne(abstractMethod.getParameters())
+                .map(p -> p.asType())
+                .flatMap(t ->
+                   IntStream.range(0, adtTypeVariables.size())
+                      .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
+                      .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), resolve(t, typeArgs(dt)), dataArgument(argName, paramType)))
+                      .findFirst()
+                )
+          )));
   }
 }

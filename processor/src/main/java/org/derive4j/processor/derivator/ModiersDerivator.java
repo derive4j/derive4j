@@ -19,6 +19,7 @@
 package org.derive4j.processor.derivator;
 
 import com.squareup.javapoet.*;
+import java.util.stream.Stream;
 import org.derive4j.Visibility;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
@@ -55,8 +56,6 @@ public final class ModiersDerivator {
     TypeElement f1 = FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements());
     String f1Apply = Utils.getAbstractMethods(f1.getEnclosedElements()).get(0).getSimpleName().toString();
 
-    String adtArg = Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
-
     List<TypeVariable> uniqueTypeVariables = getUniqueTypeVariables(field, adt.fields(), deriveUtils);
 
     Function<TypeVariable, Optional<TypeName>> polymorphism = tv -> uniqueTypeVariables.stream()
@@ -67,6 +66,11 @@ public final class ModiersDerivator {
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
     String modMethodName = "mod" + Utils.capitalize(field.fieldName());
+
+    NameAllocator nameAllocator = new NameAllocator();
+    nameAllocator.newName(modMethodName);
+
+    String adtArg = nameAllocator.newName(Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName()));
 
     MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName).addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream()
@@ -89,15 +93,20 @@ public final class ModiersDerivator {
       modBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
     }
 
+
     CodeBlock lambdas = adt.dataConstruction().constructors().stream()
         .map(constructor ->
             CodeBlock.builder().add("($L) -> " + (constructor.typeRestrictions().isEmpty() ? "$L" : "($T) ") + "$L($L)",
-                Utils.asLambdaParametersString(constructor.arguments(), constructor.typeRestrictions()),
+               Utils.joinStringsAsArguments(Stream.concat(
+                  constructor.arguments().stream().map(DataArgument::fieldName)
+                     .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+                  constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
+                     .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))),
                 constructor.typeRestrictions().isEmpty() ? "" : ClassName.get(adt.typeConstructor().typeElement()),
                 constructor.name(),
                 joinStringsAsArguments(constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> fn.equals(field.fieldName())
-                    ? moderArg + "." + f1Apply + "(" + fn + ")"
-                    : fn))).build())
+                    ? moderArg + "." + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")"
+                    : nameAllocator.clone().newName(fn, fn + " field")))).build())
         .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
         .orElse(CodeBlock.builder().build());
 
