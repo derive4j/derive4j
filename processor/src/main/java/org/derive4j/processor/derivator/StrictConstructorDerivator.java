@@ -176,17 +176,20 @@ public final class StrictConstructorDerivator {
     if (constructor.arguments().isEmpty()) {
       FieldSpec.Builder singleton = FieldSpec.builder(ClassName.get(adt.typeConstructor().typeElement()),
          constructor.name(),
-         Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-         .initializer("new $L()", className);
+         Modifier.PRIVATE, Modifier.STATIC);
       if (!adt.typeConstructor().typeVariables().isEmpty()) {
         singleton.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
-        factory.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
+        factory.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "rawtypes", "unchecked").build());
       }
 
       result = DerivedCodeSpec.codeSpec(typeSpecBuilder.build(),
          singleton.build(),
          factory
-            .addStatement("return $L", constructor.name())
+            .addStatement("$1T _$2L = $2L", constructedType, constructor.name())
+            .beginControlFlow("if (_$L == null)", constructor.name())
+            .addStatement("$1L = _$1L = new $2L()", constructor.name(), className)
+            .endControlFlow()
+            .addStatement("return _$L", constructor.name())
             .build());
     } else {
       result = DerivedCodeSpec.codeSpec(typeSpecBuilder.build(),
