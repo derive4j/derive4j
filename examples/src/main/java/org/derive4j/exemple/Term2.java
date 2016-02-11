@@ -25,11 +25,15 @@
  */
 package org.derive4j.exemple;
 
+import fj.F;
+import fj.F2;
+import fj.F3;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.derive4j.Flavour;
 
 import static java.lang.System.out;
 import static org.derive4j.exemple.Term2s.*;
@@ -42,21 +46,21 @@ import static org.derive4j.exemple.Term2s.*;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data
+@Data(flavour = Flavour.FJ)
 public abstract class Term2<T> {
   Term2() {
   }
 
   public static <T> T eval(final Term2<T> term) {
 
-    Function<Term2<T>, T> eval = Term2s.<T>cases().
-        Zero(__                    -> __.__(0)).
-        Succ((t, __)               -> __.__(eval(t) + 1)).
-        Pred((t, __)               -> __.__(eval(t) - 1)).
-        IsZero((t, __)             -> __.__(eval(t) == 0)).
+    F<Term2<T>, T> eval = Term2s.<T>cases().
+        Zero(__                    -> __.f(0)).
+        Succ((t, __)               -> __.f(eval(t) + 1)).
+        Pred((t, __)               -> __.f(eval(t) - 1)).
+        IsZero((t, __)             -> __.f(eval(t) == 0)).
         If((cond, then, otherwise) -> eval(cond) ? eval(then) : eval(otherwise));
 
-    return eval.apply(term);
+    return eval.f(term);
   }
 
   public static void main(final String[] args) {
@@ -75,17 +79,12 @@ public abstract class Term2<T> {
     //  else IsZero(Succ(0))"
   }
 
-  public abstract <X> X match(@FieldNames("__") Function<F<Integer, T>, X> Zero,
-                              @FieldNames({"term", "__"}) BiFunction<Term2<Integer>, F<Integer, T>, X> Succ,
-                              @FieldNames({"term", "__"}) BiFunction<Term2<Integer>, F<Integer, T>, X> Pred,
-                              @FieldNames({"term", "__"}) BiFunction<Term2<Integer>, F<Boolean, T>, X> IsZero,
-                              @FieldNames({"cond", "then", "otherwise"}) TriFunction<Term2<Boolean>, Term2<T>, Term2<T>, X> If);
+  public abstract <X> X match(@FieldNames("__") F<F<Integer, T>, X> Zero,
+                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Integer, T>, X> Succ,
+                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Integer, T>, X> Pred,
+                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Boolean, T>, X> IsZero,
+                              @FieldNames({"cond", "then", "otherwise"}) F3<Term2<Boolean>, Term2<T>, Term2<T>, X> If);
 
-  public interface F<A, B> {// Could be java.util.function.Function,
-
-    //used only for the visualy lighter apply method.
-    B __(A a);
-  }
 
   @Override
   public abstract boolean equals(Object obj);
@@ -96,9 +95,4 @@ public abstract class Term2<T> {
   @Override
   public abstract String toString();
 
-  public interface TriFunction<A, B, C, R> {// Could be java.util.function.Function,
-
-    //used only for the visualy lighter apply method.
-    R appy(A a, B b, C c);
-  }
 }

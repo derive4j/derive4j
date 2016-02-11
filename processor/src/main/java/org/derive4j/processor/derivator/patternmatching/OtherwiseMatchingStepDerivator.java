@@ -415,7 +415,7 @@ public class OtherwiseMatchingStepDerivator {
       Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
-      String lambdaArgs = joinStringsAsArguments(IntStream.range(9, 0 + dc.arguments().size() + dc.typeRestrictions().size())
+      String lambdaArgs = joinStringsAsArguments(IntStream.range(9, 9 + dc.arguments().size() + dc.typeRestrictions().size())
          .mapToObj(i -> "$" + i + "L"));
 
       codeBlock.addStatement("$1T $2L = (this.$3L != null) ? (" + lambdaArgs + ") -> $4T.$5L(this.$3L.$6L(" + lambdaArgs + "))\n"
