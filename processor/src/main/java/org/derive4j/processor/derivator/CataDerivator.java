@@ -31,6 +31,7 @@ import com.squareup.javapoet.TypeVariableName;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -85,39 +86,41 @@ public class CataDerivator {
     TypeElement f = FlavourImpl.findF(context.flavour(), utils.elements());
     TypeName returnType = TypeName.get(utils.types().getDeclaredType(f,
        adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable()));
+    ExecutableElement abstractMethod = Utils.getAbstractMethods(f.getEnclosedElements()).get(0);
 
     TypeSpec wrapper = TypeSpec.anonymousClassBuilder("")
-       .addField(FieldSpec.builder(returnType, nameAllocator.get("cata"))
-          .initializer(CodeBlock.builder().addStatement("$L -> $L.$L($L)",
-             nameAllocator.get("adt var"), nameAllocator.get("adt var"),
+       .addSuperinterface(returnType)
+       .addMethod(MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())
+          .addAnnotation(Override.class)
+          .addModifiers(abstractMethod.getModifiers().stream().filter(m -> m != Modifier.ABSTRACT).collect(Collectors.toList()))
+          .returns(TypeName.get(adt.matchMethod().returnTypeVariable()))
+          .addParameter(TypeName.get(adt.typeConstructor().declaredType()), nameAllocator.get("adt var"))
+          .addStatement("return $L.$L($L)",
+             nameAllocator.get("adt var"),
              adt.matchMethod().element().getSimpleName(),
-             Utils.joinStringsAsArguments(constructors.stream().map(
-                constructor ->
-                   constructor.arguments().stream()
-                      .map(DataArguments::getType)
-                      .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
+             Utils.joinStringsAsArguments(constructors.stream().map(constructor ->
+                constructor.arguments().stream()
+                   .map(DataArguments::getType)
+                   .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
                    ? "\n" + constructor.name()
                    : CodeBlock.builder().add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(Stream.concat(
-                      constructor.arguments().stream().map(DataArgument::fieldName)
-                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
-                      constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
-                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))),
-                      constructor.name(),
-                      MapperDerivator.mapperApplyMethod(utils, context, constructor),
-                      Utils.joinStringsAsArguments(Stream.concat(
-                         constructor.arguments().stream().map(
-                            argument ->
-                               utils.types().isSameType(argument.type(),
-                                  adt.typeConstructor().declaredType())
-                               ? "() -> this." + nameAllocator.get("cata")
-                                  + "." + FlavourImpl.functionApplyMethod(utils, context)
-                                  + "(" + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + ")"
-                               : argument.fieldName()),
-                         constructor.typeRestrictions().stream()
-                            .map(TypeRestriction::idFunction)
-                            .map(DataArgument::fieldName)))).build().toString())
-
-             )).build()).build()).build();
+                   constructor.arguments().stream().map(DataArgument::fieldName)
+                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+                   constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
+                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))),
+                   constructor.name(),
+                   MapperDerivator.mapperApplyMethod(utils, context, constructor),
+                   Utils.joinStringsAsArguments(Stream.concat(
+                      constructor.arguments().stream().map(argument ->
+                         utils.types().isSameType(argument.type(),
+                            adt.typeConstructor().declaredType())
+                            ? "() -> " + FlavourImpl.functionApplyMethod(utils, context)
+                            + "(" + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + ")"
+                            : argument.fieldName()),
+                      constructor.typeRestrictions().stream()
+                         .map(TypeRestriction::idFunction)
+                         .map(DataArgument::fieldName)))).build().toString())
+             )).build()).build();
 
     MethodSpec cataMethod = MethodSpec.methodBuilder("cata")
        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -127,7 +130,7 @@ public class CataDerivator {
        .addParameters(constructors.stream().map(dc
           -> ParameterSpec.builder(cataMapperTypeName(dc), MapperDerivator.mapperFieldName(dc)).build())
           .collect(toList()))
-       .addStatement("return $L.$L", wrapper, nameAllocator.get("cata"))
+       .addStatement("return $L", wrapper)
        .build();
 
     return result(methodSpec(cataMethod));
