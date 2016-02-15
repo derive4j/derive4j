@@ -101,9 +101,7 @@ public class DerivingProcessor extends AbstractProcessor {
           @SuppressWarnings("deprecation")
           @Override
           public Visibility visibility() {
-            return dataAnnotation.value().withVisibility() == Visibility.Same
-                ? dataAnnotation.value().withVisbility()
-                : dataAnnotation.value().withVisibility();
+            return dataAnnotation.value().withVisibility();
           }
 
           @Override

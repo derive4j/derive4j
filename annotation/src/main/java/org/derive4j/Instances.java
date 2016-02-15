@@ -27,7 +27,7 @@ public @interface Instances {
 
   String inClass() default ":auto";
 
-  Visibility withVisbility() default Same;
+  Visibility withVisibility() default Same;
 
   Class<?>[] value();
 

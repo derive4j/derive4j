@@ -29,6 +29,9 @@ public @interface Derive {
 
   Visibility withVisibility() default Same;
 
+  /**
+   * Ignored from 0.7 onward, will be removed in 0.8
+   */
   @Deprecated
   Visibility withVisbility() default Same;
 
