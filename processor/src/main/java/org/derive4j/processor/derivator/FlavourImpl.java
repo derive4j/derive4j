@@ -54,7 +54,7 @@ public final class FlavourImpl {
           .Fj(() -> "fj.F")
           .Fugue(() -> Function.class.getName())
           .Fugue2(() -> "com.google.common.base.Function")
-          .Javaslang(() -> Function.class.getName())
+          .Javaslang(() -> "javaslang.Function1")
           .apply(flavour)
     );
   }

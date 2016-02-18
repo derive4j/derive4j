@@ -18,7 +18,18 @@
  */
 package org.derive4j.processor.derivator;
 
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -27,20 +38,15 @@ import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.api.model.TypeConstructor;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.codeSpec;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
-import static org.derive4j.processor.derivator.StrictConstructorDerivator.*;
+import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractEquals;
+import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractHashCode;
+import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractToString;
 
 public final class LazyConstructorDerivator {
-
 
   public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
 
@@ -56,38 +62,40 @@ public final class LazyConstructorDerivator {
     TypeName typeName = TypeName.get(typeConstructor.declaredType());
 
     List<TypeVariableName> typeVariableNames = adt.typeConstructor().typeVariables().stream()
-        .map(TypeVariableName::get).collect(Collectors.toList());
+       .map(TypeVariableName::get).collect(Collectors.toList());
 
     String className = "Lazy";
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(className)
-        .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
-        .addTypeVariables(typeVariableNames)
-        .addField(FieldSpec.builder(TypeName.get(Object.class), "lock", Modifier.PRIVATE, Modifier.FINAL).initializer("new Object()").build())
-        .addField(FieldSpec.builder(lazyArgTypeName, "expression", Modifier.PRIVATE).build())
-        .addField(FieldSpec.builder(typeName, "evaluation", Modifier.PRIVATE, Modifier.VOLATILE).build())
-        .addMethod(MethodSpec.constructorBuilder()
-            .addParameter(ParameterSpec.builder(lazyArgTypeName, lazyArgName).build())
-            .addStatement("this.expression = $N", lazyArgName).build())
-        .addMethod(
-            MethodSpec.methodBuilder("eval")
-                .addModifiers(Modifier.PRIVATE)
-                .returns(typeName)
-                .addCode(CodeBlock.builder()
-                    .addStatement("$T _evaluation = this.evaluation", typeName)
-                    .beginControlFlow("if (_evaluation == null)")
-                    .beginControlFlow("synchronized (this.lock)")
-                    .addStatement("_evaluation = this.evaluation")
-                    .beginControlFlow("if (_evaluation == null)")
-                    .addStatement("this.evaluation = _evaluation = expression.$L()", Utils.getAbstractMethods(lazyTypeElement.getEnclosedElements()).get(0).getSimpleName())
-                    .addStatement("this.expression = null")
-                    .endControlFlow().endControlFlow().endControlFlow()
-                    .addStatement("return _evaluation")
-                    .build())
+       .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+       .addTypeVariables(typeVariableNames)
+       .addField(FieldSpec.builder(TypeName.get(Object.class), "lock", Modifier.PRIVATE, Modifier.FINAL).initializer("new Object()").build())
+       .addField(FieldSpec.builder(lazyArgTypeName, "expression", Modifier.PRIVATE).build())
+       .addField(FieldSpec.builder(typeName, "evaluation", Modifier.PRIVATE, Modifier.VOLATILE).build())
+       .addMethod(MethodSpec.constructorBuilder()
+          .addParameter(ParameterSpec.builder(lazyArgTypeName, lazyArgName).build())
+          .addStatement("this.expression = $N", lazyArgName).build())
+       .addMethod(
+          MethodSpec.methodBuilder("eval")
+             .addModifiers(Modifier.PRIVATE)
+             .returns(typeName)
+             .addCode(CodeBlock.builder()
+                .addStatement("$T _evaluation = this.evaluation", typeName)
+                .beginControlFlow("if (_evaluation == null)")
+                .beginControlFlow("synchronized (this.lock)")
+                .addStatement("_evaluation = this.evaluation")
+                .beginControlFlow("if (_evaluation == null)")
+                .addStatement("this.evaluation = _evaluation = expression.$L()",
+                   Utils.getAbstractMethods(lazyTypeElement.getEnclosedElements()).get(0).getSimpleName())
+                .addStatement("this.expression = null")
+                .endControlFlow().endControlFlow().endControlFlow()
+                .addStatement("return _evaluation")
                 .build())
-        .addMethod(
-            Utils.overrideMethodBuilder(adt.matchMethod().element())
-                .addStatement("return this.eval().$L($L)", adt.matchMethod().element().getSimpleName(), Utils.asArgumentsStringOld(adt.matchMethod().element().getParameters()))
-                .build());
+             .build())
+       .addMethod(
+          Utils.overrideMethodBuilder(adt.matchMethod().element())
+             .addStatement("return eval().$L($L)", adt.matchMethod().element().getSimpleName(),
+                Utils.asArgumentsStringOld(adt.matchMethod().element().getParameters()))
+             .build());
 
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.INTERFACE) {
       typeSpecBuilder.addSuperinterface(typeName);
@@ -96,34 +104,34 @@ public final class LazyConstructorDerivator {
     }
 
     typeSpecBuilder.addMethods(optionalAsStream(
-        findAbstractEquals(typeConstructor.typeElement(), deriveUtils.elements())
-            .map(equals -> deriveUtils.overrideMethodBuilder(equals)
-                .addStatement("return this.eval().equals($L)", equals.getParameters().get(0).getSimpleName())
-                .build())
+       findAbstractEquals(typeConstructor.typeElement(), deriveUtils.elements())
+          .map(equals -> deriveUtils.overrideMethodBuilder(equals)
+             .addStatement("return this.eval().equals($L)", equals.getParameters().get(0).getSimpleName())
+             .build())
     ).collect(Collectors.toList()));
 
     typeSpecBuilder.addMethods(optionalAsStream(
-        findAbstractHashCode(typeConstructor.typeElement(), deriveUtils.elements())
-            .map(hashCode -> deriveUtils.overrideMethodBuilder(hashCode)
-                .addStatement("return this.eval().hashCode()")
-                .build())
+       findAbstractHashCode(typeConstructor.typeElement(), deriveUtils.elements())
+          .map(hashCode -> deriveUtils.overrideMethodBuilder(hashCode)
+             .addStatement("return this.eval().hashCode()")
+             .build())
     ).collect(Collectors.toList()));
 
     typeSpecBuilder.addMethods(optionalAsStream(
-        findAbstractToString(typeConstructor.typeElement(), deriveUtils.elements())
-            .map(toString -> deriveUtils.overrideMethodBuilder(toString)
-                .addStatement("return this.eval().toString()")
-                .build())
+       findAbstractToString(typeConstructor.typeElement(), deriveUtils.elements())
+          .map(toString -> deriveUtils.overrideMethodBuilder(toString)
+             .addStatement("return this.eval().toString()")
+             .build())
     ).collect(Collectors.toList()));
 
     return result(codeSpec(
-        typeSpecBuilder.build(),
-        MethodSpec.methodBuilder("lazy")
-            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-            .addTypeVariables(typeConstructor.typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
-            .addParameter(lazyArgTypeName, lazyArgName)
-            .returns(typeName)
-            .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty() ? "" : "<>", lazyArgName).build()
+       typeSpecBuilder.build(),
+       MethodSpec.methodBuilder("lazy")
+          .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+          .addTypeVariables(typeConstructor.typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
+          .addParameter(lazyArgTypeName, lazyArgName)
+          .returns(typeName)
+          .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty() ? "" : "<>", lazyArgName).build()
     ));
 
   }
