@@ -238,7 +238,7 @@ public class Utils {
   }
 
 
-  public static <A, B> DeriveResult<List<B>> traverseResults(List<A> as, Function<A, DeriveResult<B>> f) {
+  public static <A, B> DeriveResult<List<B>> traverseResults(Collection<A> as, Function<A, DeriveResult<B>> f) {
     return traverseResults(as.stream().map(f).collect(Collectors.toList()));
   }
 

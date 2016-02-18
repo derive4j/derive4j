@@ -24,6 +24,7 @@ import com.squareup.javapoet.TypeSpec;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Flavour;
+import org.derive4j.Make;
 import org.derive4j.Visibility;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
@@ -92,6 +93,8 @@ public class DerivingProcessor extends AbstractProcessor {
       try {
         Data dataAnnotation = element.getAnnotation(Data.class);
 
+        Set<Make> makes = BuiltinDerivator.makeWithDpendencies(dataAnnotation.value().make());
+
         DeriveContext deriveContext = new DeriveContext() {
           @Override
           public Flavour flavour() {
@@ -112,6 +115,10 @@ public class DerivingProcessor extends AbstractProcessor {
           @Override
           public String targetClassName() {
             return deduceDerivedClassName(dataAnnotation.value(), element);
+          }
+
+          @Override public Set<Make> makes() {
+            return makes;
           }
         };
 

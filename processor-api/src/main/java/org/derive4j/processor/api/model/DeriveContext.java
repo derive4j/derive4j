@@ -18,7 +18,10 @@
  */
 package org.derive4j.processor.api.model;
 
+import java.util.EnumSet;
+import java.util.Set;
 import org.derive4j.Flavour;
+import org.derive4j.Make;
 import org.derive4j.Visibility;
 
 public interface DeriveContext {
@@ -30,5 +33,7 @@ public interface DeriveContext {
   String targetPackage();
 
   String targetClassName();
+
+  Set<Make> makes();
 
 }

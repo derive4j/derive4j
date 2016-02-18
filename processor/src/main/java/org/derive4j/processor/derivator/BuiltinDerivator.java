@@ -19,7 +19,15 @@
 package org.derive4j.processor.derivator;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.derive4j.Make;
+import org.derive4j.Makes;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
@@ -27,22 +35,44 @@ import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
 
+import static org.derive4j.Make.constructors;
+import static org.derive4j.Make.lambdaVisitor;
 import static org.derive4j.processor.Utils.traverseResults;
 import static org.derive4j.processor.api.DeriveResults.lazy;
 
 public class BuiltinDerivator {
 
+  private static final Function<Make, Stream<Make>> dependencies = Makes.cases()
+     .lambdaVisitor(() -> Stream.<Make>of())
+     .constructors(() -> Stream.of())
+     .lazyConstructor(() -> Stream.of())
+     .patternMatching(() -> Stream.of(lambdaVisitor))
+     .getters(() -> Stream.of(lambdaVisitor))
+     .modifiers(() -> Stream.of(lambdaVisitor, constructors))
+     .catamorphism(() -> Stream.of(lambdaVisitor));
+
   public static BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator(DeriveUtils deriveUtils) {
     return (adt, deriveContext) ->
-       traverseResults(Arrays.asList(
-          lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
-          lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)),
-          lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)),
-          lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()),
-          lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)),
-          lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)),
-          lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils))
-          )).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+       traverseResults(deriveContext.makes(), Makes.cases()
+          .lambdaVisitor(lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)))
+          .constructors(lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
+          .lazyConstructor(lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
+          .patternMatching(lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils)))
+          .getters(lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)))
+          .modifiers(lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)))
+          .catamorphism(lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()))
+       ).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+  }
+
+  public static Set<Make> makeWithDpendencies(Make... makes) {
+
+    EnumSet<Make> makeSet = EnumSet.noneOf(Make.class);
+
+    makeSet.addAll(Arrays.asList(makes).stream()
+       .flatMap(m -> Stream.concat(dependencies.apply(m), Stream.of(m)))
+       .collect(Collectors.toList()));
+
+    return Collections.unmodifiableSet(makeSet);
   }
 
 }
