@@ -52,7 +52,7 @@ allprojects {
         primaryEmail = "jb@giraudeau.info"
 
         dependencyJavaPoet = "com.squareup:javapoet:1.5.1"
-        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.6"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.6.3"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
 
