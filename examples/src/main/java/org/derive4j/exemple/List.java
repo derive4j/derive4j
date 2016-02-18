@@ -25,9 +25,6 @@
  */
 package org.derive4j.exemple;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Ordering;
-import io.atlassian.fugue.Pair;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -55,6 +52,12 @@ public abstract class List<A> {
     return iterate(s, i -> i + 1);
   }
 
+  public static List<Integer> range(final int from, int toExclusive) {
+    return from == toExclusive
+           ? nil()
+           : cons(from, lazy(() -> range(from + 1, toExclusive)));
+  }
+
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
     return lazy(() -> cons(seed, iterate(op.apply(seed), op)));
   }
@@ -62,28 +65,28 @@ public abstract class List<A> {
   public abstract <X> X list(Supplier<X> nil,
      @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
 
-  public <B> List<B> map(Function<A, B> f) {
+  public final <B> List<B> map(Function<A, B> f) {
     return lazy(() -> list(
        () -> nil(),
        (h, tail) -> cons(f.apply(h), tail.map(f))
     ));
   }
 
-  public List<A> append(final List<A> list) {
+  public final List<A> append(final List<A> list) {
     return lazy(() -> list(
        () -> list,
        (head, tail) -> cons(head, tail.append(list))
     ));
   }
 
-  public List<A> filter(Predicate<A> p) {
+  public final List<A> filter(Predicate<A> p) {
     return lazy(() -> list(
        () -> nil(),
        (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)
     ));
   }
 
-  public <B> List<B> bind(Function<A, List<B>> f) {
+  public final <B> List<B> bind(Function<A, List<B>> f) {
     return lazy(() -> list(
        () -> nil(),
        (h, t) -> f.apply(h).append(t.bind(f))
@@ -92,7 +95,7 @@ public abstract class List<A> {
     //return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
   }
 
-  public List<A> take(int n) {
+  public final List<A> take(int n) {
     return n <= 0
            ? nil()
            : lazy(() -> list(
@@ -101,7 +104,7 @@ public abstract class List<A> {
            ));
   }
 
-  public void forEach(Consumer<A> effect) {
+  public final void forEach(Consumer<A> effect) {
     // a bit ugly due to lack of TCO
     class ConsVisitor implements BiFunction<A, List<A>, Boolean> {
       List<A> l = List.this;
@@ -118,7 +121,7 @@ public abstract class List<A> {
     }
   }
 
-  public <B> B foldLeft(final BiFunction<B, A, B> f, final B zero) {
+  public final <B> B foldLeft(final BiFunction<B, A, B> f, final B zero) {
     // again, ugly due to lack of TCO
     class Acc implements Consumer<A> {
       B acc = zero;
@@ -133,12 +136,12 @@ public abstract class List<A> {
     return acc.acc;
   }
 
-  public <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
+  public final int length() {
+    return foldLeft((i, a) -> i + 1, 0);
+  }
+
+  public final <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
     return Lists.cata(() -> zero, f).apply(this);
   }
 
-  public static void main(String[] args) {
-    Ordering<com.atlassian.fugue.Pair<Integer, ?>> pairOrdering = Ordering.natural().onResultOf(com.atlassian.fugue.Pair.<Integer>leftValue());
-    pairOrdering.sortedCopy(ImmutableSet.of(com.atlassian.fugue.Pair.pair(1, "A")));
-  }
 }
