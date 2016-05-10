@@ -20,7 +20,7 @@ buildscript {
 
     dependencies {
         classpath "com.ofg:uptodate-gradle-plugin:$uptodateVersion"
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.5"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.6"
         classpath "nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0"
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.0"
     }
@@ -35,7 +35,7 @@ allprojects {
 
     ext {
         isSnapshot = true
-        d4jBaseVersion = "0.7"
+        d4jBaseVersion = "0.8"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
@@ -51,8 +51,8 @@ allprojects {
 
         primaryEmail = "jb@giraudeau.info"
 
-        dependencyJavaPoet = "com.squareup:javapoet:1.5.1"
-        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.6.3"
+        dependencyJavaPoet = "com.squareup:javapoet:1.7.0"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.7"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
 
