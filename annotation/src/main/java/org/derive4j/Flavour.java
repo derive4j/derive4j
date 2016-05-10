@@ -54,6 +54,13 @@ public enum Flavour {
     public <R> R match(Cases<R> cases) {
       return cases.Javaslang();
     }
+  },
+
+  HighJ {
+    @Override
+    public <R> R match(Cases<R> cases) {
+      return cases.HighJ();
+    }
   };
 
   public abstract <R> R match(Cases<R> cases);
@@ -68,6 +75,8 @@ public enum Flavour {
     R Fugue2();
 
     R Javaslang();
+
+    R HighJ();
   }
 
 }

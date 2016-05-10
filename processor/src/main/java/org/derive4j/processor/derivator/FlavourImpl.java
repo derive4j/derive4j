@@ -37,46 +37,50 @@ public final class FlavourImpl {
 
   public static TypeElement findF0(Flavour flavour, Elements elements) {
     return elements.getTypeElement(
-       Flavours.cases()
-          .Jdk(() -> Supplier.class.getName())
-          .Fj(() -> "fj.F0")
-          .Fugue(() -> Supplier.class.getName())
-          .Fugue2(() -> "com.google.common.base.Supplier")
-          .Javaslang(() -> Supplier.class.getName())
-          .apply(flavour)
+        Flavours.cases()
+            .Jdk(() -> Supplier.class.getName())
+            .Fj(() -> "fj.F0")
+            .Fugue(() -> Supplier.class.getName())
+            .Fugue2(() -> "com.google.common.base.Supplier")
+            .Javaslang(() -> Supplier.class.getName())
+            .HighJ(Supplier.class.getName())
+            .apply(flavour)
     );
   }
 
   public static TypeElement findF(Flavour flavour, Elements elements) {
     return elements.getTypeElement(
        Flavours.cases()
-          .Jdk(() -> Function.class.getName())
-          .Fj(() -> "fj.F")
-          .Fugue(() -> Function.class.getName())
-          .Fugue2(() -> "com.google.common.base.Function")
-          .Javaslang(() -> "javaslang.Function1")
+          .Jdk(Function.class.getName())
+          .Fj("fj.F")
+          .Fugue(Function.class.getName())
+          .Fugue2("com.google.common.base.Function")
+          .Javaslang("javaslang.Function1")
+           .HighJ("org.highj.data.functions.F1")
           .apply(flavour)
     );
   }
 
   public static OptionType findOptionType(Flavour flavour, Elements elements) {
     return Flavours.cases()
-       .Jdk(() -> optionType(elements.getTypeElement(Optional.class.getName()), "empty", "of"))
-       .Fj(() -> optionType(elements.getTypeElement("fj.data.Option"), "none", "some"))
-       .Fugue(() -> optionType(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some"))
-       .Fugue2(() -> optionType(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
-       .Javaslang(() -> optionType(elements.getTypeElement("javaslang.control.Option"), "none", "some"))
-       .apply(flavour);
+        .Jdk(() -> optionType(elements.getTypeElement(Optional.class.getName()), "empty", "of"))
+        .Fj(() -> optionType(elements.getTypeElement("fj.data.Option"), "none", "some"))
+        .Fugue(() -> optionType(elements.getTypeElement("io.atlassian.fugue.Option"), "none", "some"))
+        .Fugue2(() -> optionType(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
+        .Javaslang(() -> optionType(elements.getTypeElement("javaslang.control.Option"), "none", "some"))
+        .HighJ(() -> optionType(elements.getTypeElement("org.highj.data.collection.Maybe"), "newNothing", "newJust"))
+        .apply(flavour);
   }
 
   public static Optional<EitherType> findEitherType(Flavour flavour, Elements elements) {
     return Flavours.cases()
-       .Jdk(() -> Optional.<EitherType>empty())
-       .Fj(() -> Optional.of(eitherType(elements.getTypeElement("fj.data.Either"), "left", "right")))
-       .Fugue(() -> Optional.of(eitherType(elements.getTypeElement("io.atlassian.fugue.Either"), "left", "right")))
-       .Fugue2(() -> Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right")))
-       .Javaslang(() -> Optional.of(eitherType(elements.getTypeElement("javaslang.control.Either"), "left", "right")))
-       .apply(flavour);
+        .Jdk(() -> Optional.<EitherType>empty())
+        .Fj(() -> Optional.of(eitherType(elements.getTypeElement("fj.data.Either"), "left", "right")))
+        .Fugue(() -> Optional.of(eitherType(elements.getTypeElement("io.atlassian.fugue.Either"), "left", "right")))
+        .Fugue2(() -> Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right")))
+        .Javaslang(() -> Optional.of(eitherType(elements.getTypeElement("javaslang.control.Either"), "left", "right")))
+        .HighJ(() -> Optional.of(eitherType(elements.getTypeElement("org.highj.data.collection.Either"), "newLeft", "newRight")))
+        .apply(flavour);
   }
 
   public static String supplierApplyMethod(DeriveUtils deriveUtils, DeriveContext deriveContext) {
