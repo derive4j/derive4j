@@ -419,7 +419,7 @@ GADTs are also supported out of the box by Derive4J (within the limitations of J
 Have a look at this gist to know how to defined GADT in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
 
 # Use it in your project
-Derive4J should be declared as a compile-time only dependency (not needed at runtime).
+Derive4J should be declared as a compile-time only dependency (not needed at runtime). So while derive4j is (L)GPL-licensed, the generated code is not linked to derive4j, and thus __derive4j can be used in any project (proprietary or not)__.
 ## Maven:
 ```xml
 <dependency>
