@@ -23,18 +23,17 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
 import org.derive4j.Data;
+import org.derive4j.Derive;
 
-@Data public abstract class Option<A> {
+@Data(@Derive(inClass = "Addresses")) public abstract class Address {
 
-  Option() {
-
+  interface Cases<R> {
+    R Address(int number, String street);
   }
 
-  public abstract <X> X option(Supplier<X> none, Function<A, X> some);
+  public abstract <R> R match(Cases<R> cases);
 
 }

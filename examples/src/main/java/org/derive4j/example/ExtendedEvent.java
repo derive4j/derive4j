@@ -23,64 +23,23 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public enum Day {
+@Data public abstract class ExtendedEvent<U> {
 
-  Sunday {
-    @Override public <R> R match(Cases<R> cases) {
+  interface Cases<A, X> extends Event.Cases<A, X> {
 
-      return cases.Sunday();
-    }
-  }, Monday {
-    @Override public <R> R match(Cases<R> cases) {
+    X itemRenamed(A ref, String itemName);
 
-      return cases.Monday();
-    }
-  }, Tuesday {
-    @Override public <R> R match(Cases<R> cases) {
-
-      return cases.Tuesday();
-    }
-  }, Wednesday {
-    @Override public <R> R match(Cases<R> cases) {
-
-      return cases.Wednesday();
-    }
-  }, Thursday {
-    @Override public <R> R match(Cases<R> cases) {
-
-      return cases.Thursday();
-    }
-  }, Friday {
-    @Override public <R> R match(Cases<R> cases) {
-
-      return cases.Friday();
-    }
-  }, Saturday {
-    @Override public <R> R match(Cases<R> cases) {
-
-      return cases.Saturday();
-    }
-  };
-
-  public abstract <R> R match(Cases<R> cases);
-
-  interface Cases<R> {
-    R Sunday();
-
-    R Monday();
-
-    R Tuesday();
-
-    R Wednesday();
-
-    R Thursday();
-
-    R Friday();
-
-    R Saturday();
   }
+
+  public abstract <X> X match(Cases<U, X> cases);
+
+  @Override public abstract boolean equals(Object obj);
+
+  @Override public abstract int hashCode();
+
+  @Override public abstract String toString();
 }

@@ -23,20 +23,64 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public abstract class Contact {
+@Data public enum Day {
 
-  interface Cases<R> {
-    R byEmail(String email);
+  Sunday {
+    @Override public <R> R match(Cases<R> cases) {
 
-    R byPhone(String phoneNumber);
+      return cases.Sunday();
+    }
+  }, Monday {
+    @Override public <R> R match(Cases<R> cases) {
 
-    R byMail(Address postalAddress);
-  }
+      return cases.Monday();
+    }
+  }, Tuesday {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Tuesday();
+    }
+  }, Wednesday {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Wednesday();
+    }
+  }, Thursday {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Thursday();
+    }
+  }, Friday {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Friday();
+    }
+  }, Saturday {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Saturday();
+    }
+  };
 
   public abstract <R> R match(Cases<R> cases);
 
+  interface Cases<R> {
+    R Sunday();
+
+    R Monday();
+
+    R Tuesday();
+
+    R Wednesday();
+
+    R Thursday();
+
+    R Friday();
+
+    R Saturday();
+  }
 }

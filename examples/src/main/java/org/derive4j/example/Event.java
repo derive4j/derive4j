@@ -23,42 +23,26 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import org.derive4j.Data;
-import org.derive4j.FieldNames;
+import org.derive4j.Flavour;
 
-import static org.derive4j.exemple.Addresses.Address;
-import static org.derive4j.exemple.Addresses.modNumber;
-import static org.derive4j.exemple.Contacts.getPostalAddress;
-import static org.derive4j.exemple.Contacts.modPostalAddress;
-import static org.derive4j.exemple.PersonNames.Name;
-import static org.derive4j.exemple.Persons.Person;
-import static org.derive4j.exemple.Persons.getContact;
-import static org.derive4j.exemple.Persons.modContact;
+@Data(flavour = Flavour.Javaslang) public abstract class Event<T> {
 
-@Data public abstract class Person {
+  interface Cases<T, R> {
 
-  public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
+    R itemAdded(String itemName);
 
-  public static void main(String[] args) {
+    R itemRemoved(T ref, String itemName);
 
-    Person joe = Person(Name("Joe"), Contacts.byMail(Address(10, "Main St")));
-
-    // oups! there was a off my one error in the import process. We must increment all street numbers!!
-
-    // Easy with Derive4J
-    Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
-
-    // newP is a copy of p with the street number incremented:
-    Person correctedJoe = incrementStreetNumber.apply(joe);
-
-    Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe)).map(Addresses::getNumber);
-
-    System.out.println(newStreetNumber); // print "Optional[11]" !!
   }
 
+  public abstract <X> X match(Cases<T, X> cases);
+
+  @Override public abstract boolean equals(Object obj);
+
+  @Override public abstract int hashCode();
+
+  @Override public abstract String toString();
 }

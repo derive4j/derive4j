@@ -23,28 +23,24 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import java.util.Optional;
 import java.util.function.Function;
 import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.FieldNames;
-import org.derive4j.Visibility;
 
-@Data(@Derive(withVisibility = Visibility.Smart)) public abstract class PersonName {
+@Data public abstract class Either<A, B> {
 
-  PersonName() {
+  Either() {
 
   }
 
-  public abstract <R> R match(@FieldNames("value") Function<String, R> Name);
-
-  public static Optional<PersonName> parseName(String value) {
-    // A name cannot be only spaces, must not start or and with space.
-    return (value.trim().isEmpty() || value.endsWith(" ") || value.startsWith(" "))
-           ? Optional.empty()
-           : Optional.of(PersonNames.Name(value));
-  }
+  /**
+   * The catamorphism for either. Folds over this either breaking into left or right.
+   *
+   * @param left The function to call if this is left.
+   * @param right The function to call if this is right.
+   * @return The reduced value.
+   */
+  public abstract <X> X either(Function<A, X> left, Function<B, X> right);
 
 }

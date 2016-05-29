@@ -23,14 +23,14 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
 import java.util.function.Function;
 import org.derive4j.Data;
 
-import static org.derive4j.exemple.Expressions.Add;
-import static org.derive4j.exemple.Expressions.Const;
-import static org.derive4j.exemple.Expressions.Mult;
+import static org.derive4j.example.Expressions.Add;
+import static org.derive4j.example.Expressions.Const;
+import static org.derive4j.example.Expressions.Mult;
 
 @Data public abstract class Expression {
 

@@ -55,7 +55,7 @@ and nothing else!
 You could then use the [corrected visitor pattern](http://logji.blogspot.ch/2012/02/correcting-visitor-pattern.html) and write the following class in Java:
 
 ```java
-package org.derive4j.exemple;
+package org.derive4j.example;
 
 /** A data type to modelise an http request. */
 @Data
@@ -225,7 +225,7 @@ Languages like Haskell provide laziness by default, which simplifies a lot of al
     ...
   }
 ```
-Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/exemple/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)). 
+Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)). 
 
 ## Flavours
 In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)) and ```Javaslang``` ([Javaslang](http://javaslang.com/)) flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
@@ -311,14 +311,14 @@ With Derive4J, writing such a function is trivial:
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.derive4j.exemple.Addresss.Address;
-import static org.derive4j.exemple.Addresss.getNumber;
-import static org.derive4j.exemple.Addresss.modNumber;
-import static org.derive4j.exemple.Contacts.getPostalAddress;
-import static org.derive4j.exemple.Contacts.modPostalAddress;
-import static org.derive4j.exemple.Persons.Person;
-import static org.derive4j.exemple.Persons.getContact;
-import static org.derive4j.exemple.Persons.modContact;
+import static org.derive4j.example.Addresss.Address;
+import static org.derive4j.example.Addresss.getNumber;
+import static org.derive4j.example.Addresss.modNumber;
+import static org.derive4j.example.Contacts.getPostalAddress;
+import static org.derive4j.example.Contacts.modPostalAddress;
+import static org.derive4j.example.Persons.Person;
+import static org.derive4j.example.Persons.getContact;
+import static org.derive4j.example.Persons.modContact;
 
   public static void main(String[] args) {
 
@@ -344,7 +344,7 @@ Algebraic data types are particulary well fitted for creating DSLs. Like a calcu
 ```java
 import java.util.function.Function;
 import org.derive4j.Data;
-import static org.derive4j.exemple.Expressions.*;
+import static org.derive4j.example.Expressions.*;
 
 @Data
 public abstract class Expression {

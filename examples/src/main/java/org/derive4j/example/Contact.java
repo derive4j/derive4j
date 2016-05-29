@@ -23,32 +23,20 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import org.derive4j.Data;
-import org.derive4j.FieldNames;
 
-import static org.derive4j.exemple.Exprs.Add;
-import static org.derive4j.exemple.Exprs.Const;
-import static org.derive4j.exemple.Exprs.Mult;
+@Data public abstract class Contact {
 
-@Data public abstract class Expr {
+  interface Cases<R> {
+    R byEmail(String email);
 
-  public static Integer eval(Expr expression) {
+    R byPhone(String phoneNumber);
 
-    return expression.match(i -> i, (left, right) -> eval(left) + eval(right), (left, right) -> eval(left) * eval(right), (expr) -> -eval(expr));
+    R byMail(Address postalAddress);
   }
 
-  public static void main(String[] args) {
-
-    Expr expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
-    System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
-  }
-
-  public abstract <R> R match(@FieldNames("value") IntFunction<R> Const, @FieldNames({ "left", "right" }) BiFunction<Expr, Expr, R> Add,
-      @FieldNames({ "left", "right" }) BiFunction<Expr, Expr, R> Mult, @FieldNames("expr") Function<Expr, R> Neg);
+  public abstract <R> R match(Cases<R> cases);
 
 }

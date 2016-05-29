@@ -23,13 +23,42 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import fj.F;
-import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-@Data public abstract class Amount {
-  public abstract <R> R match(@FieldNames("value") F<BigDecimal, R> amout);
+import static org.derive4j.example.Addresses.Address;
+import static org.derive4j.example.Addresses.modNumber;
+import static org.derive4j.example.Contacts.getPostalAddress;
+import static org.derive4j.example.Contacts.modPostalAddress;
+import static org.derive4j.example.PersonNames.Name;
+import static org.derive4j.example.Persons.Person;
+import static org.derive4j.example.Persons.getContact;
+import static org.derive4j.example.Persons.modContact;
+
+@Data public abstract class Person {
+
+  public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
+
+  public static void main(String[] args) {
+
+    Person joe = Person(Name("Joe"), Contacts.byMail(Address(10, "Main St")));
+
+    // oups! there was a off my one error in the import process. We must increment all street numbers!!
+
+    // Easy with Derive4J
+    Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
+
+    // newP is a copy of p with the street number incremented:
+    Person correctedJoe = incrementStreetNumber.apply(joe);
+
+    Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe)).map(Addresses::getNumber);
+
+    System.out.println(newStreetNumber); // print "Optional[11]" !!
+  }
+
 }

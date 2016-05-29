@@ -23,23 +23,13 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
+import fj.F;
+import java.math.BigDecimal;
 import org.derive4j.Data;
+import org.derive4j.FieldNames;
 
-@Data public abstract class ExtendedEvent<U> {
-
-  interface Cases<A, X> extends Event.Cases<A, X> {
-
-    X itemRenamed(A ref, String itemName);
-
-  }
-
-  public abstract <X> X match(Cases<U, X> cases);
-
-  @Override public abstract boolean equals(Object obj);
-
-  @Override public abstract int hashCode();
-
-  @Override public abstract String toString();
+@Data public abstract class Amount {
+  public abstract <R> R match(@FieldNames("value") F<BigDecimal, R> amout);
 }

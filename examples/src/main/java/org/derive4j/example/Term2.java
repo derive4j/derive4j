@@ -23,16 +23,20 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-import java.util.function.Function;
+import fj.F;
+import fj.F2;
+import fj.F3;
 import org.derive4j.Data;
+import org.derive4j.FieldNames;
+import org.derive4j.Flavour;
 
 import static java.lang.System.out;
-import static org.derive4j.exemple.Terms.If;
-import static org.derive4j.exemple.Terms.IsZero;
-import static org.derive4j.exemple.Terms.Succ;
-import static org.derive4j.exemple.Terms.Zero;
+import static org.derive4j.example.Term2s.If;
+import static org.derive4j.example.Term2s.IsZero;
+import static org.derive4j.example.Term2s.Succ;
+import static org.derive4j.example.Term2s.Zero;
 
 // Implementation of a pseudo-GADT in Java, translating the examples from
 // http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf
@@ -42,43 +46,46 @@ import static org.derive4j.exemple.Terms.Zero;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data public abstract class Term<T> {
-  Term() {
+@Data(flavour = Flavour.FJ) public abstract class Term2<T> {
+  Term2() {
 
   }
 
-  public static <T> T eval(final Term<T> term) {
+  public static <T> T eval(final Term2<T> term) {
 
-    Function<Term<T>, T> eval = Terms.<T>cases().
-        Zero(__ -> __.__(0)).
-        Succ((t, __) -> __.__(eval(t) + 1)).
-        Pred((t, __) -> __.__(eval(t) - 1)).
-        IsZero((t, __) -> __.__(eval(t) == 0)).
+    F<Term2<T>, T> eval = Term2s.<T>cases().
+        Zero(__ -> __.f(0)).
+        Succ((t, __) -> __.f(eval(t) + 1)).
+        Pred((t, __) -> __.f(eval(t) - 1)).
+        IsZero((t, __) -> __.f(eval(t) == 0)).
         If((cond, then, otherwise) -> eval(cond)
                                       ? eval(then)
                                       : eval(otherwise));
 
-    return eval.apply(term);
+    return eval.f(term);
   }
 
   public static void main(final String[] args) {
 
-    Term<Integer> one = Succ(Zero());
+    Term2<Integer> one = Succ(Zero());
     out.println(eval(one)); // "1"
     out.println(eval(IsZero(one))); // "false"
     // IsZero(IsZero(one)); // does not compile:
     // "The method IsZero(Term<Integer>) in the type Term<T> is not
     // applicable for the arguments (Term<Boolean>)"
     out.println(eval(If(IsZero(one), Zero(), one))); // "1"
-    Term<Boolean> True = IsZero(Zero());
-    Term<Boolean> False = IsZero(one);
+    Term2<Boolean> True = IsZero(Zero());
+    Term2<Boolean> False = IsZero(one);
     out.println(eval(If(True, True, False))); // "true"
     // out.println(prettyPrint(If(True, True, False), 0)); // "if IsZero(0)
     //  then IsZero(0)
     //  else IsZero(Succ(0))"
   }
 
-  public abstract <X> X match(Cases<T, X> cases);
+  public abstract <X> X match(@FieldNames("__") F<F<Integer, T>, X> Zero, @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Integer, T>, X> Succ,
+      @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Integer, T>, X> Pred,
+      @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Boolean, T>, X> IsZero,
+      @FieldNames({ "cond", "then", "otherwise" }) F3<Term2<Boolean>, Term2<T>, Term2<T>, X> If);
 
   @Override public abstract boolean equals(Object obj);
 
@@ -86,21 +93,4 @@ import static org.derive4j.exemple.Terms.Zero;
 
   @Override public abstract String toString();
 
-  public interface F<A, B> {// Could be java.util.function.Function,
-
-    //used only for the visualy lighter apply method.
-    B __(A a);
-  }
-
-  interface Cases<A, R> {
-    R Zero(F<Integer, A> id);
-
-    R Succ(Term<Integer> pred, F<Integer, A> id);
-
-    R Pred(Term<Integer> succ, F<Integer, A> id);
-
-    R IsZero(Term<Integer> a, F<Boolean, A> id);
-
-    R If(Term<Boolean> cond, Term<A> then, Term<A> otherwise);
-  }
 }

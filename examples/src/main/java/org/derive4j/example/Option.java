@@ -23,45 +23,18 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
-public class Bench {
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.derive4j.Data;
 
-  static final int COUNT = 500000;
-  static final int ITERATIONS = 200;
-  static final int WARMUP = 100;
+@Data public abstract class Option<A> {
 
-  public static void main(String[] args) {
+  Option() {
 
-    // Average time after 200 iterations: 17.869925 ms
-    timed(() -> List.range(0, COUNT).length());
-
-    // Average time after 200 iterations: 26.725065 ms
-    timed(() -> javaslang.collection.Stream.range(0, COUNT).length());
-
-    // Average time after 200 iterations: 24.768288 ms
-    timed(() -> fj.data.Stream.range(0, COUNT).length());
-
-    // Average time after 200 iterations: 4.771267 ms
-    timed(() -> java.util.stream.Stream.iterate(0, i -> i + 1).limit(COUNT).reduce(0, (i1, i2) -> i1 + 1));
-
-    timed(() -> Stream.range(0, COUNT).length());
   }
 
-  static void timed(Runnable stuff) {
-
-    for (int i = 0; i < WARMUP; i++) {
-      System.gc(); // try to get rid of potential GC pauses
-      stuff.run();
-    }
-    long vs = 0;
-    for (int i = 0; i < ITERATIONS; i++) {
-      System.gc(); // try to get rid of potential GC pauses
-      long t = System.nanoTime();
-      stuff.run();
-      vs += (System.nanoTime() - t);
-    }
-    System.out.printf("Average time after %d iterations: %f ms\n", ITERATIONS, (vs / 1000000.0) / ITERATIONS);
-  }
+  public abstract <X> X option(Supplier<X> none, Function<A, X> some);
 
 }

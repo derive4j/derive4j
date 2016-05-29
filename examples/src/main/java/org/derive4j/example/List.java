@@ -23,7 +23,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.derive4j.exemple;
+package org.derive4j.example;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -34,9 +34,9 @@ import java.util.function.UnaryOperator;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-import static org.derive4j.exemple.Lists.cons;
-import static org.derive4j.exemple.Lists.lazy;
-import static org.derive4j.exemple.Lists.nil;
+import static org.derive4j.example.Lists.cons;
+import static org.derive4j.example.Lists.lazy;
+import static org.derive4j.example.Lists.nil;
 
 @Data public abstract class List<A> {
 
