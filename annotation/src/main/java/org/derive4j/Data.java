@@ -22,13 +22,11 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-@Target(ElementType.TYPE)
-@Documented
-public @interface Data {
+@Target(ElementType.TYPE) @Documented public @interface Data {
 
   Flavour flavour() default Flavour.JDK;
 
-  Derive value() default @Derive();
+  Derive value() default @Derive;
 
   ArgOption[] arguments() default {};
 

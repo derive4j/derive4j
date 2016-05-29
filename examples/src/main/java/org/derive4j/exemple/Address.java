@@ -27,12 +27,8 @@ package org.derive4j.exemple;
 
 import org.derive4j.Data;
 import org.derive4j.Derive;
-import org.derive4j.FieldNames;
 
-import java.util.function.BiFunction;
-
-@Data(@Derive(inClass = "Addresses"))
-public abstract class Address {
+@Data(@Derive(inClass = "Addresses")) public abstract class Address {
 
   interface Cases<R> {
     R Address(int number, String street);

@@ -18,43 +18,43 @@
  */
 package org.derive4j.processor.api.model;
 
-import org.derive4j.Data;
-import org.derive4j.Derive;
-
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import java.util.ArrayList;
 import java.util.List;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import org.derive4j.Data;
+import org.derive4j.Derive;
 
 import static java.util.Collections.unmodifiableList;
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.MultipleConstructorsSupport.cases;
 import static org.derive4j.processor.api.model.MultipleConstructorsSupport.getConstructors;
 
-@Data(@Derive(inClass = "MultipleConstructorsSupport", withVisibility = Smart))
-public abstract class MultipleConstructors {
+@Data(@Derive(inClass = "MultipleConstructorsSupport", withVisibility = Smart)) public abstract class MultipleConstructors {
 
   MultipleConstructors() {
+
   }
 
   public static MultipleConstructors visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
+
     return MultipleConstructorsSupport.visitorDispatch(visitorParam, visitorType, unmodifiableList(new ArrayList<>(constructors)));
   }
 
   public static MultipleConstructors functionsDispatch(List<DataConstructor> constructors) {
+
     return MultipleConstructorsSupport.functionsDispatch(unmodifiableList(new ArrayList<>(constructors)));
   }
 
   public abstract <R> R match(Cases<R> cases);
 
   public boolean isVisitorDispatch() {
-    return cases()
-        .visitorDispatch((visitorParam, visitorType, constructors) -> true)
-        .functionsDispatch(__ -> false)
-        .apply(this);
+
+    return cases().visitorDispatch((visitorParam, visitorType, constructors) -> true).functionsDispatch(__ -> false).apply(this);
   }
 
   public List<DataConstructor> constructors() {
+
     return getConstructors(this);
   }
 

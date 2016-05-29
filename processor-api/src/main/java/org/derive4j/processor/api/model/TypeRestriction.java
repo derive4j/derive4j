@@ -18,34 +18,39 @@
  */
 package org.derive4j.processor.api.model;
 
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-
 import static org.derive4j.Visibility.Smart;
-import static org.derive4j.processor.api.model.TypeRestrictions.*;
+import static org.derive4j.processor.api.model.TypeRestrictions.getIdFunction;
+import static org.derive4j.processor.api.model.TypeRestrictions.getRefinementType;
+import static org.derive4j.processor.api.model.TypeRestrictions.getRestrictedTypeVariable;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class TypeRestriction {
+@Data(@Derive(withVisibility = Smart)) public abstract class TypeRestriction {
 
   TypeRestriction() {
+
   }
 
   public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument idFunction) {
+
     return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, idFunction);
   }
 
   public TypeVariable restrictedTypeVariable() {
+
     return getRestrictedTypeVariable(this);
   }
 
   public TypeMirror refinementType() {
+
     return getRefinementType(this);
   }
 
   public DataArgument idFunction() {
+
     return getIdFunction(this);
   }
 

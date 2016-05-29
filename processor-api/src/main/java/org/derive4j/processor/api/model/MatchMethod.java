@@ -18,39 +18,40 @@
  */
 package org.derive4j.processor.api.model;
 
-import org.derive4j.Data;
-import org.derive4j.Derive;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeVariable;
+import org.derive4j.Data;
+import org.derive4j.Derive;
 
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.MatchMethods.getElement;
 import static org.derive4j.processor.api.model.MatchMethods.getReturnTypeVariable;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class MatchMethod {
+@Data(@Derive(withVisibility = Smart)) public abstract class MatchMethod {
 
   MatchMethod() {
+
   }
 
   public static MatchMethod matchMethod(ExecutableElement element, TypeVariable returnTypeVariable) {
+
     return MatchMethods.matchMethod(element, returnTypeVariable);
   }
 
   public abstract <R> R match(Case<R> matchMethod);
 
   public TypeVariable returnTypeVariable() {
+
     return getReturnTypeVariable(this);
   }
 
   public ExecutableElement element() {
+
     return getElement(this);
   }
 
   public interface Case<R> {
     R matchMethod(ExecutableElement element, TypeVariable returnTypeVariable);
   }
-
 
 }

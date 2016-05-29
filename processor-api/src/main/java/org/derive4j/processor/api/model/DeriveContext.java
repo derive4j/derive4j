@@ -18,7 +18,6 @@
  */
 package org.derive4j.processor.api.model;
 
-import java.util.EnumSet;
 import java.util.Set;
 import org.derive4j.Flavour;
 import org.derive4j.Make;

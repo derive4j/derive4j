@@ -18,55 +18,69 @@
  */
 package org.derive4j.processor.api.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 
-import javax.lang.model.type.TypeVariable;
-import java.util.ArrayList;
-import java.util.List;
-
 import static java.util.Collections.unmodifiableList;
 import static org.derive4j.Visibility.Smart;
-import static org.derive4j.processor.api.model.DataConstructors.*;
+import static org.derive4j.processor.api.model.DataConstructors.getArguments;
+import static org.derive4j.processor.api.model.DataConstructors.getDeconstructor;
+import static org.derive4j.processor.api.model.DataConstructors.getName;
+import static org.derive4j.processor.api.model.DataConstructors.getReturnedType;
+import static org.derive4j.processor.api.model.DataConstructors.getTypeRestrictions;
+import static org.derive4j.processor.api.model.DataConstructors.getTypeVariables;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class DataConstructor {
+@Data(@Derive(withVisibility = Smart)) public abstract class DataConstructor {
 
   DataConstructor() {
+
   }
 
-  public static DataConstructor constructor(String name, List<DataArgument> arguments,
-                                            List<TypeVariable> typeVariables, List<TypeRestriction> typeRestrictions,
-                                            DataDeconstructor deconstructor) {
+  public static DataConstructor constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
+      List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor) {
 
-    return DataConstructors.constructor(name, unmodifiableList(new ArrayList<>(arguments)),
-        unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(typeRestrictions)),
-        deconstructor);
+    return DataConstructors.constructor(name, unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(arguments)),
+        unmodifiableList(new ArrayList<>(typeRestrictions)), returnedType, deconstructor);
   }
 
   public abstract <R> R match(Case<R> constructor);
 
   public String name() {
+
     return getName(this);
   }
 
-  public List<DataArgument> arguments() {
-    return getArguments(this);
-  }
-
   public List<TypeVariable> typeVariables() {
+
     return getTypeVariables(this);
   }
 
+  public List<DataArgument> arguments() {
+
+    return getArguments(this);
+  }
+
+  public DeclaredType returnedType() {
+
+    return getReturnedType(this);
+  }
+
   public DataDeconstructor deconstructor() {
+
     return getDeconstructor(this);
   }
 
   public List<TypeRestriction> typeRestrictions() {
+
     return getTypeRestrictions(this);
   }
 
   public interface Case<R> {
-    R constructor(String name, List<DataArgument> arguments, List<TypeVariable> typeVariables, List<TypeRestriction> typeRestrictions, DataDeconstructor deconstructor);
+    R constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
+        DeclaredType returnedType, DataDeconstructor deconstructor);
   }
 }

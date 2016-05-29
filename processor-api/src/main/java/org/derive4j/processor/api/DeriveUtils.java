@@ -20,9 +20,10 @@ package org.derive4j.processor.api;
 
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
-import org.derive4j.processor.api.model.AlgebraicDataType;
-import org.derive4j.processor.api.model.TypeRestriction;
-
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -30,10 +31,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.TypeRestriction;
 
 public interface DeriveUtils {
 
@@ -51,11 +50,21 @@ public interface DeriveUtils {
 
   TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
 
-  MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
+  DeclaredType resolve(DeclaredType declaredType, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
 
-  default MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod) {
-    return overrideMethodBuilder(abstractMethod, tv -> Optional.empty());
-  }
+  MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, DeclaredType declaredType);
 
   Stream<TypeVariable> typeVariablesIn(TypeMirror typeMirror);
+
+  List<ExecutableElement> allAbstractMethods(DeclaredType declaredType);
+
+  List<ExecutableElement> allAbstractMethods(TypeElement typeElement);
+
+  TypeElement object();
+
+  ExecutableElement objectEquals();
+
+  ExecutableElement objectHashCode();
+
+  ExecutableElement objectToString();
 }

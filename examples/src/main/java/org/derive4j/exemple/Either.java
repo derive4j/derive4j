@@ -25,19 +25,19 @@
  */
 package org.derive4j.exemple;
 
+import java.util.function.Function;
 import org.derive4j.Data;
 
-import java.util.function.Function;
+@Data public abstract class Either<A, B> {
 
-@Data
-public abstract class Either<A, B> {
+  Either() {
 
-  Either(){}
+  }
 
   /**
    * The catamorphism for either. Folds over this either breaking into left or right.
    *
-   * @param left  The function to call if this is left.
+   * @param left The function to call if this is left.
    * @param right The function to call if this is right.
    * @return The reduced value.
    */

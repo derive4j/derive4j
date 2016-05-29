@@ -18,19 +18,19 @@
  */
 package org.derive4j.processor.api;
 
-import org.derive4j.Data;
-import org.derive4j.Derive;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import org.derive4j.Data;
+import org.derive4j.Derive;
 
 import static org.derive4j.Visibility.Smart;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class MessageLocalization {
+@Data(@Derive(withVisibility = Smart)) public abstract class MessageLocalization {
 
-  MessageLocalization(){}
+  MessageLocalization() {
+
+  }
 
   public interface Cases<R> {
     R onElement(Element element);
@@ -43,14 +43,17 @@ public abstract class MessageLocalization {
   public abstract <R> R match(Cases<R> cases);
 
   public static MessageLocalization onElement(Element e) {
+
     return MessageLocalizations.onElement(e);
   }
 
   public static MessageLocalization onAnnotation(Element e, AnnotationMirror a) {
+
     return MessageLocalizations.onAnnotation(e, a);
   }
 
   public static MessageLocalization onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
+
     return MessageLocalizations.onAnnotationValue(e, a, v);
   }
 

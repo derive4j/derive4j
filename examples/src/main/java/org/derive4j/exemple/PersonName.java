@@ -25,28 +25,26 @@
  */
 package org.derive4j.exemple;
 
-
+import java.util.Optional;
+import java.util.function.Function;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.FieldNames;
 import org.derive4j.Visibility;
 
-import java.util.Optional;
-import java.util.function.Function;
-
-@Data(@Derive(withVisibility = Visibility.Smart))
-public abstract class PersonName {
+@Data(@Derive(withVisibility = Visibility.Smart)) public abstract class PersonName {
 
   PersonName() {
+
   }
 
   public abstract <R> R match(@FieldNames("value") Function<String, R> Name);
 
   public static Optional<PersonName> parseName(String value) {
     // A name cannot be only spaces, must not start or and with space.
-    return value.trim().isEmpty() || value.endsWith(" ") || value.startsWith(" ")
-        ? Optional.<PersonName>empty()
-        : Optional.of(PersonNames.Name(value));
+    return (value.trim().isEmpty() || value.endsWith(" ") || value.startsWith(" "))
+           ? Optional.empty()
+           : Optional.of(PersonNames.Name(value));
   }
 
 }

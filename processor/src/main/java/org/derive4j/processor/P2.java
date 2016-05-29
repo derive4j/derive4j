@@ -19,18 +19,30 @@
 package org.derive4j.processor;
 
 import java.util.function.BiFunction;
+import org.derive4j.Data;
+import org.derive4j.FieldNames;
 
-public interface P2<A, B> {
+@Data public abstract class P2<A, B> {
 
-  static <A, B> P2<A, B> p2(A a, B b) {
-    return new P2<A, B>() {
-      @Override
-      public <R> R match(BiFunction<A, B, R> pair) {
-        return pair.apply(a, b);
-      }
-    };
+  P2() {
+
   }
 
-  <R> R match(BiFunction<A, B, R> pair);
+  static <A, B> P2<A, B> p2(A a, B b) {
+
+    return P2s.P2(a, b);
+  }
+
+  public abstract <R> R match(@FieldNames({ "_1", "_2" }) BiFunction<A, B, R> P2);
+
+  public final A _1() {
+
+    return P2s.get_1(this);
+  }
+
+  public final B _2() {
+
+    return P2s.get_2(this);
+  }
 
 }

@@ -28,8 +28,7 @@ package org.derive4j.exemple;
 import org.derive4j.Data;
 import org.derive4j.Flavour;
 
-@Data(flavour = Flavour.Javaslang)
-public abstract class Event<T> {
+@Data(flavour = Flavour.Javaslang) public abstract class Event<T> {
 
   interface Cases<T, R> {
 
@@ -41,12 +40,9 @@ public abstract class Event<T> {
 
   public abstract <X> X match(Cases<T, X> cases);
 
-  @Override
-  public abstract boolean equals(Object obj);
+  @Override public abstract boolean equals(Object obj);
 
-  @Override
-  public abstract int hashCode();
+  @Override public abstract int hashCode();
 
-  @Override
-  public abstract String toString();
+  @Override public abstract String toString();
 }

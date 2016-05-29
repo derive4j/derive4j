@@ -18,11 +18,12 @@
  */
 package org.derive4j.processor;
 
-public class Unit {
+public final class Unit {
 
   public static Unit unit = new Unit();
 
   private Unit() {
+
   }
 
 }

@@ -29,7 +29,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -65,6 +64,7 @@ public class CataDerivator {
   private final AlgebraicDataType adt;
 
   public CataDerivator(DeriveUtils utils, DeriveContext context, AlgebraicDataType adt) {
+
     this.utils = utils;
     this.context = context;
     this.adt = adt;
@@ -73,9 +73,11 @@ public class CataDerivator {
   public DeriveResult<DerivedCodeSpec> derive() {
 
     return adt.fields().stream().map(DataArguments::getType).anyMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-           ? DataConstructions.cases().multipleConstructors(
-       MultipleConstructorsSupport.cases().visitorDispatch(this::visitorDispatchImpl).functionsDispatch(this::functionDispatchImpl))
-              .otherwise(() -> result(DerivedCodeSpec.none())).apply(adt.dataConstruction())
+           ? DataConstructions.cases()
+               .multipleConstructors(
+                   MultipleConstructorsSupport.cases().visitorDispatch(this::visitorDispatchImpl).functionsDispatch(this::functionDispatchImpl))
+               .otherwise(() -> result(DerivedCodeSpec.none()))
+               .apply(adt.dataConstruction())
            : result(DerivedCodeSpec.none());
   }
 
@@ -84,116 +86,143 @@ public class CataDerivator {
     NameAllocator nameAllocator = nameAllocator(constructors);
 
     TypeElement f = FlavourImpl.findF(context.flavour(), utils.elements());
-    TypeName returnType = TypeName.get(utils.types().getDeclaredType(f,
-       adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable()));
-    ExecutableElement abstractMethod = Utils.getAbstractMethods(f.getEnclosedElements()).get(0);
+    DeclaredType fDT = utils.types().getDeclaredType(f, adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable());
+    TypeName returnType = TypeName.get(fDT);
+    ExecutableElement abstractMethod = utils.allAbstractMethods(fDT).get(0);
 
     TypeSpec wrapper = TypeSpec.anonymousClassBuilder("")
-       .addSuperinterface(returnType)
-       .addMethod(MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())
-          .addAnnotation(Override.class)
-          .addModifiers(abstractMethod.getModifiers().stream().filter(m -> m != Modifier.ABSTRACT).collect(Collectors.toList()))
-          .returns(TypeName.get(adt.matchMethod().returnTypeVariable()))
-          .addParameter(TypeName.get(adt.typeConstructor().declaredType()), nameAllocator.get("adt var"))
-          .addStatement("return $L.$L($L)",
-             nameAllocator.get("adt var"),
-             adt.matchMethod().element().getSimpleName(),
-             Utils.joinStringsAsArguments(constructors.stream().map(constructor ->
-                constructor.arguments().stream()
-                   .map(DataArguments::getType)
-                   .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-                ? "\n" + constructor.name()
-                : CodeBlock.builder().add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(Stream.concat(
-                   constructor.arguments().stream().map(DataArgument::fieldName)
-                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
-                   constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
-                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))),
-                   constructor.name(),
-                   MapperDerivator.mapperApplyMethod(utils, context, constructor),
-                   Utils.joinStringsAsArguments(Stream.concat(
-                      constructor.arguments().stream().map(argument ->
-                         utils.types().isSameType(argument.type(),
-                            adt.typeConstructor().declaredType())
-                         ? "() -> " + FlavourImpl.functionApplyMethod(utils, context)
-                            + "(" + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + ")"
-                         : argument.fieldName()),
-                      constructor.typeRestrictions().stream()
-                         .map(TypeRestriction::idFunction)
-                         .map(DataArgument::fieldName)))).build().toString())
-             )).build()).build();
+        .addSuperinterface(returnType)
+        .addMethod(MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())
+            .addAnnotation(Override.class)
+            .addModifiers(abstractMethod.getModifiers().stream().filter(m -> m != Modifier.ABSTRACT).collect(toList()))
+            .returns(TypeName.get(adt.matchMethod().returnTypeVariable()))
+            .addParameter(TypeName.get(adt.typeConstructor().declaredType()), nameAllocator.get("adt var"))
+            .addStatement("return $L.$L($L)", nameAllocator.get("adt var"), adt.matchMethod().element().getSimpleName(), Utils.joinStringsAsArguments(
+                constructors.stream()
+                    .map(constructor -> constructor.arguments()
+                                            .stream()
+                                            .map(DataArguments::getType)
+                                            .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
+                                        ? ('\n' + constructor.name())
+                                        : CodeBlock.builder()
+                                            .add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(concat(constructor.arguments()
+                                                    .stream()
+                                                    .map(DataArgument::fieldName)
+                                                    .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor.typeRestrictions()
+                                                    .stream()
+                                                    .map(TypeRestriction::idFunction)
+                                                    .map(DataArgument::fieldName)
+                                                    .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
+                                                MapperDerivator.mapperApplyMethod(utils, context, constructor), Utils.joinStringsAsArguments(concat(
+                                                    constructor.arguments()
+                                                        .stream()
+                                                        .map(argument -> utils.types()
+                                                                             .isSameType(argument.type(), adt.typeConstructor().declaredType())
+                                                                         ? ("() -> " +
+                                                                                FlavourImpl.functionApplyMethod(utils, context) +
+                                                                                '(' +
+                                                                                nameAllocator.clone()
+                                                                                    .newName(argument.fieldName(), argument.fieldName() + " field") +
+                                                                                ')')
+                                                                         : argument.fieldName()), constructor.typeRestrictions()
+                                                        .stream()
+                                                        .map(TypeRestriction::idFunction)
+                                                        .map(DataArgument::fieldName))))
+                                            .build()
+                                            .toString())))
+            .build())
+        .build();
 
     MethodSpec cataMethod = MethodSpec.methodBuilder("cata")
-       .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-       .addTypeVariables(Stream.concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable()))
-          .map(TypeVariableName::get).collect(Collectors.toList()))
-       .returns(returnType)
-       .addParameters(constructors.stream().map(dc
-          -> ParameterSpec.builder(cataMapperTypeName(dc), MapperDerivator.mapperFieldName(dc)).build())
-          .collect(toList()))
-       .addStatement("return $L", wrapper)
-       .build();
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .addTypeVariables(
+            concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable())).map(TypeVariableName::get)
+                .collect(toList()))
+        .returns(returnType)
+        .addParameters(constructors.stream()
+            .map(dc -> ParameterSpec.builder(cataMapperTypeName(dc), MapperDerivator.mapperFieldName(dc)).build())
+            .collect(toList()))
+        .addStatement("return $L", wrapper)
+        .build();
 
     return result(methodSpec(cataMethod));
   }
 
   private DeriveResult<DerivedCodeSpec> visitorDispatchImpl(VariableElement visitorParam, DeclaredType visitorType,
-     List<DataConstructor> constructors) {
+      List<DataConstructor> constructors) {
 
     NameAllocator nameAllocator = nameAllocator(constructors);
 
     TypeSpec wrapper = TypeSpec.anonymousClassBuilder("")
-       .addField(FieldSpec.builder(TypeName.get(visitorType), nameAllocator.get("cata"))
-          .initializer(CodeBlock.builder().addStatement("$T.$L($L)",
-             ClassName.get(context.targetPackage(), context.targetClassName()),
-             MapperDerivator.visitorLambdaFactoryName(adt),
-             Utils.joinStringsAsArguments(constructors.stream().map(
-                constructor ->
-                   constructor.arguments().stream()
-                      .map(DataArguments::getType)
-                      .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-                   ? "\n" + constructor.name()
-                   : CodeBlock.builder().add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(Stream.concat(
-                      constructor.arguments().stream().map(DataArgument::fieldName)
-                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
-                      constructor.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)
-                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
-                      MapperDerivator.mapperApplyMethod(utils, context, constructor),
-                      Utils.joinStringsAsArguments(Stream.concat(
-                         constructor.arguments().stream().map(
-                            argument ->
-                               utils.types().isSameType(argument.type(),
-                                  adt.typeConstructor().declaredType())
-                               ? "() -> " + nameAllocator.clone().newName(argument.fieldName(), argument.fieldName() + " field") + "."
-                                  + adt.matchMethod().element().getSimpleName() + "(this."
-                                  + nameAllocator.get("cata") + ")"
-                               : argument.fieldName()),
-                         constructor.typeRestrictions().stream()
-                            .map(TypeRestriction::idFunction)
-                            .map(DataArgument::fieldName)))).build().toString())
+        .addField(FieldSpec.builder(TypeName.get(visitorType), nameAllocator.get("cata"))
+            .initializer(CodeBlock.builder()
+                .addStatement("$T.$L($L)", ClassName.get(context.targetPackage(), context.targetClassName()),
+                    MapperDerivator.visitorLambdaFactoryName(adt), Utils.joinStringsAsArguments(constructors.stream()
+                            .map(constructor -> constructor.arguments()
+                                                    .stream()
+                                                    .map(DataArguments::getType)
+                                                    .noneMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
+                                                ? ('\n' + constructor.name())
+                                                : CodeBlock.builder()
+                                                    .add("\n($L) -> $L.$L($L)", Utils.joinStringsAsArguments(concat(constructor.arguments()
+                                                            .stream()
+                                                            .map(DataArgument::fieldName)
+                                                            .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor
+                                                            .typeRestrictions()
+                                                            .stream()
+                                                            .map(TypeRestriction::idFunction)
+                                                            .map(DataArgument::fieldName)
+                                                            .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
+                                                        MapperDerivator.mapperApplyMethod(utils, context, constructor), Utils.joinStringsAsArguments(
+                                                            concat(constructor.arguments()
+                                                                .stream()
+                                                                .map(argument -> utils.types()
+                                                                                     .isSameType(argument.type(), adt.typeConstructor()
+                                                                                         .declaredType())
+                                                                                 ? ("() -> " +
+                                                                                        nameAllocator.clone()
+                                                                                            .newName(argument.fieldName(),
+                                                                                                argument.fieldName() + ' ' + "field") +
+                                                                                        '.' +
+                                                                                        adt.matchMethod().element().getSimpleName() +
+                                                                                        "(this." +
+                                                                                        nameAllocator.get("cata") +
+                                                                                        ')')
+                                                                                 : argument.fieldName()), constructor.typeRestrictions()
+                                                                .stream()
+                                                                .map(TypeRestriction::idFunction)
+                                                                .map(DataArgument::fieldName))))
+                                                    .build()
+                                                    .toString())
 
-             )).build()).build()).build();
+                                                                                               ))
+                .build())
+            .build())
+        .build();
 
     MethodSpec cataMethod = MethodSpec.methodBuilder("cata")
-       .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-       .addTypeVariables(Stream.concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable()))
-          .map(TypeVariableName::get).collect(Collectors.toList()))
-       .returns(TypeName.get(utils.types().getDeclaredType(FlavourImpl.findF(context.flavour(), utils.elements()),
-          adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable())))
-       .addParameters(constructors.stream().map(dc
-          -> ParameterSpec.builder(cataMapperTypeName(dc), MapperDerivator.mapperFieldName(dc)).build())
-          .collect(toList()))
-       .addStatement("$T $L = $L.$L", TypeName.get(visitorType), nameAllocator.get("cata"), wrapper, nameAllocator.get("cata"))
-       .addStatement("return $L -> $L.$L($L)", nameAllocator.get("adt var"), nameAllocator.get("adt var"),
-          adt.matchMethod().element().getSimpleName(), nameAllocator.get("cata"))
-       .build();
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .addTypeVariables(
+            concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable())).map(TypeVariableName::get)
+                .collect(toList()))
+        .returns(TypeName.get(utils.types()
+            .getDeclaredType(FlavourImpl.findF(context.flavour(), utils.elements()), adt.typeConstructor().declaredType(),
+                adt.matchMethod().returnTypeVariable())))
+        .addParameters(constructors.stream()
+            .map(dc -> ParameterSpec.builder(cataMapperTypeName(dc), MapperDerivator.mapperFieldName(dc)).build())
+            .collect(toList()))
+        .addStatement("$T $L = $L.$L", TypeName.get(visitorType), nameAllocator.get("cata"), wrapper, nameAllocator.get("cata"))
+        .addStatement("return $L -> $L.$L($L)", nameAllocator.get("adt var"), nameAllocator.get("adt var"),
+            adt.matchMethod().element().getSimpleName(), nameAllocator.get("cata"))
+        .build();
 
     return result(methodSpec(cataMethod));
   }
 
   private NameAllocator nameAllocator(List<DataConstructor> constructors) {
+
     NameAllocator nameAllocator = new NameAllocator();
-    constructors.stream().forEach(dc ->
-       nameAllocator.newName(MapperDerivator.mapperFieldName(dc), MapperDerivator.mapperFieldName(dc) + " arg"));
+    constructors.stream().forEach(dc -> nameAllocator.newName(MapperDerivator.mapperFieldName(dc), MapperDerivator.mapperFieldName(dc) + " arg"));
     nameAllocator.newName("cata", "cata");
     nameAllocator.newName(Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName()), "adt var");
     return nameAllocator;
@@ -202,37 +231,36 @@ public class CataDerivator {
   TypeName cataMapperTypeName(DataConstructor dc) {
 
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
-       dc.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::type)).map(t -> Utils.asBoxedType.visit(t, utils.types()))
-       .map(this::substituteTypeWithRecursionVar)
-       .map(TypeName::get)
-       .toArray(TypeName[]::new);
+        dc.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::type)).map(t -> Utils.asBoxedType.visit(t, utils.types()))
+        .map(this::substituteTypeWithRecursionVar)
+        .map(TypeName::get)
+        .toArray(TypeName[]::new);
 
     return adt.dataConstruction().isVisitorDispatch()
-           ? argsTypeNames.length == 0
-             ? ParameterizedTypeName
-                .get(ClassName.get(FlavourImpl.findF0(context.flavour(), utils.elements())), TypeName.get(adt.matchMethod().returnTypeVariable()))
-             : argsTypeNames.length == 1
-               ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF(context.flavour(), utils.elements())),
-                argsTypeNames[0], TypeName.get(adt.matchMethod().returnTypeVariable()))
-               : ParameterizedTypeName.get(Utils.getClassName(context, MapperDerivator.mapperInterfaceName(dc)),
-                  concat(concat(
-                     dc.typeVariables().stream().map(TypeVariableName::get),
-                     fold(MapperDerivator.findInductiveArgument(utils, adt, dc),
-                        Stream.<TypeName>of(),
-                        tm ->
-                           Stream.of(ParameterizedTypeName.get(
-                              ClassName.get(FlavourImpl.findF0(context.flavour(), utils.elements())),
-                              TypeName.get(adt.matchMethod().returnTypeVariable()))))),
-                     Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable())))
-                     .toArray(TypeName[]::new))
+           ? ((argsTypeNames.length == 0)
+              ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF0(context.flavour(), utils.elements())),
+        TypeName.get(adt.matchMethod().returnTypeVariable()))
+              : ((argsTypeNames.length == 1)
+                 ? ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF(context.flavour(), utils.elements())), argsTypeNames[0],
+                  TypeName.get(adt.matchMethod().returnTypeVariable()))
+                 : ParameterizedTypeName.get(Utils.getClassName(context, MapperDerivator.mapperInterfaceName(dc)), concat(
+                     concat(dc.typeVariables().stream().map(TypeVariableName::get),
+                         fold(MapperDerivator.findInductiveArgument(utils, adt, dc), Stream.of(), tm -> Stream.of(
+                             ParameterizedTypeName.get(ClassName.get(FlavourImpl.findF0(context.flavour(), utils.elements())),
+                                 TypeName.get(adt.matchMethod().returnTypeVariable()))))),
+                     Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))).toArray(TypeName[]::new))))
 
-           : TypeName.get(utils.types().getDeclaredType(Utils.asTypeElement.visit(dc.deconstructor().visitorType().asElement()).get(),
-              dc.deconstructor().visitorType().getTypeArguments().stream()
-                 .map(this::substituteTypeWithRecursionVar)
-                 .toArray(TypeMirror[]::new)));
+           : TypeName.get(utils.types()
+               .getDeclaredType(Utils.asTypeElement.visit(dc.deconstructor().visitorType().asElement()).get(), dc.deconstructor()
+                   .visitorType()
+                   .getTypeArguments()
+                   .stream()
+                   .map(this::substituteTypeWithRecursionVar)
+                   .toArray(TypeMirror[]::new)));
   }
 
   TypeMirror substituteTypeWithRecursionVar(TypeMirror tm) {
+
     return utils.types().isSameType(tm, adt.typeConstructor().declaredType())
            ? utils.types().getDeclaredType(FlavourImpl.findF0(context.flavour(), utils.elements()), adt.matchMethod().returnTypeVariable())
            : tm;

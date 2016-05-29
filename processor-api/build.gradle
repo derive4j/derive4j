@@ -1,14 +1,12 @@
-
-
 pomProjectName = "Derive4J - Annotation Processor API"
 
 archivesBaseName = "${project.projectName}-${project.name}"
 
 dependencies {
-    compile project(":annotation")
-    compile dependencyJavaPoet
-    testCompile dependencyJunit
-    apt dependencyPreviousDerive4J
+  compile project(":annotation")
+  compile dependencyJavaPoet
+  testCompile dependencyJunit
+  apt dependencyPreviousDerive4J
 }
 
 configureUpload(lgplLicenseName)

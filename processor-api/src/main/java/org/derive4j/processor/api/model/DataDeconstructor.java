@@ -18,42 +18,55 @@
  */
 package org.derive4j.processor.api.model;
 
-import org.derive4j.Data;
-import org.derive4j.Derive;
-
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import org.derive4j.Data;
+import org.derive4j.Derive;
 
 import static org.derive4j.Visibility.Smart;
-import static org.derive4j.processor.api.model.DataDeconstructors.*;
+import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethod;
+import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethodType;
+import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorParam;
+import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class DataDeconstructor {
+@Data(@Derive(withVisibility = Smart)) public abstract class DataDeconstructor {
 
   DataDeconstructor() {
+
   }
 
-  public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod) {
-    return DataDeconstructors.deconstructor(visitorParam, visitorType, visitorMethod);
+  public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod,
+      ExecutableType visitorMethodType) {
+
+    return DataDeconstructors.deconstructor(visitorParam, visitorType, visitorMethod, visitorMethodType);
   }
 
   public ExecutableElement visitorMethod() {
+
     return getVisitorMethod(this);
   }
 
+  public ExecutableType visitorMethodType() {
+
+    return getVisitorMethodType(this);
+  }
+
   public VariableElement visitorParam() {
+
     return getVisitorParam(this);
   }
 
   public DeclaredType visitorType() {
+
     return getVisitorType(this);
   }
 
   public abstract <R> R match(Case<R> deconstructor);
 
   public interface Case<R> {
-    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod);
+    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod, ExecutableType visitorMethodType);
   }
 
 }

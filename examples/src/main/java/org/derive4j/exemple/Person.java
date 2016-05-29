@@ -25,15 +25,13 @@
  */
 package org.derive4j.exemple;
 
-import org.derive4j.Data;
-import org.derive4j.FieldNames;
-
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.derive4j.Data;
+import org.derive4j.FieldNames;
 
 import static org.derive4j.exemple.Addresses.Address;
-import static org.derive4j.exemple.Addresses.getNumber;
 import static org.derive4j.exemple.Addresses.modNumber;
 import static org.derive4j.exemple.Contacts.getPostalAddress;
 import static org.derive4j.exemple.Contacts.modPostalAddress;
@@ -42,10 +40,9 @@ import static org.derive4j.exemple.Persons.Person;
 import static org.derive4j.exemple.Persons.getContact;
 import static org.derive4j.exemple.Persons.modContact;
 
-@Data
-public abstract class Person {
+@Data public abstract class Person {
 
-  public abstract <R> R match(@FieldNames({"name", "contact"}) BiFunction<PersonName, Contact, R> Person);
+  public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
 
   public static void main(String[] args) {
 
@@ -59,8 +56,7 @@ public abstract class Person {
     // newP is a copy of p with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
 
-    Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe))
-        .map(postalAddress -> getNumber(postalAddress));
+    Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe)).map(Addresses::getNumber);
 
     System.out.println(newStreetNumber); // print "Optional[11]" !!
   }

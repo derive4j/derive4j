@@ -1,17 +1,16 @@
-
 projectTitle = "Derive4J - Examples"
 
 archivesBaseName = "${project.projectName}-${project.name}"
 
 dependencies {
-    compileOnly project(":annotation")
-    apt project(":processor")
-    compile "org.functionaljava:functionaljava:4.5"
-    compile 'io.atlassian.fugue:fugue:3.1.0'
-    compile 'com.atlassian.fugue:fugue:2.6.1'
-    compile 'com.google.guava:guava:19.0'
-    compile "io.javaslang:javaslang:2.0.2"
-    testCompile dependencyJunit
+  compileOnly project(":annotation")
+  apt project(":processor")
+  compile "org.functionaljava:functionaljava:4.5"
+  compile 'io.atlassian.fugue:fugue:3.1.0'
+  compile 'com.atlassian.fugue:fugue:2.6.1'
+  compile 'com.google.guava:guava:19.0'
+  compile "io.javaslang:javaslang:2.0.2"
+  testCompile dependencyJunit
 }
 
 configureUpload(bsd3LicenseName)

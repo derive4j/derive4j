@@ -25,24 +25,16 @@
  */
 package org.derive4j.exemple;
 
-import fj.F;
 import fj.F0;
-import fj.F2;
+import fj.P;
 import fj.P2;
 import fj.data.Option;
 import fj.data.optic.Lens;
 import fj.data.optic.Optional;
 import fj.data.optic.Prism;
-import org.derive4j.ArgOption;
 import org.derive4j.Data;
-import org.derive4j.FieldNames;
 import org.derive4j.Flavour;
 
-import java.util.function.Supplier;
-
-import static fj.P.p;
-import static fj.data.Option.none;
-import static fj.data.Option.some;
 import static fj.data.optic.Lens.lens;
 import static fj.data.optic.Optional.optional;
 import static fj.data.optic.Prism.prism;
@@ -54,8 +46,7 @@ import static org.derive4j.ArgOption.checkedNotNull;
  * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
  * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
  */
-@Data(flavour = Flavour.FJ, arguments = ArgOption.checkedNotNull)
-public abstract class Request {
+@Data(flavour = Flavour.FJ, arguments = checkedNotNull) public abstract class Request {
 
   /**
    * First we start by defining a 'visitor' for our datatype:
@@ -64,8 +55,11 @@ public abstract class Request {
   // the 'visitor' interface:
   interface Cases<X> {
     X GET(String path);
+
     X DELETE(String path);
+
     X PUT(String path, String body);
+
     X POST(String path, String body);
   }
 
@@ -76,22 +70,21 @@ public abstract class Request {
    * Alternatively, if you prefer a more FP style, you can define a catamorphism instead
    * (equivalent to the visitor above, most useful for standard data type like Option, Either, List...):
    */
-//  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
-//                              @FieldNames("path") F<String, X> DELETE,
-//                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
-//                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
+  //  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
+  //                              @FieldNames("path") F<String, X> DELETE,
+  //                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
+  //                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
 
   /**
    * Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString}
    * are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force
    * Derive4J to implement them, by declaring them abstract:
    */
-  @Override
-  public abstract int hashCode();
-  @Override
-  public abstract boolean equals(Object obj);
-  @Override
-  public abstract String toString();
+  @Override public abstract int hashCode();
+
+  @Override public abstract boolean equals(Object obj);
+
+  @Override public abstract String toString();
 
   /**
    * Now run compilation and a 'Requests' classe will be generated, by default with the same visibility as 'Request'.
@@ -99,9 +92,11 @@ public abstract class Request {
    * and delegate to the generated Requests class. eg. for constructors:
    */
   public static Request GET(String path) {
+
     return Requests.GET(path);
   }
   public static Request PUT(String path, String body) {
+
     return Requests.PUT(path, body);
   }
 
@@ -124,10 +119,12 @@ public abstract class Request {
    */
 
   public final String path() {
+
     return Requests.getPath(this);
   }
 
   public final Option<String> body() {
+
     return Requests.getBody(this);
   }
 
@@ -136,6 +133,7 @@ public abstract class Request {
    */
 
   public final Request withPath(String newPath) {
+
     return Requests.setPath(newPath).f(this);
   }
 
@@ -155,19 +153,13 @@ public abstract class Request {
   // which is Equivalent to:
   public static final Lens<Request, String> _pathPatternMatch = lens(
       // getter function:
-      Requests.cases()
-          .GET(path -> path)
-          .DELETE(path -> path)
-          .PUT((path, body) -> path)
-          .POST((path, body) -> path),
+      Requests.cases().GET(path -> path).DELETE(path -> path).PUT((path, body) -> path).POST((path, body) -> path),
       // setter function:
-      newPath ->
-          Requests.cases()
-              .GET(path -> Requests.GET(newPath))
-              .DELETE(path -> Requests.DELETE(newPath))
-              .PUT((path, body) -> Requests.PUT(newPath, body))
-              .POST((path, body) -> Requests.POST(newPath, body))
-  );
+      newPath -> Requests.cases()
+          .GET(path -> Requests.GET(newPath))
+          .DELETE(path -> Requests.DELETE(newPath))
+          .PUT((path, body) -> Requests.PUT(newPath, body))
+          .POST((path, body) -> Requests.POST(newPath, body)));
 
   /**
    * Optional: optics focused on a field that may not be present for all contructors (getter return an 'Option'):
@@ -176,40 +168,25 @@ public abstract class Request {
   // Equivalent to:
   private static final Optional<Request, String> _bodyPatternMatch = optional(
       // getter function:
-      Requests.cases()
-          .PUT((path, body) -> body)
-          .POST((path, body) -> body)
-          .otherwiseNone(),
+      Requests.cases().PUT((path, body) -> body).POST((path, body) -> body).otherwiseNone(),
       // setter function:
-      newBody ->
-          Requests.cases()
-              .GET(path -> Requests.GET(path)) // or with method reference:
-              .DELETE(Requests::DELETE)
-              .PUT((path, body) -> Requests.PUT(path, newBody))
-              .POST((path, body) -> Requests.POST(path, newBody))
-  );
-
-
+      newBody -> Requests.cases().GET(Requests::GET) // or with method reference:
+          .DELETE(Requests::DELETE).PUT((path, body) -> Requests.PUT(path, newBody)).POST((path, body) -> Requests.POST(path, newBody)));
 
   /**
    * Prism: optics focused on a specific constructor:
    */
   private static final Prism<Request, String> _GET = prism(
       // Getter function
-      Requests.cases()
-          .GET(fj.data.Option::some)
-          .otherwise(Option::none),
+      Requests.cases().GET(fj.data.Option::some).otherwise(Option::none),
       // Reverse Get function (aka constructor)
       Requests::GET);
 
   // If there more than one field, we use a tuple as the prism target:
   private static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
-      Requests.cases()
-          .POST((path, body) -> p(path, body))
-          .otherwiseNone(),
+      Requests.cases().POST(P::p).otherwiseNone(),
       // reverse get (construct a POST request given a P2<String, String>):
       p2 -> Requests.POST(p2._1(), p2._2()));
-
 
 }

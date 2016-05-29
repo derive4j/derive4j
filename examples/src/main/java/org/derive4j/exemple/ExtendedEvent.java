@@ -25,38 +25,21 @@
  */
 package org.derive4j.exemple;
 
-import java.util.function.Function;
 import org.derive4j.Data;
 
-import static org.derive4j.exemple.Expressions.Add;
-import static org.derive4j.exemple.Expressions.Const;
-import static org.derive4j.exemple.Expressions.Mult;
+@Data public abstract class ExtendedEvent<U> {
 
-@Data public abstract class Expression {
+  interface Cases<A, X> extends Event.Cases<A, X> {
 
-  private static final Function<Expression, Integer> eval = Expressions.cata(value -> value, (left, right) -> left.get() + right.get(),
-      (left, right) -> left.get() * right.get(), expr -> -expr.get());
+    X itemRenamed(A ref, String itemName);
 
-  public static Integer eval(Expression expression) {
-
-    return eval.apply(expression);
   }
 
-  public static void main(String[] args) {
+  public abstract <X> X match(Cases<U, X> cases);
 
-    Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
-    System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
-  }
+  @Override public abstract boolean equals(Object obj);
 
-  public abstract <R> R match(Cases<R> cases);
+  @Override public abstract int hashCode();
 
-  interface Cases<R> {
-    R Const(int value);
-
-    R Add(Expression left, Expression right);
-
-    R Mult(Expression left, Expression right);
-
-    R Neg(Expression expr);
-  }
+  @Override public abstract String toString();
 }

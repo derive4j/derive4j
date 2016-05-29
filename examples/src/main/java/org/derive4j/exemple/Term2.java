@@ -30,13 +30,13 @@ import fj.F2;
 import fj.F3;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
-
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import org.derive4j.Flavour;
 
 import static java.lang.System.out;
-import static org.derive4j.exemple.Term2s.*;
+import static org.derive4j.exemple.Term2s.If;
+import static org.derive4j.exemple.Term2s.IsZero;
+import static org.derive4j.exemple.Term2s.Succ;
+import static org.derive4j.exemple.Term2s.Zero;
 
 // Implementation of a pseudo-GADT in Java, translating the examples from
 // http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf
@@ -46,24 +46,27 @@ import static org.derive4j.exemple.Term2s.*;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data(flavour = Flavour.FJ)
-public abstract class Term2<T> {
+@Data(flavour = Flavour.FJ) public abstract class Term2<T> {
   Term2() {
+
   }
 
   public static <T> T eval(final Term2<T> term) {
 
     F<Term2<T>, T> eval = Term2s.<T>cases().
-        Zero(__                    -> __.f(0)).
-        Succ((t, __)               -> __.f(eval(t) + 1)).
-        Pred((t, __)               -> __.f(eval(t) - 1)).
-        IsZero((t, __)             -> __.f(eval(t) == 0)).
-        If((cond, then, otherwise) -> eval(cond) ? eval(then) : eval(otherwise));
+        Zero(__ -> __.f(0)).
+        Succ((t, __) -> __.f(eval(t) + 1)).
+        Pred((t, __) -> __.f(eval(t) - 1)).
+        IsZero((t, __) -> __.f(eval(t) == 0)).
+        If((cond, then, otherwise) -> eval(cond)
+                                      ? eval(then)
+                                      : eval(otherwise));
 
     return eval.f(term);
   }
 
   public static void main(final String[] args) {
+
     Term2<Integer> one = Succ(Zero());
     out.println(eval(one)); // "1"
     out.println(eval(IsZero(one))); // "false"
@@ -79,20 +82,15 @@ public abstract class Term2<T> {
     //  else IsZero(Succ(0))"
   }
 
-  public abstract <X> X match(@FieldNames("__") F<F<Integer, T>, X> Zero,
-                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Integer, T>, X> Succ,
-                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Integer, T>, X> Pred,
-                              @FieldNames({"term", "__"}) F2<Term2<Integer>, F<Boolean, T>, X> IsZero,
-                              @FieldNames({"cond", "then", "otherwise"}) F3<Term2<Boolean>, Term2<T>, Term2<T>, X> If);
+  public abstract <X> X match(@FieldNames("__") F<F<Integer, T>, X> Zero, @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Integer, T>, X> Succ,
+      @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Integer, T>, X> Pred,
+      @FieldNames({ "term", "__" }) F2<Term2<Integer>, F<Boolean, T>, X> IsZero,
+      @FieldNames({ "cond", "then", "otherwise" }) F3<Term2<Boolean>, Term2<T>, Term2<T>, X> If);
 
+  @Override public abstract boolean equals(Object obj);
 
-  @Override
-  public abstract boolean equals(Object obj);
+  @Override public abstract int hashCode();
 
-  @Override
-  public abstract int hashCode();
-
-  @Override
-  public abstract String toString();
+  @Override public abstract String toString();
 
 }

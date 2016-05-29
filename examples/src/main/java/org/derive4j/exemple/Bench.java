@@ -25,41 +25,43 @@
  */
 package org.derive4j.exemple;
 
-
 public class Bench {
 
-    static final int COUNT = 500000;
-    static final int ITERATIONS = 200;
-    static final int WARMUP = 100;
+  static final int COUNT = 500000;
+  static final int ITERATIONS = 200;
+  static final int WARMUP = 100;
 
-    public static void main(String[] args) {
+  public static void main(String[] args) {
 
-        // Average time after 200 iterations: 17.869925 ms
-        timed(() -> List.range(0, COUNT).length());
+    // Average time after 200 iterations: 17.869925 ms
+    timed(() -> List.range(0, COUNT).length());
 
-        // Average time after 200 iterations: 26.725065 ms
-        timed(() -> javaslang.collection.Stream.range(0, COUNT).length());
+    // Average time after 200 iterations: 26.725065 ms
+    timed(() -> javaslang.collection.Stream.range(0, COUNT).length());
 
-        // Average time after 200 iterations: 24.768288 ms
-        timed(() -> fj.data.Stream.range(0, COUNT).length());
+    // Average time after 200 iterations: 24.768288 ms
+    timed(() -> fj.data.Stream.range(0, COUNT).length());
 
-        // Average time after 200 iterations: 4.771267 ms
-        timed(() -> java.util.stream.Stream.iterate(0, i -> i + 1).limit(COUNT).reduce(0, (i1, i2) -> i1+1));
+    // Average time after 200 iterations: 4.771267 ms
+    timed(() -> java.util.stream.Stream.iterate(0, i -> i + 1).limit(COUNT).reduce(0, (i1, i2) -> i1 + 1));
+
+    timed(() -> Stream.range(0, COUNT).length());
+  }
+
+  static void timed(Runnable stuff) {
+
+    for (int i = 0; i < WARMUP; i++) {
+      System.gc(); // try to get rid of potential GC pauses
+      stuff.run();
     }
-
-    static void timed(Runnable stuff) {
-        long vs = 0;
-        for (int i = 0; i < WARMUP; i++) {
-            System.gc(); // try to get rid of potential GC pauses
-            stuff.run();
-        }
-        for (int i = 0; i < ITERATIONS; i++) {
-            System.gc(); // try to get rid of potential GC pauses
-            long t = System.nanoTime();
-            stuff.run();
-            vs += (System.nanoTime() - t);
-        }
-        System.out.printf("Average time after %d iterations: %f ms\n", ITERATIONS, (vs / 1000000.0) / ITERATIONS);
+    long vs = 0;
+    for (int i = 0; i < ITERATIONS; i++) {
+      System.gc(); // try to get rid of potential GC pauses
+      long t = System.nanoTime();
+      stuff.run();
+      vs += (System.nanoTime() - t);
     }
+    System.out.printf("Average time after %d iterations: %f ms\n", ITERATIONS, (vs / 1000000.0) / ITERATIONS);
+  }
 
 }

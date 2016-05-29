@@ -43,34 +43,34 @@ import static org.derive4j.processor.api.DeriveResults.lazy;
 public class BuiltinDerivator {
 
   private static final Function<Make, Stream<Make>> dependencies = Makes.cases()
-     .lambdaVisitor(() -> Stream.<Make>of())
-     .constructors(() -> Stream.of())
-     .lazyConstructor(() -> Stream.of())
-     .patternMatching(() -> Stream.of(lambdaVisitor))
-     .getters(() -> Stream.of(lambdaVisitor))
-     .modifiers(() -> Stream.of(lambdaVisitor, constructors))
-     .catamorphism(() -> Stream.of(lambdaVisitor));
+      .lambdaVisitor(Stream::<Make>of)
+      .constructors(Stream::of)
+      .lazyConstructor(Stream::of)
+      .patternMatching(() -> Stream.of(lambdaVisitor))
+      .getters(() -> Stream.of(lambdaVisitor))
+      .modifiers(() -> Stream.of(lambdaVisitor, constructors))
+      .catamorphism(() -> Stream.of(lambdaVisitor))
+      .hktCoerce(Stream::of);
 
   public static BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator(DeriveUtils deriveUtils) {
-    return (adt, deriveContext) ->
-       traverseResults(deriveContext.makes(), Makes.cases()
-          .lambdaVisitor(lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)))
-          .constructors(lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
-          .lazyConstructor(lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
-          .patternMatching(lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils)))
-          .getters(lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)))
-          .modifiers(lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)))
-          .catamorphism(lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()))
-       ).map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+
+    return (adt, deriveContext) -> traverseResults(deriveContext.makes(), Makes.cases()
+        .lambdaVisitor(lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)))
+        .constructors(lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
+        .lazyConstructor(lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
+        .patternMatching(lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils)))
+        .getters(lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)))
+        .modifiers(lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)))
+        .catamorphism(lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()))
+        .hktCoerce(DeriveResult.result(DerivedCodeSpec.none()))).map(
+        codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
   public static Set<Make> makeWithDpendencies(Make... makes) {
 
     EnumSet<Make> makeSet = EnumSet.noneOf(Make.class);
 
-    makeSet.addAll(Arrays.asList(makes).stream()
-       .flatMap(m -> Stream.concat(dependencies.apply(m), Stream.of(m)))
-       .collect(Collectors.toList()));
+    makeSet.addAll(Arrays.asList(makes).stream().flatMap(m -> Stream.concat(dependencies.apply(m), Stream.of(m))).collect(Collectors.toList()));
 
     return Collections.unmodifiableSet(makeSet);
   }

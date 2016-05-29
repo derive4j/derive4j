@@ -25,12 +25,14 @@
  */
 package org.derive4j.exemple;
 
+import java.util.function.Function;
 import org.derive4j.Data;
 
-import java.util.function.Function;
-
 import static java.lang.System.out;
-import static org.derive4j.exemple.Terms.*;
+import static org.derive4j.exemple.Terms.If;
+import static org.derive4j.exemple.Terms.IsZero;
+import static org.derive4j.exemple.Terms.Succ;
+import static org.derive4j.exemple.Terms.Zero;
 
 // Implementation of a pseudo-GADT in Java, translating the examples from
 // http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf
@@ -40,9 +42,9 @@ import static org.derive4j.exemple.Terms.*;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data
-public abstract class Term<T> {
+@Data public abstract class Term<T> {
   Term() {
+
   }
 
   public static <T> T eval(final Term<T> term) {
@@ -52,12 +54,15 @@ public abstract class Term<T> {
         Succ((t, __) -> __.__(eval(t) + 1)).
         Pred((t, __) -> __.__(eval(t) - 1)).
         IsZero((t, __) -> __.__(eval(t) == 0)).
-        If((cond, then, otherwise) -> eval(cond) ? eval(then) : eval(otherwise));
+        If((cond, then, otherwise) -> eval(cond)
+                                      ? eval(then)
+                                      : eval(otherwise));
 
     return eval.apply(term);
   }
 
   public static void main(final String[] args) {
+
     Term<Integer> one = Succ(Zero());
     out.println(eval(one)); // "1"
     out.println(eval(IsZero(one))); // "false"
@@ -75,15 +80,11 @@ public abstract class Term<T> {
 
   public abstract <X> X match(Cases<T, X> cases);
 
-  @Override
-  public abstract boolean equals(Object obj);
+  @Override public abstract boolean equals(Object obj);
 
-  @Override
-  public abstract int hashCode();
+  @Override public abstract int hashCode();
 
-  @Override
-  public abstract String toString();
-
+  @Override public abstract String toString();
 
   public interface F<A, B> {// Could be java.util.function.Function,
 

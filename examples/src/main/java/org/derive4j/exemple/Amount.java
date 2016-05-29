@@ -26,12 +26,10 @@
 package org.derive4j.exemple;
 
 import fj.F;
+import java.math.BigDecimal;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-import java.math.BigDecimal;
-
-@Data
-public abstract class Amount {
+@Data public abstract class Amount {
   public abstract <R> R match(@FieldNames("value") F<BigDecimal, R> amout);
 }

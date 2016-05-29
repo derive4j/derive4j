@@ -38,70 +38,65 @@ import static org.derive4j.exemple.Lists.cons;
 import static org.derive4j.exemple.Lists.lazy;
 import static org.derive4j.exemple.Lists.nil;
 
-@Data
-public abstract class List<A> {
+@Data public abstract class List<A> {
 
   List() {
+
   }
 
   public static List<Integer> naturals() {
+
     return integersFrom(0);
   }
 
   public static List<Integer> integersFrom(final int s) {
+
     return iterate(s, i -> i + 1);
   }
 
   public static List<Integer> range(final int from, int toExclusive) {
-    return from == toExclusive
+
+    return (from == toExclusive)
            ? nil()
            : cons(from, lazy(() -> range(from + 1, toExclusive)));
   }
 
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
+
     return lazy(() -> cons(seed, iterate(op.apply(seed), op)));
   }
 
-  public abstract <X> X list(Supplier<X> nil,
-     @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
+  public abstract <X> X list(Supplier<X> nil, @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
 
   public final <B> List<B> map(Function<A, B> f) {
-    return lazy(() -> list(
-       () -> nil(),
-       (h, tail) -> cons(f.apply(h), tail.map(f))
-    ));
+
+    return lazy(() -> list(Lists::nil, (h, tail) -> cons(f.apply(h), tail.map(f))));
   }
 
   public final List<A> append(final List<A> list) {
-    return lazy(() -> list(
-       () -> list,
-       (head, tail) -> cons(head, tail.append(list))
-    ));
+
+    return lazy(() -> list(() -> list, (head, tail) -> cons(head, tail.append(list))));
   }
 
   public final List<A> filter(Predicate<A> p) {
-    return lazy(() -> list(
-       () -> nil(),
-       (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)
-    ));
+
+    return lazy(() -> list(Lists::nil, (h, tail) -> p.test(h)
+                                                    ? cons(h, tail.filter(p))
+                                                    : tail.filter(p)));
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {
-    return lazy(() -> list(
-       () -> nil(),
-       (h, t) -> f.apply(h).append(t.bind(f))
-    ));
+
+    return lazy(() -> list(Lists::nil, (h, t) -> f.apply(h).append(t.bind(f))));
     // alternative implementation using foldRight:
     //return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
   }
 
   public final List<A> take(int n) {
-    return n <= 0
+
+    return (n <= 0)
            ? nil()
-           : lazy(() -> list(
-              () -> nil(),
-              (head, tail) -> cons(head, tail.take(n - 1))
-           ));
+           : lazy(() -> list(Lists::nil, (head, tail) -> cons(head, tail.take(n - 1))));
   }
 
   public final void forEach(Consumer<A> effect) {
@@ -109,8 +104,8 @@ public abstract class List<A> {
     class ConsVisitor implements BiFunction<A, List<A>, Boolean> {
       List<A> l = List.this;
 
-      @Override
-      public Boolean apply(A head, List<A> tail) {
+      @Override public Boolean apply(A head, List<A> tail) {
+
         effect.accept(head);
         l = tail;
         return true;
@@ -126,8 +121,8 @@ public abstract class List<A> {
     class Acc implements Consumer<A> {
       B acc = zero;
 
-      @Override
-      public void accept(A a) {
+      @Override public void accept(A a) {
+
         acc = f.apply(acc, a);
       }
     }
@@ -137,10 +132,12 @@ public abstract class List<A> {
   }
 
   public final int length() {
+
     return foldLeft((i, a) -> i + 1, 0);
   }
 
   public final <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
+
     return Lists.cata(() -> zero, f).apply(this);
   }
 

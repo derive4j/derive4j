@@ -18,34 +18,36 @@
  */
 package org.derive4j.processor.api.model;
 
+import java.util.function.BiFunction;
+import javax.lang.model.type.TypeMirror;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.FieldNames;
-
-import javax.lang.model.type.TypeMirror;
-import java.util.function.BiFunction;
 
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 import static org.derive4j.processor.api.model.DataArguments.getType;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class DataArgument {
+@Data(@Derive(withVisibility = Smart)) public abstract class DataArgument {
 
   DataArgument() {
+
   }
 
   public static DataArgument dataArgument(String fieldName, TypeMirror type) {
+
     return DataArguments.dataArgument(fieldName, type);
   }
 
-  public abstract <R> R match(@FieldNames({"fieldName", "type"}) BiFunction<String, TypeMirror, R> dataArgument);
+  public abstract <R> R match(@FieldNames({ "fieldName", "type" }) BiFunction<String, TypeMirror, R> dataArgument);
 
   public String fieldName() {
+
     return getFieldName(this);
   }
 
   public TypeMirror type() {
+
     return getType(this);
   }
 }

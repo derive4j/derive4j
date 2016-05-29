@@ -18,49 +18,49 @@
  */
 package org.derive4j.processor.api.model;
 
-import org.derive4j.Data;
-import org.derive4j.Derive;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import org.derive4j.Data;
+import org.derive4j.Derive;
 
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataConstructions.cases;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class DataConstruction {
+@Data(@Derive(withVisibility = Smart)) public abstract class DataConstruction {
 
-  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases()
-      .multipleConstructors(MultipleConstructorsSupport::getConstructors)
-      .oneConstructor(Collections::singletonList)
-      .noConstructor(Collections::emptyList);
+  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases().multipleConstructors(
+      MultipleConstructorsSupport::getConstructors).oneConstructor(Collections::singletonList).noConstructor(Collections::emptyList);
 
   DataConstruction() {
+
   }
 
   public static DataConstruction multipleConstructors(MultipleConstructors constructors) {
+
     return DataConstructions.multipleConstructors(constructors);
   }
 
   public static DataConstruction oneConstructor(final DataConstructor constructor) {
+
     return DataConstructions.oneConstructor(constructor);
   }
 
   public static DataConstruction noConstructor() {
+
     return DataConstructions.noConstructor();
   }
 
   public abstract <R> R match(Cases<R> cases);
 
   public List<DataConstructor> constructors() {
+
     return getConstructors.apply(this);
   }
 
   public boolean isVisitorDispatch() {
-    return DataConstructions.getConstructors(this)
-        .map(MultipleConstructors::isVisitorDispatch)
-        .orElse(false);
+
+    return DataConstructions.getConstructors(this).map(MultipleConstructors::isVisitorDispatch).orElse(false);
   }
 
   public interface Cases<R> {

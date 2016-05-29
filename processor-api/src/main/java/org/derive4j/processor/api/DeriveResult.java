@@ -18,37 +18,39 @@
  */
 package org.derive4j.processor.api;
 
+import java.util.function.Function;
 import org.derive4j.Data;
 import org.derive4j.Derive;
-
-import java.util.function.Function;
 
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.DeriveResults.modResult;
 
-@Data(@Derive(withVisibility = Smart))
-public abstract class DeriveResult<A> {
+@Data(@Derive(withVisibility = Smart)) public abstract class DeriveResult<A> {
 
   DeriveResult() {
+
   }
 
   public static <A> DeriveResult<A> error(DeriveMessage errorMsg) {
+
     return DeriveResults.error(errorMsg);
   }
 
   public static <A> DeriveResult<A> result(A result) {
+
     return DeriveResults.result(result);
   }
 
   public <B> DeriveResult<B> map(Function<A, B> f) {
+
     return modResult(f).apply(this);
   }
 
   public <B> DeriveResult<B> bind(Function<A, DeriveResult<B>> f) {
+
     return match(DeriveResult::error, f);
   }
 
   public abstract <R> R match(Function<DeriveMessage, R> error, Function<A, R> result);
-
 
 }

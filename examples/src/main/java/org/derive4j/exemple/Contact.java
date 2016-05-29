@@ -27,15 +27,16 @@ package org.derive4j.exemple;
 
 import org.derive4j.Data;
 
-@Data
-public abstract class Contact {
+@Data public abstract class Contact {
 
-    interface Cases<R> {
-      R byEmail(String email);
-      R byPhone(String phoneNumber);
-      R byMail(Address postalAddress);
-    }
+  interface Cases<R> {
+    R byEmail(String email);
 
-    public abstract <R> R match(Cases<R> cases);
+    R byPhone(String phoneNumber);
+
+    R byMail(Address postalAddress);
+  }
+
+  public abstract <R> R match(Cases<R> cases);
 
 }
