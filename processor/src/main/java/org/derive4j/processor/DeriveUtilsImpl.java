@@ -22,6 +22,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -138,10 +139,21 @@ final class DeriveUtilsImpl implements DeriveUtils {
     return MethodSpec.overriding(abstractMethod, declaredType, Types);
   }
 
-  @Override public Stream<TypeVariable> typeVariablesIn(TypeMirror typeMirror) {
+  @Override public List<TypeVariable> typeVariablesIn(TypeMirror typeMirror) {
+    List<TypeVariable> typeVariables = new ArrayList<>();
+
+    typeVariablesIn0(typeMirror).forEach(tv -> {
+      if (typeVariables.stream().noneMatch(predTv -> Types.isSameType(predTv, tv))) {
+        typeVariables.add(tv);
+      }
+    });
+    return  typeVariables;
+  }
+
+  private Stream<TypeVariable> typeVariablesIn0(TypeMirror typeMirror) {
 
     return asDeclaredType.visit(typeMirror)
-        .map(dt -> dt.getTypeArguments().stream().flatMap(this::typeVariablesIn))
+        .map(dt -> dt.getTypeArguments().stream().flatMap(this::typeVariablesIn0))
         .orElseGet(() -> asTypeVariable.visit(typeMirror).map(Stream::of).orElse(Stream.empty()));
   }
 

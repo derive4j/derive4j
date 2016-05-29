@@ -174,10 +174,10 @@ public final class ModiersDerivator {
 
   private static List<TypeVariable> getUniqueTypeVariables(DataArgument field, List<DataArgument> allFields, DeriveUtils deriveUtils) {
 
-    return deriveUtils.typeVariablesIn(field.type())
+    return deriveUtils.typeVariablesIn(field.type()).stream()
         .filter(tv -> allFields.stream()
             .filter(da -> !field.fieldName().equals(da.fieldName()))
-            .flatMap(da -> deriveUtils.typeVariablesIn(da.type()))
+            .flatMap(da -> deriveUtils.typeVariablesIn(da.type()).stream())
             .noneMatch(tv2 -> deriveUtils.types().isSameType(tv, tv2)))
         .collect(Collectors.toList());
   }

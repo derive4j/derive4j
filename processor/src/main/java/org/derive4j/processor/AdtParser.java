@@ -265,7 +265,7 @@ final class AdtParser {
         }
         constructorArguments.add(dataArgument(paramElement.getSimpleName().toString(), paramType));
       }
-      seenVariables.addAll(deriveUtils.typeVariablesIn(paramType)
+      seenVariables.addAll(deriveUtils.typeVariablesIn(paramType).stream()
           .filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv)))
           .collect(Collectors.toList()));
     }

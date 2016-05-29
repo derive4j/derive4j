@@ -54,7 +54,7 @@ public interface DeriveUtils {
 
   MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod, DeclaredType declaredType);
 
-  Stream<TypeVariable> typeVariablesIn(TypeMirror typeMirror);
+  List<TypeVariable> typeVariablesIn(TypeMirror typeMirror);
 
   List<ExecutableElement> allAbstractMethods(DeclaredType declaredType);
 
