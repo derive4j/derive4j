@@ -201,9 +201,8 @@ final class AdtParser {
     if (abstractMethods.stream().map(e -> e.getSimpleName().toString()).distinct().count() != abstractMethods.size()) {
       result = error(message("All abstract methods of " + visitorType + " must have a unique name", onElement(visitorArg)));
     } else {
-      Function<TypeVariable, Optional<TypeMirror>> typeArgs = deriveUtils.typeArgs(visitorType);
       result = Utils.traverseResults(abstractMethods, m -> parseDataConstructor(adtDeclaredType, adtTypeVariables,
-          deconstructor(visitorArg, visitorType, m, (ExecutableType) types.asMemberOf(visitorType, m)), typeArgs))
+          deconstructor(visitorArg, visitorType, m, (ExecutableType) types.asMemberOf(visitorType, m))))
           .map(constructors -> constructors.isEmpty()
                                ? noConstructor()
                                : findOnlyOne(constructors).map(DataConstruction::oneConstructor)
@@ -242,7 +241,7 @@ final class AdtParser {
   }
 
   private DeriveResult<DataConstructor> parseDataConstructor(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeParameters,
-      DataDeconstructor deconstructor, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+      DataDeconstructor deconstructor) {
 
     ExecutableElement visitorMethod = deconstructor.visitorMethod();
     ExecutableType visitorMethodType = deconstructor.visitorMethodType();
@@ -255,8 +254,8 @@ final class AdtParser {
       VariableElement paramElement = parameter._1();
       TypeMirror paramType = parameter._2();
 
-      Optional<TypeRestriction> gadtConstraint = parseGadtConstraint(paramElement.getSimpleName().toString(), paramType, adtTypeParameters,
-          typeArgs).filter(tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
+      Optional<TypeRestriction> gadtConstraint = parseGadtConstraint(paramElement.getSimpleName().toString(), paramType, adtTypeParameters).filter(
+          tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
 
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
@@ -265,7 +264,8 @@ final class AdtParser {
         }
         constructorArguments.add(dataArgument(paramElement.getSimpleName().toString(), paramType));
       }
-      seenVariables.addAll(deriveUtils.typeVariablesIn(paramType).stream()
+      seenVariables.addAll(deriveUtils.typeVariablesIn(paramType)
+          .stream()
           .filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv)))
           .collect(Collectors.toList()));
     }
@@ -304,19 +304,22 @@ final class AdtParser {
         .map(Function.<AnnotationMirror>identity());
   }
 
-  private Optional<TypeRestriction> parseGadtConstraint(String argName, TypeMirror paramType, List<TypeVariable> adtTypeVariables,
-      Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+  private Optional<TypeRestriction> parseGadtConstraint(String argName, TypeMirror paramType, List<TypeVariable> adtTypeVariables) {
 
-    return asDeclaredType.visit(paramType)
-        .filter(dt -> dt.asElement().getKind() == ElementKind.INTERFACE)
-        .flatMap(dt -> findOnlyOne(deriveUtils.allAbstractMethods(dt)).filter(m -> m.getTypeParameters().isEmpty())
-            .flatMap(
-                m -> asTypeVariable.visit(m.getReturnType()).flatMap(deriveUtils.typeArgs(dt)).flatMap(asTypeVariable::visit).map(rt -> p2(m, rt)))
-            .flatMap(p2 -> p2.match((abstractMethod, rt) -> findOnlyOne(abstractMethod.getParameters()).map(Element::asType)
-                .flatMap(t -> IntStream.range(0, adtTypeVariables.size())
-                    .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
-                    .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), deriveUtils.resolve(t, deriveUtils.typeArgs(dt)),
-                        dataArgument(argName, paramType)))
-                    .findFirst()))));
+    return argName.startsWith("id") || argName.startsWith("uni")
+           ? asDeclaredType.visit(paramType)
+               .filter(dt -> dt.asElement().getKind() == ElementKind.INTERFACE)
+               .flatMap(dt -> findOnlyOne(deriveUtils.allAbstractMethods(dt)).filter(m -> m.getTypeParameters().isEmpty())
+                   .flatMap(m -> asTypeVariable.visit(m.getReturnType())
+                       .flatMap(deriveUtils.typeArgs(dt))
+                       .flatMap(asTypeVariable::visit)
+                       .map(rt -> p2(m, rt)))
+                   .flatMap(p2 -> p2.match((abstractMethod, rt) -> findOnlyOne(abstractMethod.getParameters()).map(Element::asType)
+                       .flatMap(t -> IntStream.range(0, adtTypeVariables.size())
+                           .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
+                           .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), deriveUtils.resolve(t, deriveUtils.typeArgs(dt)),
+                               dataArgument(argName, paramType)))
+                           .findFirst()))))
+           : Optional.empty();
   }
 }
