@@ -22,6 +22,7 @@ import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -174,12 +175,13 @@ public class PatternMatchingDerivator {
 
   static MethodSpec.Builder constantMatchMethodBuilder(AlgebraicDataType adt, DataConstructor currentConstructor) {
 
+    NameAllocator nameAllocator = new NameAllocator();
+    String argName = uncapitalize(adt.matchMethod().returnTypeVariable().toString());
     return MethodSpec.methodBuilder(currentConstructor.name())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addParameter(TypeName.get(adt.matchMethod().returnTypeVariable()), uncapitalize(adt.matchMethod().returnTypeVariable().toString()))
+        .addParameter(TypeName.get(adt.matchMethod().returnTypeVariable()), nameAllocator.newName(argName))
         .addStatement("return this.$L(($L) -> $L)", currentConstructor.name(),
-            Utils.asLambdaParametersString(currentConstructor.arguments(), currentConstructor.typeRestrictions()),
-            uncapitalize(adt.matchMethod().returnTypeVariable().toString()));
+            Utils.asLambdaParametersString(currentConstructor.arguments(), currentConstructor.typeRestrictions(), nameAllocator), argName);
   }
 
   private static String partialMatchBuilderClassName(DataConstructor currentConstructor) {

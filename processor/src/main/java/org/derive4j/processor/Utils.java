@@ -20,6 +20,7 @@ package org.derive4j.processor;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -200,6 +201,12 @@ public class Utils {
 
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
         restrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)));
+  }
+
+
+  public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions, NameAllocator nameAllocator) {
+    return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
+        typeRestrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)).map(nameAllocator::newName));
   }
 
   public static String asArgumentsString(List<DataArgument> arguments) {
