@@ -76,7 +76,7 @@ public abstract class Request {
   }
 
   // the 'accept' method of the visitor pattern:
-  public abstract <R> R match(Cases<X> cases);
+  public abstract <R> R match(Cases<R> cases);
 
   /**
    * Alternatively and equivalently to the visitor pattern above, if you prefer a more FP style,
@@ -92,7 +92,7 @@ Without Derive4J, you would have to create subclasses of ```Request``` for all f
   public static Request GET(String path) {
     return new Request() {
       @Override
-      public <X> X match(Cases<X> cases) {
+      public <R> R match(Cases<R> cases) {
         return cases.GET(path);
       }
     };}
@@ -404,7 +404,7 @@ import org.derive4j.Data;
 @Data
 public abstract class Option<A> {
 
-    public abstract <X> X cata(Supplier<X> none, Function<A, X> some);
+    public abstract <R> R cata(Supplier<R> none, Function<A, R> some);
 
     public final <B> Option<B> map(final Function<A, B> mapper) {
         return Options.modSome(mapper).apply(this);
