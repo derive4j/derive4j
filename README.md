@@ -57,7 +57,7 @@ You could then use the [corrected visitor pattern](http://logji.blogspot.ch/2012
 ```java
 package org.derive4j.example;
 
-/** A data type to modelise an http request. */
+/** A data type to modelize an http request. */
 @Data
 public abstract class Request {
 
@@ -271,7 +271,7 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
 }
 ```
 # Updating deeply nested immutable data structure
-Let's say you want to modelise a CRM. Each client is a ```Person``` which can be contacted either by email, telephone or postal mail. With Derive4J you could write the following:
+Let's say you want to modelize a CRM. Each client is a ```Person``` which can be contacted either by email, telephone or postal mail. With Derive4J you could write the following:
 ```java
 import org.derive4j.*;
 import java.util.function.BiFunction;
@@ -376,7 +376,7 @@ public abstract class Expression {
 }
 ```
 # Catamorphisms
-are generated for recursively defined datatypes. So that you can rewrite the above ```eval``` method with into:
+are generated for recursively defined datatypes. So that you can rewrite the above ```eval``` method into:
 ```java
 	public static Integer eval(Expression expression) {
 		Expressions
@@ -389,7 +389,7 @@ are generated for recursively defined datatypes. So that you can rewrite the abo
 		     .apply(expression)
 	}
 ```
-But beware that for very deep structure it may blow the stack!
+But beware that for very deep structure it may blow the stack! (unless you make good use of lazy constructors...)
 
 # But what exactly is generated?
 This is a very legitimate question. Here is the [```Expressions.java```](https://gist.github.com/jbgi/3904e696fb27a2e33ae1) file that is generated for the above ```@Data Expression``` class.
@@ -416,7 +416,7 @@ public abstract class Option<A> {
 # Generalized Algebraic Data Types
 
 GADTs are also supported out of the box by Derive4J (within the limitations of Java type system).
-Have a look at this gist to know how to defined GADT in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
+Have a look at this gist to know how to define GADTs in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
 
 # Use it in your project
 Derive4J should be declared as a compile-time only dependency (not needed at runtime). So while derive4j is (L)GPL-licensed, the generated code is not linked to derive4j, and thus __derive4j can be used in any project (proprietary or not)__.
