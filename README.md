@@ -35,7 +35,7 @@
 - https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
 - http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
 
-This project has a special dedicace to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
+This project has a special dedication to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
 I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
 
 So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
