@@ -228,7 +228,7 @@ Languages like Haskell provide laziness by default, which simplifies a lot of al
 Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)). 
 
 ## Flavours
-In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)) and ```Javaslang``` ([Javaslang](http://javaslang.com/)) flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
+In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)), ```Javaslang``` ([Javaslang](http://javaslang.com/)) and ```HighJ``` ([HighJ](https://github.com/DanielGronau/highj))  flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
 
 ## Optics (functional lenses)
 If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
