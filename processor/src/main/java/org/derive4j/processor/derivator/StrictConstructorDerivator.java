@@ -43,6 +43,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.TypeKindVisitor7;
 import org.derive4j.ArgOption;
 import org.derive4j.Data;
@@ -307,6 +308,11 @@ public final class StrictConstructorDerivator {
       @Override protected String defaultAction(final TypeMirror e, final String p) {
 
         return '(' + thisField + " == " + p + ')';
+      }
+
+      @Override public String visitTypeVariable(TypeVariable t, String p) {
+
+        return thisField + ".equals(" + p + ')';
       }
 
       @Override public String visitArray(final ArrayType t, final String p) {
