@@ -118,7 +118,7 @@ DerivingProcessor
             return dataAnnotation.flavour();
           }
 
-          @SuppressWarnings("deprecation") @Override public Visibility visibility() {
+          @Override public Visibility visibility() {
 
             return dataAnnotation.value().withVisibility();
           }

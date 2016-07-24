@@ -35,11 +35,6 @@ import static org.derive4j.Visibility.Same;
 
   Visibility withVisibility() default Same;
 
-  /**
-   * @deprecated Ignored from 0.7 onward, will be removed in 0.8
-   */
-  @Deprecated Visibility withVisbility() default Same;
-
   Make[] make() default { lambdaVisitor, constructors, getters, modifiers, lazyConstructor, patternMatching, catamorphism };
 
   Instances[] value() default {};
