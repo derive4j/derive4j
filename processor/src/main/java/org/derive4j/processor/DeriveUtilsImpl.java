@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -45,11 +46,14 @@ import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.TypeRestriction;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.derive4j.processor.P2.p2;
 import static org.derive4j.processor.Utils.asDeclaredType;
+import static org.derive4j.processor.Utils.asExecutableElement;
 import static org.derive4j.processor.Utils.asTypeElement;
 import static org.derive4j.processor.Utils.asTypeVariable;
 import static org.derive4j.processor.Utils.getMethods;
+import static org.derive4j.processor.Utils.p;
 
 final class DeriveUtilsImpl implements DeriveUtils {
 
@@ -160,24 +164,48 @@ final class DeriveUtilsImpl implements DeriveUtils {
   @Override public List<ExecutableElement> allAbstractMethods(DeclaredType declaredType) {
 
     return asTypeElement.visit(declaredType.asElement()).map(typeElement -> {
-      List<P2<ExecutableElement, ExecutableType>> abstractMethods = getMethods(Elements.getAllMembers(typeElement)).filter(
-          e -> e.getModifiers().contains(Modifier.ABSTRACT))
-          .filter(e -> !((e.getEnclosingElement().getKind() == ElementKind.INTERFACE) &&
-                             (Elements.overrides(e, objectEquals, typeElement) ||
-                                  Elements.overrides(e, objectHashCode, typeElement) ||
-                                  Elements.overrides(e, objectToString, typeElement))))
+
+      List<P2<ExecutableElement, ExecutableType>> unorderedAbstractMethods = getMethods(Elements.getAllMembers(typeElement))
+          .filter(this::abstractMehod)
           .map(e -> p2(e, (ExecutableType) Types.asMemberOf(declaredType, e)))
           .collect(toList());
 
-      return IntStream.range(0, abstractMethods.size())
-          .filter(i -> abstractMethods.subList(0, i)
+      Set<ExecutableElement> deduplicatedUnorderedAbstractMethods = IntStream.range(0, unorderedAbstractMethods.size())
+          .filter(i -> unorderedAbstractMethods.subList(0, i)
               .stream()
-              .noneMatch(m -> m.match((predExecutableElement, predExecutableType) -> abstractMethods.get(i)
+              .noneMatch(m -> m.match((predExecutableElement, predExecutableType) -> unorderedAbstractMethods.get(i)
                   .match((executableElement, executableType) -> predExecutableElement.getSimpleName().equals(executableElement.getSimpleName()) &&
                       Types.isSubsignature(predExecutableType, executableType)))))
-          .mapToObj(i -> abstractMethods.get(i).match((executableElement, __) -> executableElement))
+          .mapToObj(i -> unorderedAbstractMethods.get(i).match((executableElement, __) -> executableElement))
+          .collect(toSet());
+
+      return Stream.concat(getSuperTypeElements(typeElement), Stream.of(typeElement))
+          .flatMap(te -> te.getEnclosedElements().stream())
+          .map(asExecutableElement::visit)
+          .flatMap(Utils::optionalAsStream)
+          .filter(deduplicatedUnorderedAbstractMethods::contains)
           .collect(toList());
+
     }).orElse(Collections.emptyList());
+  }
+
+  private boolean abstractMehod(ExecutableElement e) {
+    return e.getModifiers().contains(Modifier.ABSTRACT) &&
+        !((e.getEnclosingElement().getKind() == ElementKind.INTERFACE) &&
+              (Elements.overrides(e, objectEquals, object) ||
+                   Elements.overrides(e, objectHashCode, object) ||
+                   Elements.overrides(e, objectToString, object)));
+  }
+
+  private static Stream<TypeElement> getSuperTypeElements(TypeElement e) {
+
+    return Stream.concat(Stream.of(e.getSuperclass()), e.getInterfaces().stream())
+        .map(asDeclaredType::visit)
+        .flatMap(Utils::optionalAsStream)
+        .map(DeclaredType::asElement)
+        .map(asTypeElement::visit)
+        .flatMap(Utils::optionalAsStream)
+        .flatMap(te -> Stream.concat(getSuperTypeElements(te), Stream.of(te)));
   }
 
   @Override public List<ExecutableElement> allAbstractMethods(TypeElement typeElement) {

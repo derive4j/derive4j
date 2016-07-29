@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -39,6 +40,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.AlgebraicDataType;
@@ -208,9 +210,13 @@ public class OtherwiseMatchingStepDerivator {
     nameAllocator.newName(adtLambdaParam, "adt var");
     nameAllocator.newName(visitorVarName, "visitor var");
 
+    String typeVarArgs = Stream.concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable()))
+        .map(TypeVariable::toString)
+        .collect(Collectors.joining(", "));
+
     return CodeBlock.builder()
-        .addStatement("$T $L = $T.$L($L)", TypeName.get(visitorType), nameAllocator.get("visitor var"),
-            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()), MapperDerivator.visitorLambdaFactoryName(adt), lambdaArgs)
+        .addStatement("$T $L = $T.<$L>$L($L)", TypeName.get(visitorType), nameAllocator.get("visitor var"),
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()), typeVarArgs, MapperDerivator.visitorLambdaFactoryName(adt), lambdaArgs)
         .addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"), adt.matchMethod().element().getSimpleName(),
             nameAllocator.get("visitor var"))
         .build();
