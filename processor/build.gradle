@@ -10,7 +10,7 @@ dependencies {
   apt dependencyAutoService
   apt dependencyPreviousDerive4J
   testCompile dependencyJunit
-  testCompile 'com.google.testing.compile:compile-testing:0.8'
+  testCompile 'com.google.testing.compile:compile-testing:0.9'
 }
 
 configureUpload(gplLicenseName)
