@@ -47,6 +47,7 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.TypeKindVisitor7;
 import org.derive4j.ArgOption;
 import org.derive4j.Data;
+import org.derive4j.Make;
 import org.derive4j.Visibility;
 import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.DeriveResult;
@@ -91,8 +92,13 @@ public final class StrictConstructorDerivator {
           .apply(adt.dataConstruction());
     }
 
-    return result(codeSpec);
+    return needLambdaVisitorGeneration(adt, deriveContext, deriveUtils)
+           ? MapperDerivator.derive(adt, deriveContext, deriveUtils).map(codeSpec::append)
+           : result(codeSpec);
 
+  }
+  private static boolean needLambdaVisitorGeneration(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+    return !deriveContext.makes().contains(Make.lambdaVisitor) && findAbstractEquals(deriveUtils, adt.typeConstructor().typeElement()).isPresent();
   }
 
   private static DerivedCodeSpec constructorSpec(AlgebraicDataType adt, DataConstructor constructor, DeriveContext deriveContext,
