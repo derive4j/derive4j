@@ -273,8 +273,11 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
 ```
 # Smart constructors and static methods export
 Sometimes you want to validate the constructors parameters before returning an instance of a type. When using the `Smart` visibity in `@Data`, Derive4J will not expose "raw" constructors and setter as public, but will use package private visibility for those methods instead (getters will still be public).
+
 Then you expose a public static factory method that will do the necessary validation of the arguments before returning an instance (typically wrapped in a `Option`/`Either`/`Validation`), and that public factory will be the only way to get an instance of that type.
+
 But at the same times you may want to only use the generated class for all static methods. In that case, you may annotated your static  methods with `@ExportAsPublic` and a delegating method will be generated with public visibility in the generated class for that method.
+
 See usage of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
 
 # Updating deeply nested immutable data structure
