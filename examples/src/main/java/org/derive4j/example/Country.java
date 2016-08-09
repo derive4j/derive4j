@@ -26,14 +26,26 @@
 package org.derive4j.example;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-@Data public abstract class Address {
+@Data public enum Country {
 
-  interface Cases<R> {
-    R Address(int number, String street);
-  }
+  Fr {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Fr();
+    }
+  }, Ch {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Ch();
+    }
+  };
 
   public abstract <R> R match(Cases<R> cases);
 
+  interface Cases<R> {
+    R Fr();
+
+    R Ch();
+  }
 }
