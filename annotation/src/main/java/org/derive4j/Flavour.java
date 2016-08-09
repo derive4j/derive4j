@@ -60,7 +60,15 @@ package org.derive4j;
 
       return cases.HighJ();
     }
+  },
+
+  Guava {
+    @Override public <R> R match(Cases<R> cases) {
+
+      return cases.Guava();
+    }
   };
+
 
   public abstract <R> R match(Cases<R> cases);
 
@@ -76,6 +84,8 @@ package org.derive4j;
     R Javaslang();
 
     R HighJ();
+
+    R Guava();
   }
 
 }

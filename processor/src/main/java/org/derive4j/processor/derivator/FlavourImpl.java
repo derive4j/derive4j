@@ -43,6 +43,7 @@ public final class FlavourImpl {
         .Fugue2(() -> "com.google.common.base.Supplier")
         .Javaslang(Supplier.class::getName)
         .HighJ(Supplier.class.getName())
+        .Guava(() -> "com.google.common.base.Supplier")
         .apply(flavour));
   }
 
@@ -55,6 +56,7 @@ public final class FlavourImpl {
         .Fugue2("com.google.common.base.Function")
         .Javaslang("javaslang.Function1")
         .HighJ("org.highj.function.F1")
+        .Guava("com.google.common.base.Function")
         .apply(flavour));
   }
 
@@ -67,6 +69,7 @@ public final class FlavourImpl {
         .Fugue2(() -> optionType(elements.getTypeElement("com.atlassian.fugue.Option"), "none", "some"))
         .Javaslang(() -> optionType(elements.getTypeElement("javaslang.control.Option"), "none", "some"))
         .HighJ(() -> optionType(elements.getTypeElement("org.highj.data.Maybe"), "Nothing", "Just"))
+        .Guava(() -> optionType(elements.getTypeElement("com.google.common.base.Optional"), "absent", "of"))
         .apply(flavour);
   }
 
@@ -79,6 +82,7 @@ public final class FlavourImpl {
         .Fugue2(() -> Optional.of(eitherType(elements.getTypeElement("com.atlassian.fugue.Either"), "left", "right")))
         .Javaslang(() -> Optional.of(eitherType(elements.getTypeElement("javaslang.control.Either"), "left", "right")))
         .HighJ(() -> Optional.of(eitherType(elements.getTypeElement("org.highj.data.Either"), "Left", "Right")))
+        .Guava(Optional::<EitherType>empty)
         .apply(flavour);
   }
 
