@@ -14,6 +14,7 @@
     - [First class laziness](#first-class-laziness)
     - [Flavours](#flavours)
     - [Optics (functional lenses)](#optics-functional-lenses)
+- [Smart constructors and static methods export](#smart-constructors-and-static-methods-export)
 - [Updating deeply nested immutable data structure](#updating-deeply-nested-immutable-data-structure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Catamorphisms](#catamorphisms)
@@ -228,7 +229,7 @@ Languages like Haskell provide laziness by default, which simplifies a lot of al
 Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)). 
 
 ## Flavours
-In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)), ```Javaslang``` ([Javaslang](http://javaslang.com/)) and ```HighJ``` ([HighJ](https://github.com/DanielGronau/highj))  flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
+In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)), ```Javaslang``` ([Javaslang](http://javaslang.com/)), ```HighJ``` ([HighJ](https://github.com/DanielGronau/highj)) and ```Guava``` flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
 
 ## Optics (functional lenses)
 If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
@@ -270,6 +271,12 @@ Using Derive4J generated code, defining optics is a breeze (you need to use the 
       p2 -> Requests.POST(p2._1(), p2._2()));
 }
 ```
+# Smart constructors and static methods export
+Sometimes you want to validate the constructors parameters before returning an instance of a type. When using the `Smart` visibity in `@Data`, Derive4J will not expose "raw" constructors and setter as public, but will use package private visibility for those methods instead (getters will still be public).
+Then you expose a public static factory method that will do the necessary validation of the arguments before returning an instance (typically wrapped in a `Option`/`Either`/`Validation`), and that public factory will be the only way to get an instance of that type.
+But at the same times you may want to only use the generated class for all static methods. In that case, you may annotated your static  methods with `@ExportAsPublic` and a delegating method will be generated with public visibility in the generated class for that method.
+See usage of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
+
 # Updating deeply nested immutable data structure
 Let's say you want to modelize a CRM. Each client is a ```Person``` which can be contacted either by email, telephone or postal mail. With Derive4J you could write the following:
 ```java
@@ -425,7 +432,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>0.8.3</version>
+  <version>0.9</version>
   <optional>true</optional>
 </dependency>
 ```
@@ -433,12 +440,12 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '0.8.3', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '0.9', ext: 'jar')
 ```
 or better using the [gradle-apt-plugin](https://github.com/tbroyer/gradle-apt-plugin):
 ```
-compileOnly "org.derive4j:derive4j-annotation:0.8.3"
-apt "org.derive4j:derive4j:0.8.3"
+compileOnly "org.derive4j:derive4j-annotation:0.9"
+apt "org.derive4j:derive4j:0.9"
 ```
 ## Contributing
 
