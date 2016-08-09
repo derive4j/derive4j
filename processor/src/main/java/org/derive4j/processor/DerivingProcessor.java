@@ -110,7 +110,7 @@ DerivingProcessor
       try {
         Data dataAnnotation = element.getAnnotation(Data.class);
 
-        Set<Make> makes = BuiltinDerivator.makeWithDpendencies(dataAnnotation.value().make());
+        Set<Make> makes = BuiltinDerivator.makeWithDependencies(dataAnnotation.value().make());
 
         DeriveContext deriveContext = new DeriveContext() {
           @Override public Flavour flavour() {

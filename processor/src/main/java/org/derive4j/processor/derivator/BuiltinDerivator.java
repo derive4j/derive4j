@@ -66,7 +66,7 @@ public class BuiltinDerivator {
         codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
-  public static Set<Make> makeWithDpendencies(Make... makes) {
+  public static Set<Make> makeWithDependencies(Make... makes) {
 
     EnumSet<Make> makeSet = EnumSet.noneOf(Make.class);
 
