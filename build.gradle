@@ -107,6 +107,7 @@ subprojects {
     license {
         header project.file('etc/HEADER.txt')
         strictCheck true
+        ignoreFailures true
         mapping {
             java = 'SLASHSTAR_STYLE'
         }
