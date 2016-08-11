@@ -51,7 +51,7 @@ import org.derive4j.Visibility;
     // A name cannot be only spaces, must not start or and with space.
     return (value.trim().isEmpty() || value.endsWith(" ") || value.startsWith(" "))
            ? Optional.empty()
-           : Optional.of(PersonNames.Name(value));
+           : Optional.of(PersonNames.Name0(value));
   }
 
 }

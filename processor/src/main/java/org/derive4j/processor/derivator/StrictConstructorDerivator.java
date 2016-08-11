@@ -157,7 +157,8 @@ public final class StrictConstructorDerivator {
     typeSpecBuilder.addMethods(optionalAsStream(deriveHashCode(adt, constructor, deriveContext, deriveUtils)).collect(Collectors.toList()));
     typeSpecBuilder.addMethods(optionalAsStream(deriveToString(adt, constructor, deriveContext, deriveUtils)).collect(Collectors.toList()));
 
-    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name())
+    boolean smartConstructor = smartConstructor(constructor, deriveContext);
+    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name() + (smartConstructor ? '0' : ""))
         .addModifiers(Modifier.STATIC)
         .addTypeVariables(typeVariableNames)
         .addParameters(constructor.arguments()
@@ -167,6 +168,10 @@ public final class StrictConstructorDerivator {
         .varargs(constructor.deconstructor().visitorMethod().isVarArgs())
         .returns(constructedType);
 
+    if (!smartConstructor) {
+      factory.addModifiers(Modifier.PUBLIC);
+    }
+
     if (Arrays.asList(adt.typeConstructor().typeElement().getAnnotation(Data.class).arguments()).contains(ArgOption.checkedNotNull)) {
       for (DataArgument argument : constructor.arguments()) {
         if (!argument.type().getKind().isPrimitive()) {
@@ -174,10 +179,6 @@ public final class StrictConstructorDerivator {
         }
       }
 
-    }
-
-    if (deriveContext.visibility() != Visibility.Smart) {
-      factory.addModifiers(Modifier.PUBLIC);
     }
 
     DerivedCodeSpec result;
@@ -205,7 +206,10 @@ public final class StrictConstructorDerivator {
     }
 
     return result;
-
+  }
+  
+  static boolean smartConstructor(DataConstructor constructor, DeriveContext deriveContext) {
+    return deriveContext.visibility() == Visibility.Smart && !constructor.arguments().isEmpty();
   }
 
   private static Optional<MethodSpec> deriveEquals(AlgebraicDataType adt, DataConstructor constructor, DeriveContext deriveContext,
