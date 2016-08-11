@@ -36,7 +36,7 @@ import static org.derive4j.Visibility.Smart;
 
   public static DeriveMessage message(String msg, List<MessageLocalization> localizations) {
 
-    return DeriveMessages.message(msg, unmodifiableList(new ArrayList<>(localizations)));
+    return DeriveMessages.message0(msg, unmodifiableList(new ArrayList<>(localizations)));
   }
 
   public static DeriveMessage message(String msg, MessageLocalization localization) {

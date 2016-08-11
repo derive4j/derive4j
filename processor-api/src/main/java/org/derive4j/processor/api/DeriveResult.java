@@ -25,7 +25,8 @@ import org.derive4j.Derive;
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.DeriveResults.modResult;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DeriveResult<A> {
+@Data
+public abstract class DeriveResult<A> {
 
   DeriveResult() {
 

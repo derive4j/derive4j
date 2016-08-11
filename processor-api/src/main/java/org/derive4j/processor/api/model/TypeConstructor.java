@@ -40,7 +40,7 @@ import static org.derive4j.processor.api.model.TypeConstructors.getTypeVariables
 
   public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables) {
 
-    return TypeConstructors.typeConstructor(typeElement, declaredType, unmodifiableList(new ArrayList<>(typeVariables)));
+    return TypeConstructors.typeConstructor0(typeElement, declaredType, unmodifiableList(new ArrayList<>(typeVariables)));
   }
 
   public abstract <R> R match(Case<R> typeConstructor);

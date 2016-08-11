@@ -38,12 +38,12 @@ import static org.derive4j.processor.api.model.MultipleConstructorsSupport.getCo
 
   public static MultipleConstructors visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
 
-    return MultipleConstructorsSupport.visitorDispatch(visitorParam, visitorType, unmodifiableList(new ArrayList<>(constructors)));
+    return MultipleConstructorsSupport.visitorDispatch0(visitorParam, visitorType, unmodifiableList(new ArrayList<>(constructors)));
   }
 
   public static MultipleConstructors functionsDispatch(List<DataConstructor> constructors) {
 
-    return MultipleConstructorsSupport.functionsDispatch(unmodifiableList(new ArrayList<>(constructors)));
+    return MultipleConstructorsSupport.functionsDispatch0(unmodifiableList(new ArrayList<>(constructors)));
   }
 
   public abstract <R> R match(Cases<R> cases);

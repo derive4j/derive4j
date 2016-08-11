@@ -27,7 +27,7 @@ import org.derive4j.Derive;
 import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataConstructions.cases;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DataConstruction {
+@Data public abstract class DataConstruction {
 
   private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases().multipleConstructors(
       MultipleConstructorsSupport::getConstructors).oneConstructor(Collections::singletonList).noConstructor(Collections::emptyList);

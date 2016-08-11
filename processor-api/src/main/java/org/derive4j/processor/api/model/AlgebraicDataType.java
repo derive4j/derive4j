@@ -39,7 +39,7 @@ import static org.derive4j.processor.api.model.AlgebraicDataTypes.getTypeConstru
   public static AlgebraicDataType adt(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction,
       List<DataArgument> fields) {
 
-    return AlgebraicDataTypes.adt(typeConstructor, matchMethod, dataConstruction, unmodifiableList(new ArrayList<>(fields)));
+    return AlgebraicDataTypes.adt0(typeConstructor, matchMethod, dataConstruction, unmodifiableList(new ArrayList<>(fields)));
   }
 
   public abstract <R> R match(Case<R> adt);

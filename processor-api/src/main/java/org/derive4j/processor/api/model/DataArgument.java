@@ -28,7 +28,7 @@ import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 import static org.derive4j.processor.api.model.DataArguments.getType;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DataArgument {
+@Data public abstract class DataArgument {
 
   DataArgument() {
 

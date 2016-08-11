@@ -46,7 +46,7 @@ import static org.derive4j.processor.api.DerivedCodeSpecs.getWarnings;
   public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, List<FieldSpec> fields, List<MethodSpec> methods, List<DeriveMessage> infos,
       List<DeriveMessage> warnings) {
 
-    return DerivedCodeSpecs.codeSpec(unmodifiableList(new ArrayList<>(classes)), unmodifiableList(new ArrayList<>(fields)),
+    return DerivedCodeSpecs.codeSpec0(unmodifiableList(new ArrayList<>(classes)), unmodifiableList(new ArrayList<>(fields)),
         unmodifiableList(new ArrayList<>(methods)), unmodifiableList(new ArrayList<>(infos)), unmodifiableList(new ArrayList<>(warnings)));
   }
 

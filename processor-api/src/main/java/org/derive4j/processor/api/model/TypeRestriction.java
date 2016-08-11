@@ -28,7 +28,7 @@ import static org.derive4j.processor.api.model.TypeRestrictions.getIdFunction;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRefinementType;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRestrictedTypeVariable;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class TypeRestriction {
+@Data public abstract class TypeRestriction {
 
   TypeRestriction() {
 

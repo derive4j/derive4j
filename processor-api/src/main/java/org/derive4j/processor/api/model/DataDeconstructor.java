@@ -31,7 +31,7 @@ import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMeth
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorParam;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DataDeconstructor {
+@Data public abstract class DataDeconstructor {
 
   DataDeconstructor() {
 

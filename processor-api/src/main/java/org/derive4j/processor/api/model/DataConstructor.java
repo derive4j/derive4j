@@ -43,7 +43,7 @@ import static org.derive4j.processor.api.model.DataConstructors.getTypeVariables
   public static DataConstructor constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
       List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor) {
 
-    return DataConstructors.constructor(name, unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(arguments)),
+    return DataConstructors.constructor0(name, unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(arguments)),
         unmodifiableList(new ArrayList<>(typeRestrictions)), returnedType, deconstructor);
   }
 

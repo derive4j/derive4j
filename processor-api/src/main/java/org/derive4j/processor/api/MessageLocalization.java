@@ -26,7 +26,7 @@ import org.derive4j.Derive;
 
 import static org.derive4j.Visibility.Smart;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class MessageLocalization {
+@Data public abstract class MessageLocalization {
 
   MessageLocalization() {
 

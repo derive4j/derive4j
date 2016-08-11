@@ -27,7 +27,7 @@ import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.MatchMethods.getElement;
 import static org.derive4j.processor.api.model.MatchMethods.getReturnTypeVariable;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class MatchMethod {
+@Data public abstract class MatchMethod {
 
   MatchMethod() {
 
