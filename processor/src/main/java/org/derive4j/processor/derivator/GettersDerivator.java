@@ -47,6 +47,7 @@ import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
+import static org.derive4j.processor.Utils.asBoxedType;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
 
@@ -73,7 +74,7 @@ public final class GettersDerivator {
     FlavourImpl.OptionType optionType = FlavourImpl.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
     DeclaredType returnType = deriveUtils.types()
-        .getDeclaredType(optionType.typeElement(), field.type().accept(Utils.asBoxedType, deriveUtils.types()));
+        .getDeclaredType(optionType.typeElement(), field.type().accept(asBoxedType, deriveUtils.types()));
 
     return DataConstructions.cases()
         .multipleConstructors(MultipleConstructorsSupport.cases()
@@ -188,7 +189,7 @@ public final class GettersDerivator {
       String arg, DeclaredType visitorType, DataArgument field) {
 
     Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                                                                       ? Optional.of(field.type())
+                                                                       ?  Optional.of(asBoxedType.visit(field.type(), deriveUtils.types()))
                                                                        : Optional.empty();
 
     Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(
