@@ -438,7 +438,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
   <version>0.9.1</version>
   <optional>true</optional>
 </dependency>
-```n
+```
 [search.maven]: http://search.maven.org/#search|ga|1|org.derive4j.derive4j
 
 ## Gradle
