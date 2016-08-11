@@ -35,7 +35,7 @@ import static org.derive4j.example.Addresses.Address;
 import static org.derive4j.example.Addresses.modNumber;
 import static org.derive4j.example.Contacts.getPostalAddress;
 import static org.derive4j.example.Contacts.modPostalAddress;
-import static org.derive4j.example.PersonNames.Name;
+import static org.derive4j.example.PersonNames.Name0;
 import static org.derive4j.example.Persons.Person;
 import static org.derive4j.example.Persons.getContact;
 import static org.derive4j.example.Persons.modContact;
@@ -46,7 +46,7 @@ import static org.derive4j.example.Persons.modContact;
 
   public static void main(String[] args) {
 
-    Person joe = Person(Name("Joe"), Contacts.byMail(Address(10, "Main St")));
+    Person joe = Person(Name0("Joe"), Contacts.byMail(Address(10, "Main St")));
 
     // oups! there was a off my one error in the import process. We must increment all street numbers!!
 

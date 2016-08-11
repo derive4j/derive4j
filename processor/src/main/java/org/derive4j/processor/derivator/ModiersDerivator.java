@@ -49,8 +49,10 @@ import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
+import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
+import static org.derive4j.processor.derivator.StrictConstructorDerivator.smartConstructor;
 
 public final class ModiersDerivator {
 
@@ -77,12 +79,19 @@ public final class ModiersDerivator {
 
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
-    String modMethodName = "mod" + Utils.capitalize(field.fieldName());
+    Visibility visibility = deriveContext.visibility();
+    String smartSuffix = visibility == Smart
+                         ? "0"
+                         : "";
+
+    String modMethodName = "mod" + Utils.capitalize(field.fieldName()) + smartSuffix;
 
     NameAllocator nameAllocator = new NameAllocator();
     nameAllocator.newName(modMethodName);
 
     String adtArg = nameAllocator.newName(Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName()));
+
+
 
     MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName)
         .addModifiers(Modifier.STATIC)
@@ -96,7 +105,7 @@ public final class ModiersDerivator {
         .returns(ParameterizedTypeName.get(ClassName.get(f1), TypeName.get(adt.typeConstructor().declaredType()),
             deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)));
 
-    if (deriveContext.visibility() != Visibility.Smart) {
+    if (visibility != Smart) {
       modBuilder.addModifiers(Modifier.PUBLIC);
     }
 
@@ -108,32 +117,35 @@ public final class ModiersDerivator {
     CodeBlock lambdas = adt.dataConstruction()
         .constructors()
         .stream()
-        .map(constructor -> CodeBlock.builder()
-            .add("($L) -> " +
-                    (constructor.typeRestrictions().isEmpty()
-                     ? "$L"
-                     : "($T) ") +
-                    "$L($L)", joinStringsAsArguments(Stream.concat(
-                constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor
-                    .typeRestrictions()
-                    .stream()
-                    .map(TypeRestriction::idFunction)
-                    .map(DataArgument::fieldName)
-                    .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
-                                                                                        ? ""
-                                                                                        : ClassName.get(adt.typeConstructor().typeElement()),
-                constructor.name(), joinStringsAsArguments(constructor.arguments()
-                    .stream()
-                    .map(DataArgument::fieldName)
-                    .map(fn -> fn.equals(field.fieldName())
-                               ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
-                               : nameAllocator.clone().newName(fn, fn + " field"))))
-            .build())
+        .map(constructor -> {
+          String constructorName =  smartConstructor(constructor, deriveContext) ? constructor.name() + "0" : constructor.name();
+          return CodeBlock.builder()
+              .add("($L) -> " +
+                      (constructor.typeRestrictions().isEmpty()
+                       ? "$L"
+                       : "($T) ") +
+                      "$L($L)", joinStringsAsArguments(Stream.concat(
+                  constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+                  constructor.typeRestrictions()
+                      .stream()
+                      .map(TypeRestriction::idFunction)
+                      .map(DataArgument::fieldName)
+                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
+                                                                                          ? ""
+                                                                                          : ClassName.get(adt.typeConstructor().typeElement()), constructorName,
+                  joinStringsAsArguments(constructor.arguments()
+                      .stream()
+                      .map(DataArgument::fieldName)
+                      .map(fn -> fn.equals(field.fieldName())
+                                 ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
+                                 : nameAllocator.clone().newName(fn, fn + " field"))))
+              .build();
+        })
         .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
         .orElse(CodeBlock.builder().build());
 
     String setterArgName = "new" + Utils.capitalize(field.fieldName());
-    MethodSpec.Builder setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName()))
+    MethodSpec.Builder setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName()) + smartSuffix)
         .addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
         .addTypeVariables(uniqueTypeVariables.stream()
@@ -144,7 +156,7 @@ public final class ModiersDerivator {
             deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)))
         .addStatement("return $L(__ -> $L)", modMethodName, setterArgName);
 
-    if (deriveContext.visibility() != Visibility.Smart) {
+    if (visibility != Smart) {
       setMethod.addModifiers(Modifier.PUBLIC);
     }
 
@@ -174,7 +186,8 @@ public final class ModiersDerivator {
 
   private static List<TypeVariable> getUniqueTypeVariables(DataArgument field, List<DataArgument> allFields, DeriveUtils deriveUtils) {
 
-    return deriveUtils.typeVariablesIn(field.type()).stream()
+    return deriveUtils.typeVariablesIn(field.type())
+        .stream()
         .filter(tv -> allFields.stream()
             .filter(da -> !field.fieldName().equals(da.fieldName()))
             .flatMap(da -> deriveUtils.typeVariablesIn(da.type()).stream())
