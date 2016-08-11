@@ -169,7 +169,9 @@ public final class StrictConstructorDerivator {
 
     if (Arrays.asList(adt.typeConstructor().typeElement().getAnnotation(Data.class).arguments()).contains(ArgOption.checkedNotNull)) {
       for (DataArgument argument : constructor.arguments()) {
-        factory.addStatement("if ($1L == null) throw new NullPointerException(\"$1L must not be null\")", argument.fieldName());
+        if (!argument.type().getKind().isPrimitive()) {
+          factory.addStatement("if ($1L == null) throw new NullPointerException(\"$1L must not be null\")", argument.fieldName());
+        }
       }
 
     }
