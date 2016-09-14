@@ -112,7 +112,7 @@ You can also ask Derive4J to generate null checks with:
 ```
 
 ## equals, hashCode, toString?
-Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString} are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them, by declaring them abstract. Eg by adding the following in your annotated class:
+[Derive4J philosophy is to be as safe and consistent as possible](https://github.com/derive4j/derive4j/issues/50). That is why Object.{equals, hashCode, toString} are not implemented by generated classes by default (they are best kept ignored as they break parametricity). Nonetheless, as a concession to legacy, it is possible to force Derive4J to implement them, by declaring them abstract. Eg by adding the following in your annotated class:
 ```java
   @Override
   public abstract int hashCode();
