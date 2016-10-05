@@ -28,7 +28,8 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static org.derive4j.Visibility.Smart;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DeriveMessage {
+@Data(@Derive(withVisibility = Smart))
+public abstract class DeriveMessage {
 
   DeriveMessage() {
 

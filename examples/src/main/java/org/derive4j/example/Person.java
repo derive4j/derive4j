@@ -40,7 +40,8 @@ import static org.derive4j.example.Persons.Person;
 import static org.derive4j.example.Persons.getContact;
 import static org.derive4j.example.Persons.modContact;
 
-@Data public abstract class Person {
+@Data
+public abstract class Person {
 
   public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
 

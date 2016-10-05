@@ -29,7 +29,8 @@ import static org.derive4j.Make.modifiers;
 import static org.derive4j.Make.patternMatching;
 import static org.derive4j.Visibility.Same;
 
-@Target({}) public @interface Derive {
+@Target({})
+public @interface Derive {
 
   String inClass() default ":auto";
 

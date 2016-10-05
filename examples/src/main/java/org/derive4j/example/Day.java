@@ -27,40 +27,48 @@ package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public enum Day {
+@Data
+public enum Day {
 
   Sunday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Sunday();
     }
   }, Monday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Monday();
     }
   }, Tuesday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Tuesday();
     }
   }, Wednesday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Wednesday();
     }
   }, Thursday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Thursday();
     }
   }, Friday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Friday();
     }
   }, Saturday {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Saturday();
     }

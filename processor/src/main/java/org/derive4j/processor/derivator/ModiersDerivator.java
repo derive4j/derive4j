@@ -91,8 +91,6 @@ public final class ModiersDerivator {
 
     String adtArg = nameAllocator.newName(Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName()));
 
-
-
     MethodSpec.Builder modBuilder = MethodSpec.methodBuilder(modMethodName)
         .addModifiers(Modifier.STATIC)
         .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
@@ -114,35 +112,32 @@ public final class ModiersDerivator {
       modBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
     }
 
-    CodeBlock lambdas = adt.dataConstruction()
-        .constructors()
-        .stream()
-        .map(constructor -> {
-          String constructorName =  smartConstructor(constructor, deriveContext) ? constructor.name() + "0" : constructor.name();
-          return CodeBlock.builder()
-              .add("($L) -> " +
-                      (constructor.typeRestrictions().isEmpty()
-                       ? "$L"
-                       : "($T) ") +
-                      "$L($L)", joinStringsAsArguments(Stream.concat(
-                  constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
+    CodeBlock lambdas = adt.dataConstruction().constructors().stream().map(constructor -> {
+      String constructorName = smartConstructor(constructor, deriveContext)
+                               ? constructor.name() + "0"
+                               : constructor.name();
+      return CodeBlock.builder()
+          .add("($L) -> " +
+                  (constructor.typeRestrictions().isEmpty()
+                   ? "$L"
+                   : "($T) ") +
+                  "$L($L)", joinStringsAsArguments(
+              Stream.concat(constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
                   constructor.typeRestrictions()
                       .stream()
                       .map(TypeRestriction::idFunction)
                       .map(DataArgument::fieldName)
                       .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
                                                                                           ? ""
-                                                                                          : ClassName.get(adt.typeConstructor().typeElement()), constructorName,
-                  joinStringsAsArguments(constructor.arguments()
-                      .stream()
-                      .map(DataArgument::fieldName)
-                      .map(fn -> fn.equals(field.fieldName())
-                                 ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
-                                 : nameAllocator.clone().newName(fn, fn + " field"))))
-              .build();
-        })
-        .reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build())
-        .orElse(CodeBlock.builder().build());
+                                                                                          : ClassName.get(adt.typeConstructor().typeElement()),
+              constructorName, joinStringsAsArguments(constructor.arguments()
+                  .stream()
+                  .map(DataArgument::fieldName)
+                  .map(fn -> fn.equals(field.fieldName())
+                             ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
+                             : nameAllocator.clone().newName(fn, fn + " field"))))
+          .build();
+    }).reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build()).orElse(CodeBlock.builder().build());
 
     String setterArgName = "new" + Utils.capitalize(field.fieldName());
     MethodSpec.Builder setMethod = MethodSpec.methodBuilder("set" + Utils.capitalize(field.fieldName()) + smartSuffix)

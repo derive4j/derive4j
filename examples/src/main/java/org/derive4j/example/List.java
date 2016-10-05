@@ -38,7 +38,8 @@ import static org.derive4j.example.Lists.cons;
 import static org.derive4j.example.Lists.lazy;
 import static org.derive4j.example.Lists.nil;
 
-@Data public abstract class List<A> {
+@Data
+public abstract class List<A> {
 
   List() {
 
@@ -104,7 +105,8 @@ import static org.derive4j.example.Lists.nil;
     class ConsVisitor implements BiFunction<A, List<A>, Boolean> {
       List<A> l = List.this;
 
-      @Override public Boolean apply(A head, List<A> tail) {
+      @Override
+      public Boolean apply(A head, List<A> tail) {
 
         effect.accept(head);
         l = tail;
@@ -121,7 +123,8 @@ import static org.derive4j.example.Lists.nil;
     class Acc implements Consumer<A> {
       B acc = zero;
 
-      @Override public void accept(A a) {
+      @Override
+      public void accept(A a) {
 
         acc = f.apply(acc, a);
       }

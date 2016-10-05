@@ -30,7 +30,8 @@ import static org.derive4j.processor.api.model.AlgebraicDataTypes.getFields;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getMatchMethod;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getTypeConstructor;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class AlgebraicDataType {
+@Data(@Derive(withVisibility = Smart))
+public abstract class AlgebraicDataType {
 
   AlgebraicDataType() {
 

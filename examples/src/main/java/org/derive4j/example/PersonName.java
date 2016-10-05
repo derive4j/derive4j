@@ -33,7 +33,8 @@ import org.derive4j.ExportAsPublic;
 import org.derive4j.FieldNames;
 import org.derive4j.Visibility;
 
-@Data(@Derive(withVisibility = Visibility.Smart)) public abstract class PersonName {
+@Data(@Derive(withVisibility = Visibility.Smart))
+public abstract class PersonName {
 
   PersonName() {
 
@@ -43,6 +44,7 @@ import org.derive4j.Visibility;
 
   /**
    * This method is reexported with public modifier as {@link PersonNames#parseName(String)}. Also the javadoc is copied over.
+   *
    * @param value unparse string
    * @return a valid {@link PersonName}, maybe.
    */

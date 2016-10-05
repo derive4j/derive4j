@@ -42,7 +42,8 @@ import static org.derive4j.example.Terms.Zero;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data public abstract class Term<T> {
+@Data
+public abstract class Term<T> {
   Term() {
 
   }
@@ -80,11 +81,14 @@ import static org.derive4j.example.Terms.Zero;
 
   public abstract <X> X match(Cases<T, X> cases);
 
-  @Override public abstract boolean equals(Object obj);
+  @Override
+  public abstract boolean equals(Object obj);
 
-  @Override public abstract int hashCode();
+  @Override
+  public abstract int hashCode();
 
-  @Override public abstract String toString();
+  @Override
+  public abstract String toString();
 
   public interface F<A, B> {// Could be java.util.function.Function,
 

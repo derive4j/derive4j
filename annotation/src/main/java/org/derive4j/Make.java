@@ -18,59 +18,68 @@
  */
 package org.derive4j;
 
-@Data public enum Make {
+@Data
+public enum Make {
 
   lambdaVisitor {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.lambdaVisitor();
     }
   },
 
   constructors {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.constructors();
     }
   },
 
   lazyConstructor {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.lazyConstructor();
     }
   },
 
   patternMatching {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.patternMatching();
     }
   },
 
   getters {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.getters();
     }
   },
 
   modifiers {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.modifiers();
     }
   },
 
   catamorphism {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.catamorphism();
     }
   },
 
   hktCoerce {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.hktCoerce();
     }

@@ -25,5 +25,6 @@ import java.lang.annotation.Target;
  * Annotate package private static methods of your @Data class with this annotation to have them re-exported as public the the corresponding
  * generated class.
  */
-@Target(ElementType.METHOD) public @interface ExportAsPublic {
+@Target(ElementType.METHOD)
+public @interface ExportAsPublic {
 }

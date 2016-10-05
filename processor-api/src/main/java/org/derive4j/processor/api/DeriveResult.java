@@ -20,9 +20,7 @@ package org.derive4j.processor.api;
 
 import java.util.function.Function;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.DeriveResults.modResult;
 
 @Data

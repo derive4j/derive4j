@@ -37,7 +37,8 @@ import static org.derive4j.processor.api.DerivedCodeSpecs.getInfos;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getMethods;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getWarnings;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DerivedCodeSpec {
+@Data(@Derive(withVisibility = Smart))
+public abstract class DerivedCodeSpec {
 
   DerivedCodeSpec() {
 

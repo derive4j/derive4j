@@ -21,14 +21,13 @@ package org.derive4j.processor.api.model;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.TypeRestrictions.getIdFunction;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRefinementType;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRestrictedTypeVariable;
 
-@Data public abstract class TypeRestriction {
+@Data
+public abstract class TypeRestriction {
 
   TypeRestriction() {
 

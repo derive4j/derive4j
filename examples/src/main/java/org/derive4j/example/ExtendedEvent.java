@@ -27,7 +27,8 @@ package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public abstract class ExtendedEvent<U> {
+@Data
+public abstract class ExtendedEvent<U> {
 
   interface Cases<A, X> extends Event.Cases<A, X> {
 
@@ -37,9 +38,12 @@ import org.derive4j.Data;
 
   public abstract <X> X match(Cases<U, X> cases);
 
-  @Override public abstract boolean equals(Object obj);
+  @Override
+  public abstract boolean equals(Object obj);
 
-  @Override public abstract int hashCode();
+  @Override
+  public abstract int hashCode();
 
-  @Override public abstract String toString();
+  @Override
+  public abstract String toString();
 }

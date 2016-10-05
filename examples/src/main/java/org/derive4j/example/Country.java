@@ -27,15 +27,18 @@ package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public enum Country {
+@Data
+public enum Country {
 
   Fr {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Fr();
     }
   }, Ch {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Ch();
     }

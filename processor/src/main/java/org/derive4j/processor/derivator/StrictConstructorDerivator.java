@@ -158,7 +158,10 @@ public final class StrictConstructorDerivator {
     typeSpecBuilder.addMethods(optionalAsStream(deriveToString(adt, constructor, deriveContext, deriveUtils)).collect(Collectors.toList()));
 
     boolean smartConstructor = smartConstructor(constructor, deriveContext);
-    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name() + (smartConstructor ? '0' : ""))
+    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name() +
+        (smartConstructor
+         ? '0'
+         : ""))
         .addModifiers(Modifier.STATIC)
         .addTypeVariables(typeVariableNames)
         .addParameters(constructor.arguments()
@@ -207,7 +210,7 @@ public final class StrictConstructorDerivator {
 
     return result;
   }
-  
+
   static boolean smartConstructor(DataConstructor constructor, DeriveContext deriveContext) {
     return deriveContext.visibility() == Visibility.Smart && !constructor.arguments().isEmpty();
   }
@@ -317,34 +320,40 @@ public final class StrictConstructorDerivator {
     String thisField = "this." + da.fieldName();
     return da.type().accept(new TypeKindVisitor7<String, String>() {
 
-      @Override protected String defaultAction(final TypeMirror e, final String p) {
+      @Override
+      protected String defaultAction(final TypeMirror e, final String p) {
 
         return '(' + thisField + " == " + p + ')';
       }
 
-      @Override public String visitTypeVariable(TypeVariable t, String p) {
+      @Override
+      public String visitTypeVariable(TypeVariable t, String p) {
 
         return thisField + ".equals(" + p + ')';
       }
 
-      @Override public String visitArray(final ArrayType t, final String p) {
+      @Override
+      public String visitArray(final ArrayType t, final String p) {
 
         return "java.util.Arrays.equals(" + thisField + ", " + p + ')';
       }
 
-      @Override public String visitDeclared(final DeclaredType t, final String p) {
+      @Override
+      public String visitDeclared(final DeclaredType t, final String p) {
 
         return (t.asElement().getKind() == ElementKind.ENUM)
                ? defaultAction(t, p)
                : (thisField + ".equals(" + p + ')');
       }
 
-      @Override public String visitPrimitiveAsDouble(final PrimitiveType t, final String p) {
+      @Override
+      public String visitPrimitiveAsDouble(final PrimitiveType t, final String p) {
 
         return "(Double.doubleToLongBits(" + thisField + ") == Double.doubleToLongBits(" + p + "))";
       }
 
-      @Override public String visitPrimitiveAsFloat(final PrimitiveType t, final String p) {
+      @Override
+      public String visitPrimitiveAsFloat(final PrimitiveType t, final String p) {
 
         return "(Float.floatToIntBits(" + thisField + ") == Float.floatToIntBits(" + p + "))";
       }
@@ -356,52 +365,62 @@ public final class StrictConstructorDerivator {
 
     return da.type().accept(new TypeKindVisitor7<String, String>() {
 
-      @Override protected String defaultAction(final TypeMirror e, final String p) {
+      @Override
+      protected String defaultAction(final TypeMirror e, final String p) {
 
         return p + ".hashCode()";
       }
 
-      @Override public String visitArray(final ArrayType t, final String p) {
+      @Override
+      public String visitArray(final ArrayType t, final String p) {
 
         return "java.util.Arrays.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsBoolean(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsBoolean(PrimitiveType t, String p) {
 
         return "Boolean.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsDouble(final PrimitiveType t, final String p) {
+      @Override
+      public String visitPrimitiveAsDouble(final PrimitiveType t, final String p) {
 
         return "Double.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsFloat(final PrimitiveType t, final String p) {
+      @Override
+      public String visitPrimitiveAsFloat(final PrimitiveType t, final String p) {
 
         return "Float.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsByte(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsByte(PrimitiveType t, String p) {
 
         return "Byte.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsChar(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsChar(PrimitiveType t, String p) {
 
         return "Character.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsInt(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsInt(PrimitiveType t, String p) {
 
         return p;
       }
 
-      @Override public String visitPrimitiveAsLong(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsLong(PrimitiveType t, String p) {
 
         return "Long.hashCode(" + p + ')';
       }
 
-      @Override public String visitPrimitiveAsShort(PrimitiveType t, String p) {
+      @Override
+      public String visitPrimitiveAsShort(PrimitiveType t, String p) {
 
         return "Short.hashCode(" + p + ')';
       }
@@ -412,12 +431,14 @@ public final class StrictConstructorDerivator {
 
     return da.type().accept(new TypeKindVisitor7<String, String>() {
 
-      @Override protected String defaultAction(final TypeMirror e, final String p) {
+      @Override
+      protected String defaultAction(final TypeMirror e, final String p) {
 
         return p;
       }
 
-      @Override public String visitArray(final ArrayType t, final String p) {
+      @Override
+      public String visitArray(final ArrayType t, final String p) {
 
         return "java.util.Arrays.toString(" + p + ')';
       }

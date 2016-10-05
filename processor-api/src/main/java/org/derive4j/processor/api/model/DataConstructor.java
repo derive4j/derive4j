@@ -34,7 +34,8 @@ import static org.derive4j.processor.api.model.DataConstructors.getReturnedType;
 import static org.derive4j.processor.api.model.DataConstructors.getTypeRestrictions;
 import static org.derive4j.processor.api.model.DataConstructors.getTypeVariables;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class DataConstructor {
+@Data(@Derive(withVisibility = Smart))
+public abstract class DataConstructor {
 
   DataConstructor() {
 

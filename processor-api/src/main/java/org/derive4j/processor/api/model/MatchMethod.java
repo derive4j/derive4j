@@ -21,13 +21,12 @@ package org.derive4j.processor.api.model;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.MatchMethods.getElement;
 import static org.derive4j.processor.api.model.MatchMethods.getReturnTypeVariable;
 
-@Data public abstract class MatchMethod {
+@Data
+public abstract class MatchMethod {
 
   MatchMethod() {
 

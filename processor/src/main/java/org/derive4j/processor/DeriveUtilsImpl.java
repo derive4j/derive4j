@@ -53,7 +53,6 @@ import static org.derive4j.processor.Utils.asExecutableElement;
 import static org.derive4j.processor.Utils.asTypeElement;
 import static org.derive4j.processor.Utils.asTypeVariable;
 import static org.derive4j.processor.Utils.getMethods;
-import static org.derive4j.processor.Utils.p;
 
 final class DeriveUtilsImpl implements DeriveUtils {
 
@@ -78,22 +77,26 @@ final class DeriveUtilsImpl implements DeriveUtils {
     adtParser = new AdtParser(this);
   }
 
-  @Override public Types types() {
+  @Override
+  public Types types() {
 
     return Types;
   }
 
-  @Override public Elements elements() {
+  @Override
+  public Elements elements() {
 
     return Elements;
   }
 
-  @Override public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(TypeElement typeElement) {
+  @Override
+  public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(TypeElement typeElement) {
 
     return adtParser.parseAlgebraicDataType(typeElement);
   }
 
-  @Override public TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs) {
+  @Override
+  public TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs) {
 
     return asDeclaredType.visit(typeMirror)
         .map(dt -> dt.getTypeArguments().isEmpty()
@@ -103,7 +106,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(TypeName.get(typeMirror)));
   }
 
-  @Override public Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt) {
+  @Override
+  public Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt) {
 
     return tv -> IntStream.range(0, dt.getTypeArguments().size())
         .filter(i -> Types.isSameType(tv, asTypeElement.visit(dt.asElement()).get().getTypeParameters().get(i).asType()))
@@ -112,7 +116,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .map(tm -> tm);
   }
 
-  @Override public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
+  @Override
+  public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
 
     return tv -> typeRestrictions.stream()
         .filter(tr -> Types.isSameType(tr.restrictedTypeVariable(), tv))
@@ -120,7 +125,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .map(TypeRestriction::refinementType);
   }
 
-  @Override public TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+  @Override
+  public TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
     return asDeclaredType.visit(typeMirror)
         .map(dt -> dt.getTypeArguments().isEmpty()
@@ -130,7 +136,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
             asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(typeMirror));
   }
 
-  @Override public DeclaredType resolve(DeclaredType declaredType, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
+  @Override
+  public DeclaredType resolve(DeclaredType declaredType, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
     return declaredType.getTypeArguments().isEmpty()
            ? declaredType
@@ -138,12 +145,14 @@ final class DeriveUtilsImpl implements DeriveUtils {
                declaredType.getTypeArguments().stream().map(ta -> resolve(ta, typeArgs)).toArray(TypeMirror[]::new));
   }
 
-  @Override public MethodSpec.Builder overrideMethodBuilder(ExecutableElement abstractMethod, DeclaredType declaredType) {
+  @Override
+  public MethodSpec.Builder overrideMethodBuilder(ExecutableElement abstractMethod, DeclaredType declaredType) {
 
     return MethodSpec.overriding(abstractMethod, declaredType, Types);
   }
 
-  @Override public List<TypeVariable> typeVariablesIn(TypeMirror typeMirror) {
+  @Override
+  public List<TypeVariable> typeVariablesIn(TypeMirror typeMirror) {
     List<TypeVariable> typeVariables = new ArrayList<>();
 
     typeVariablesIn0(typeMirror).forEach(tv -> {
@@ -151,7 +160,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         typeVariables.add(tv);
       }
     });
-    return  typeVariables;
+    return typeVariables;
   }
 
   private Stream<TypeVariable> typeVariablesIn0(TypeMirror typeMirror) {
@@ -161,14 +170,13 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .orElseGet(() -> asTypeVariable.visit(typeMirror).map(Stream::of).orElse(Stream.empty()));
   }
 
-  @Override public List<ExecutableElement> allAbstractMethods(DeclaredType declaredType) {
+  @Override
+  public List<ExecutableElement> allAbstractMethods(DeclaredType declaredType) {
 
     return asTypeElement.visit(declaredType.asElement()).map(typeElement -> {
 
-      List<P2<ExecutableElement, ExecutableType>> unorderedAbstractMethods = getMethods(Elements.getAllMembers(typeElement))
-          .filter(this::abstractMehod)
-          .map(e -> p2(e, (ExecutableType) Types.asMemberOf(declaredType, e)))
-          .collect(toList());
+      List<P2<ExecutableElement, ExecutableType>> unorderedAbstractMethods = getMethods(Elements.getAllMembers(typeElement)).filter(
+          this::abstractMehod).map(e -> p2(e, (ExecutableType) Types.asMemberOf(declaredType, e))).collect(toList());
 
       Set<ExecutableElement> deduplicatedUnorderedAbstractMethods = IntStream.range(0, unorderedAbstractMethods.size())
           .filter(i -> unorderedAbstractMethods.subList(0, i)
@@ -208,27 +216,32 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .flatMap(te -> Stream.concat(getSuperTypeElements(te), Stream.of(te)));
   }
 
-  @Override public List<ExecutableElement> allAbstractMethods(TypeElement typeElement) {
+  @Override
+  public List<ExecutableElement> allAbstractMethods(TypeElement typeElement) {
 
     return allAbstractMethods((DeclaredType) typeElement.asType());
   }
 
-  @Override public TypeElement object() {
+  @Override
+  public TypeElement object() {
 
     return object;
   }
 
-  @Override public ExecutableElement objectEquals() {
+  @Override
+  public ExecutableElement objectEquals() {
 
     return objectEquals;
   }
 
-  @Override public ExecutableElement objectHashCode() {
+  @Override
+  public ExecutableElement objectHashCode() {
 
     return objectHashCode;
   }
 
-  @Override public ExecutableElement objectToString() {
+  @Override
+  public ExecutableElement objectToString() {
 
     return objectToString;
   }

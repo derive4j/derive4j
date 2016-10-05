@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-@Data public abstract class Amount {
+@Data
+public abstract class Amount {
   public abstract <R> R match(@FieldNames("value") F<BigDecimal, R> amout);
 }

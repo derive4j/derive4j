@@ -22,7 +22,8 @@ import java.util.function.BiFunction;
 import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
-@Data public abstract class P2<A, B> {
+@Data
+public abstract class P2<A, B> {
 
   P2() {
 

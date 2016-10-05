@@ -26,9 +26,9 @@
 package org.derive4j.example;
 
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-@Data public abstract class Address {
+@Data
+public abstract class Address {
 
   interface Cases<R> {
     R Address(int number, String street);

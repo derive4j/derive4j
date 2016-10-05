@@ -32,7 +32,8 @@ import static org.derive4j.processor.api.model.TypeConstructors.getDeclaredType;
 import static org.derive4j.processor.api.model.TypeConstructors.getTypeElement;
 import static org.derive4j.processor.api.model.TypeConstructors.getTypeVariables;
 
-@Data(@Derive(withVisibility = Smart)) public abstract class TypeConstructor {
+@Data(@Derive(withVisibility = Smart))
+public abstract class TypeConstructor {
 
   TypeConstructor() {
 

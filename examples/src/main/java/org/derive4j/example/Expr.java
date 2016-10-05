@@ -35,7 +35,8 @@ import static org.derive4j.example.Exprs.Add;
 import static org.derive4j.example.Exprs.Const;
 import static org.derive4j.example.Exprs.Mult;
 
-@Data public abstract class Expr {
+@Data
+public abstract class Expr {
 
   public static Integer eval(Expr expression) {
 

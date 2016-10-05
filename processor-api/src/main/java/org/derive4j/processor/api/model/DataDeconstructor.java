@@ -23,15 +23,14 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethod;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethodType;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorParam;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType;
 
-@Data public abstract class DataDeconstructor {
+@Data
+public abstract class DataDeconstructor {
 
   DataDeconstructor() {
 

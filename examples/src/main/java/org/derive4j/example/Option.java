@@ -29,7 +29,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.derive4j.Data;
 
-@Data public abstract class Option<A> {
+@Data
+public abstract class Option<A> {
 
   Option() {
 

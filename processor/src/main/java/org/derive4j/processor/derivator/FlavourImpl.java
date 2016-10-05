@@ -96,7 +96,8 @@ public final class FlavourImpl {
     return deriveUtils.allAbstractMethods(findF(deriveContext.flavour(), deriveUtils.elements())).get(0).getSimpleName().toString();
   }
 
-  @Data public abstract static class OptionType {
+  @Data
+  public abstract static class OptionType {
 
     public abstract <R> R optionType(Case<R> optionType);
 
@@ -120,7 +121,8 @@ public final class FlavourImpl {
     }
   }
 
-  @Data public abstract static class EitherType {
+  @Data
+  public abstract static class EitherType {
 
     public abstract <R> R eitherType(Case<R> optionType);
 

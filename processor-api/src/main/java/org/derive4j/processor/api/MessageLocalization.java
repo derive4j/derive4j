@@ -22,11 +22,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.Visibility.Smart;
-
-@Data public abstract class MessageLocalization {
+@Data
+public abstract class MessageLocalization {
 
   MessageLocalization() {
 

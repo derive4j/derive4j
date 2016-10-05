@@ -46,7 +46,8 @@ import static org.derive4j.ArgOption.checkedNotNull;
  * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
  * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
  */
-@Data(flavour = Flavour.FJ, arguments = checkedNotNull) public abstract class Request {
+@Data(flavour = Flavour.FJ, arguments = checkedNotNull)
+public abstract class Request {
 
   /**
    * First we start by defining a 'visitor' for our datatype:
@@ -80,11 +81,14 @@ import static org.derive4j.ArgOption.checkedNotNull;
    * are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force
    * Derive4J to implement them, by declaring them abstract:
    */
-  @Override public abstract int hashCode();
+  @Override
+  public abstract int hashCode();
 
-  @Override public abstract boolean equals(Object obj);
+  @Override
+  public abstract boolean equals(Object obj);
 
-  @Override public abstract String toString();
+  @Override
+  public abstract String toString();
 
   /**
    * Now run compilation and a 'Requests' classe will be generated, by default with the same visibility as 'Request'.

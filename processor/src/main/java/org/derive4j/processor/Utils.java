@@ -67,7 +67,8 @@ public class Utils {
 
   public static final TypeVisitor<Optional<DeclaredType>, Unit> asDeclaredType = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(
       Optional.empty()) {
-    @Override public Optional<DeclaredType> visitDeclared(final DeclaredType t, final Unit p) {
+    @Override
+    public Optional<DeclaredType> visitDeclared(final DeclaredType t, final Unit p) {
 
       return Optional.of(t);
     }
@@ -75,7 +76,8 @@ public class Utils {
 
   public static final TypeVisitor<Optional<TypeVariable>, Unit> asTypeVariable = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(
       Optional.empty()) {
-    @Override public Optional<TypeVariable> visitTypeVariable(final TypeVariable t, final Unit p) {
+    @Override
+    public Optional<TypeVariable> visitTypeVariable(final TypeVariable t, final Unit p) {
 
       return Optional.of(t);
     }
@@ -84,7 +86,8 @@ public class Utils {
   public static final ElementVisitor<Optional<TypeElement>, Unit> asTypeElement = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(
       Optional.empty()) {
 
-    @Override public Optional<TypeElement> visitType(final TypeElement e, final Unit p) {
+    @Override
+    public Optional<TypeElement> visitType(final TypeElement e, final Unit p) {
 
       return Optional.of(e);
     }
@@ -93,12 +96,14 @@ public class Utils {
 
   public static final SimpleElementVisitor6<PackageElement, Void> getPackage = new SimpleElementVisitor6<PackageElement, Void>() {
 
-    @Override public PackageElement visitPackage(final PackageElement e, final Void p) {
+    @Override
+    public PackageElement visitPackage(final PackageElement e, final Void p) {
 
       return e;
     }
 
-    @Override protected PackageElement defaultAction(final Element e, final Void p) {
+    @Override
+    protected PackageElement defaultAction(final Element e, final Void p) {
 
       return e.getEnclosingElement().accept(getPackage, null);
     }
@@ -109,12 +114,14 @@ public class Utils {
       asExecutableElement
       = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
 
-    @Override protected Optional<ExecutableElement> defaultAction(final Element e, final Void p) {
+    @Override
+    protected Optional<ExecutableElement> defaultAction(final Element e, final Void p) {
 
       return Optional.empty();
     }
 
-    @Override public Optional<ExecutableElement> visitExecutable(final ExecutableElement e, final Void p) {
+    @Override
+    public Optional<ExecutableElement> visitExecutable(final ExecutableElement e, final Void p) {
 
       return Optional.of(e);
     }
@@ -123,12 +130,14 @@ public class Utils {
 
   public static TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
 
-    @Override protected TypeMirror defaultAction(TypeMirror e, Types types) {
+    @Override
+    protected TypeMirror defaultAction(TypeMirror e, Types types) {
 
       return e;
     }
 
-    @Override public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
+    @Override
+    public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
 
       return types.boxedClass(t).asType();
     }
@@ -202,7 +211,6 @@ public class Utils {
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
         restrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)));
   }
-
 
   public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions, NameAllocator nameAllocator) {
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),

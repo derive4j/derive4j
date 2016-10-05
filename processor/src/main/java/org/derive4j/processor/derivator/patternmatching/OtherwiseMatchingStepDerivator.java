@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -216,7 +215,8 @@ public class OtherwiseMatchingStepDerivator {
 
     return CodeBlock.builder()
         .addStatement("$T $L = $T.<$L>$L($L)", TypeName.get(visitorType), nameAllocator.get("visitor var"),
-            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()), typeVarArgs, MapperDerivator.visitorLambdaFactoryName(adt), lambdaArgs)
+            ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()), typeVarArgs, MapperDerivator.visitorLambdaFactoryName(adt),
+            lambdaArgs)
         .addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"), adt.matchMethod().element().getSimpleName(),
             nameAllocator.get("visitor var"))
         .build();

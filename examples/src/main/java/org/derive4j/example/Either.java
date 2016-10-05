@@ -28,7 +28,8 @@ package org.derive4j.example;
 import java.util.function.Function;
 import org.derive4j.Data;
 
-@Data public abstract class Either<A, B> {
+@Data
+public abstract class Either<A, B> {
 
   Either() {
 

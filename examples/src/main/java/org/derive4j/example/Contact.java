@@ -27,7 +27,8 @@ package org.derive4j.example;
 
 import org.derive4j.Data;
 
-@Data public abstract class Contact {
+@Data
+public abstract class Contact {
 
   interface Cases<R> {
     R byEmail(String email);

@@ -21,14 +21,13 @@ package org.derive4j.processor.api.model;
 import java.util.function.BiFunction;
 import javax.lang.model.type.TypeMirror;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 import org.derive4j.FieldNames;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 import static org.derive4j.processor.api.model.DataArguments.getType;
 
-@Data public abstract class DataArgument {
+@Data
+public abstract class DataArgument {
 
   DataArgument() {
 

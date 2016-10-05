@@ -18,24 +18,28 @@
  */
 package org.derive4j;
 
-@Data(@Derive(inClass = "Visibilities")) public enum Visibility {
+@Data(@Derive(inClass = "Visibilities"))
+public enum Visibility {
 
   Same {
-    @Override public <R> R match(VisibilityCases<R> cases) {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
 
       return cases.Same();
     }
   },
 
   Package {
-    @Override public <R> R match(VisibilityCases<R> cases) {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
 
       return cases.Package();
     }
   },
 
   Smart {
-    @Override public <R> R match(VisibilityCases<R> cases) {
+    @Override
+    public <R> R match(VisibilityCases<R> cases) {
 
       return cases.Smart();
     }

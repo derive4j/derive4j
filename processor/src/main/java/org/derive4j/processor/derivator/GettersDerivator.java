@@ -73,8 +73,7 @@ public final class GettersDerivator {
 
     FlavourImpl.OptionType optionType = FlavourImpl.findOptionType(deriveContext.flavour(), deriveUtils.elements());
 
-    DeclaredType returnType = deriveUtils.types()
-        .getDeclaredType(optionType.typeElement(), field.type().accept(asBoxedType, deriveUtils.types()));
+    DeclaredType returnType = deriveUtils.types().getDeclaredType(optionType.typeElement(), field.type().accept(asBoxedType, deriveUtils.types()));
 
     return DataConstructions.cases()
         .multipleConstructors(MultipleConstructorsSupport.cases()
@@ -189,7 +188,7 @@ public final class GettersDerivator {
       String arg, DeclaredType visitorType, DataArgument field) {
 
     Function<TypeVariable, Optional<TypeMirror>> returnTypeArg = tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                                                                       ?  Optional.of(asBoxedType.visit(field.type(), deriveUtils.types()))
+                                                                       ? Optional.of(asBoxedType.visit(field.type(), deriveUtils.types()))
                                                                        : Optional.empty();
 
     Function<TypeVariable, Optional<TypeMirror>> otherTypeArgs = tv -> Optional.of(

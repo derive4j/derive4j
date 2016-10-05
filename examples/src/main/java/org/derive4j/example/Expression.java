@@ -32,7 +32,8 @@ import static org.derive4j.example.Expressions.Add;
 import static org.derive4j.example.Expressions.Const;
 import static org.derive4j.example.Expressions.Mult;
 
-@Data public abstract class Expression {
+@Data
+public abstract class Expression {
 
   private static final Function<Expression, Integer> eval = Expressions.cata(value -> value, (left, right) -> left.get() + right.get(),
       (left, right) -> left.get() * right.get(), expr -> -expr.get());

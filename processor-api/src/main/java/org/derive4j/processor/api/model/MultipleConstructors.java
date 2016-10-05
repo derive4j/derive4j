@@ -30,7 +30,8 @@ import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.MultipleConstructorsSupport.cases;
 import static org.derive4j.processor.api.model.MultipleConstructorsSupport.getConstructors;
 
-@Data(@Derive(inClass = "MultipleConstructorsSupport", withVisibility = Smart)) public abstract class MultipleConstructors {
+@Data(@Derive(inClass = "MultipleConstructorsSupport", withVisibility = Smart))
+public abstract class MultipleConstructors {
 
   MultipleConstructors() {
 

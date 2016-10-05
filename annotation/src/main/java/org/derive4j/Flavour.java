@@ -18,57 +18,64 @@
  */
 package org.derive4j;
 
-@Data public enum Flavour {
+@Data
+public enum Flavour {
 
   JDK {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Jdk();
     }
   },
 
   FJ {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Fj();
     }
   },
 
   Fugue {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Fugue();
     }
   },
 
   Fugue2 {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Fugue2();
     }
   },
 
   Javaslang {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Javaslang();
     }
   },
 
   HighJ {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.HighJ();
     }
   },
 
   Guava {
-    @Override public <R> R match(Cases<R> cases) {
+    @Override
+    public <R> R match(Cases<R> cases) {
 
       return cases.Guava();
     }
   };
-
 
   public abstract <R> R match(Cases<R> cases);
 

@@ -44,7 +44,8 @@ public abstract class Stream<A> {
   public static <A> Stream<A> mu(Mu<A> mu) {
 
     return new Stream<A>() {
-      @Override <X> X match(Cases<A, X> cases) {
+      @Override
+      <X> X match(Cases<A, X> cases) {
 
         return cases.build(mu);
       }
@@ -54,7 +55,8 @@ public abstract class Stream<A> {
   public static <S, A> Stream<A> nu(S init, F<S, Step<A, S>> stepper) {
 
     return new Stream<A>() {
-      @Override <X> X match(Cases<A, X> cases) {
+      @Override
+      <X> X match(Cases<A, X> cases) {
 
         return cases.unfold(init, stepper);
       }
@@ -66,12 +68,14 @@ public abstract class Stream<A> {
   public final <B> Stream<B> map(F<A, B> f) {
 
     return match(new Cases<A, Stream<B>>() {
-      @Override public Stream<B> build(Mu<A> mu) {
+      @Override
+      public Stream<B> build(Mu<A> mu) {
 
         return mu(mu.map(f));
       }
 
-      @Override public <S> Stream<B> unfold(S init, F<S, Step<A, S>> stepper) {
+      @Override
+      public <S> Stream<B> unfold(S init, F<S, Step<A, S>> stepper) {
 
         F<Step<A, S>, Step<B, S>> mapValue = Steps.modValue(f);
         return nu(init, s -> mapValue.f(stepper.f(s)));
@@ -82,18 +86,21 @@ public abstract class Stream<A> {
   public final <X> X foldl(final F2<X, A, X> f, final X x) {
 
     return match(new Cases<A, X>() {
-      @Override public X build(Mu<A> mu) {
+      @Override
+      public X build(Mu<A> mu) {
 
         return mu.foldl(f, x);
       }
 
-      @Override public <S> X unfold(S init, F<S, Step<A, S>> stepper) {
+      @Override
+      public <S> X unfold(S init, F<S, Step<A, S>> stepper) {
 
         class Acc implements F2<A, S, Boolean> {
           S s = init;
           X acc = x;
 
-          @Override public Boolean f(A a, S s) {
+          @Override
+          public Boolean f(A a, S s) {
 
             acc = f.f(acc, a);
             this.s = s;
@@ -120,7 +127,8 @@ public abstract class Stream<A> {
     <S> X unfold(S init, F<S, Step<A, S>> stepper);
   }
 
-  @Data(flavour = Flavour.FJ) abstract static class Step<A, S> {
+  @Data(flavour = Flavour.FJ)
+  abstract static class Step<A, S> {
 
     abstract <X> X match(F0<X> done, @FieldNames({ "value", "stepper" }) F2<A, S, X> yield);
   }
@@ -134,12 +142,14 @@ public abstract class Stream<A> {
     final <B> Mu<B> map(F<A, B> f) {
 
       return new Mu<B>() {
-        @Override <X> X foldr(F2<B, F0<X>, X> cons, X nil) {
+        @Override
+        <X> X foldr(F2<B, F0<X>, X> cons, X nil) {
 
           return Mu.this.foldr((h, t) -> cons.f(f.f(h), t), nil);
         }
 
-        @Override <X> X foldl(F2<X, B, X> acc, X init) {
+        @Override
+        <X> X foldl(F2<X, B, X> acc, X init) {
 
           return Mu.this.foldl((x, a) -> acc.f(x, f.f(a)), init);
         }
