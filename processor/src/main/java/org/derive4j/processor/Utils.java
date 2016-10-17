@@ -56,8 +56,6 @@ import javax.lang.model.util.Types;
 import org.derive4j.processor.api.DeriveMessage;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.model.DataArgument;
-import org.derive4j.processor.api.model.DeriveContext;
-import org.derive4j.processor.api.model.TypeConstructor;
 import org.derive4j.processor.api.model.TypeRestriction;
 
 import static java.util.stream.Collectors.toList;
@@ -65,8 +63,9 @@ import static org.derive4j.processor.P2.p2;
 
 public class Utils {
 
-  public static final TypeVisitor<Optional<DeclaredType>, Unit> asDeclaredType = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(
-      Optional.empty()) {
+  public static final TypeVisitor<Optional<DeclaredType>, Unit>
+      asDeclaredType
+      = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(Optional.empty()) {
     @Override
     public Optional<DeclaredType> visitDeclared(final DeclaredType t, final Unit p) {
 
@@ -74,8 +73,9 @@ public class Utils {
     }
   };
 
-  public static final TypeVisitor<Optional<TypeVariable>, Unit> asTypeVariable = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(
-      Optional.empty()) {
+  public static final TypeVisitor<Optional<TypeVariable>, Unit>
+      asTypeVariable
+      = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(Optional.empty()) {
     @Override
     public Optional<TypeVariable> visitTypeVariable(final TypeVariable t, final Unit p) {
 
@@ -83,8 +83,9 @@ public class Utils {
     }
   };
 
-  public static final ElementVisitor<Optional<TypeElement>, Unit> asTypeElement = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(
-      Optional.empty()) {
+  public static final ElementVisitor<Optional<TypeElement>, Unit>
+      asTypeElement
+      = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(Optional.empty()) {
 
     @Override
     public Optional<TypeElement> visitType(final TypeElement e, final Unit p) {
@@ -115,15 +116,15 @@ public class Utils {
       = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
 
     @Override
-    protected Optional<ExecutableElement> defaultAction(final Element e, final Void p) {
-
-      return Optional.empty();
-    }
-
-    @Override
     public Optional<ExecutableElement> visitExecutable(final ExecutableElement e, final Void p) {
 
       return Optional.of(e);
+    }
+
+    @Override
+    protected Optional<ExecutableElement> defaultAction(final Element e, final Void p) {
+
+      return Optional.empty();
     }
 
   };
@@ -131,23 +132,23 @@ public class Utils {
   public static TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
 
     @Override
-    protected TypeMirror defaultAction(TypeMirror e, Types types) {
-
-      return e;
-    }
-
-    @Override
     public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
 
       return types.boxedClass(t).asType();
+    }
+
+    @Override
+    protected TypeMirror defaultAction(TypeMirror e, Types types) {
+
+      return e;
     }
   };
 
   public static String capitalize(final String s) {
 
     return (s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1))
-           ? s.substring(0, 2).toUpperCase(Locale.US) + s.substring(2)
-           : s.substring(0, 1).toUpperCase(Locale.US) + s.substring(1);
+        ? s.substring(0, 2).toUpperCase(Locale.US) + s.substring(2)
+        : s.substring(0, 1).toUpperCase(Locale.US) + s.substring(1);
   }
 
   public static <A, R> R fold(Optional<A> oa, R none, Function<A, R> some) {
@@ -158,8 +159,8 @@ public class Utils {
   public static <A> Optional<A> findOnlyOne(List<A> as) {
 
     return (as.size() == 1)
-           ? Optional.of(as.get(0))
-           : Optional.empty();
+        ? Optional.of(as.get(0))
+        : Optional.empty();
   }
 
   public static <A> Stream<A> optionalAsStream(Optional<A> o) {
@@ -181,16 +182,11 @@ public class Utils {
     return Optional.of(bs);
   }
 
-  public static ClassName getClassName(DeriveContext deriveContext, String className) {
-
-    return ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName(), className);
-  }
-
   public static String uncapitalize(final CharSequence s) {
 
     return (s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1))
-           ? s.toString().substring(0, 2).toLowerCase(Locale.US) + s.toString().substring(2)
-           : s.toString().substring(0, 1).toLowerCase(Locale.US) + s.toString().substring(1);
+        ? s.toString().substring(0, 2).toLowerCase(Locale.US) + s.toString().substring(2)
+        : s.toString().substring(0, 1).toLowerCase(Locale.US) + s.toString().substring(1);
   }
 
   public static String asArgumentsStringOld(final List<? extends VariableElement> parameters) {
@@ -201,9 +197,9 @@ public class Utils {
   public static String asArgumentsString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
     return Stream.concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream()
-        .map(tr -> uncapitalize(tr.restrictedTypeVariable().toString()) + " -> " + uncapitalize(tr.restrictedTypeVariable().toString())))
-        .reduce((s1, s2) -> s1 + ", " + s2)
-        .orElse("");
+        .map(tr -> uncapitalize(tr.restrictedTypeVariable().toString()) +
+            " -> " +
+            uncapitalize(tr.restrictedTypeVariable().toString()))).reduce((s1, s2) -> s1 + ", " + s2).orElse("");
   }
 
   public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
@@ -212,7 +208,8 @@ public class Utils {
         restrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)));
   }
 
-  public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions, NameAllocator nameAllocator) {
+  public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
+      NameAllocator nameAllocator) {
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
         typeRestrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)).map(nameAllocator::newName));
   }
@@ -232,35 +229,13 @@ public class Utils {
     return strings.reduce((s1, s2) -> s1 + joiner + s2).orElse("");
   }
 
-  public static TypeName typeName(TypeConstructor typeConstructor, List<TypeRestriction> restrictions, Types types) {
-
-    TypeName[] typeArgs = typeConstructor.typeVariables()
-        .stream()
-        .map(tv -> restrictions.stream()
-            .filter(tr -> types.isSameType(tr.restrictedTypeVariable(), tv))
-            .findFirst()
-            .map(TypeRestriction::refinementType)
-            .orElse(tv))
-        .map(TypeName::get)
-        .toArray(TypeName[]::new);
-
-    return (typeArgs.length == 0)
-           ? TypeName.get(typeConstructor.declaredType())
-           : ParameterizedTypeName.get(ClassName.get(typeConstructor.typeElement()), typeArgs);
-  }
-
   public static TypeName typeName(ClassName className, Stream<TypeName> typeArguments) {
 
     TypeName[] typeArgs = typeArguments.toArray(TypeName[]::new);
 
     return (typeArgs.length == 0)
-           ? className
-           : ParameterizedTypeName.get(className, typeArgs);
-  }
-
-  public static List<ExecutableElement> getAbstractMethods(final List<? extends Element> amongElements) {
-
-    return getMethods(amongElements).filter(e -> e.getModifiers().contains(Modifier.ABSTRACT)).collect(toList());
+        ? className
+        : ParameterizedTypeName.get(className, typeArgs);
   }
 
   public static Stream<ExecutableElement> getMethods(final List<? extends Element> amongElements) {
@@ -269,7 +244,6 @@ public class Utils {
   }
 
   public static <T> Predicate<T> p(Predicate<T> p) {
-
     return p;
   }
 

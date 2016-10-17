@@ -25,35 +25,15 @@
  */
 package org.derive4j.example;
 
-import java.util.Optional;
-import java.util.function.Function;
 import org.derive4j.Data;
 import org.derive4j.Derive;
-import org.derive4j.ExportAsPublic;
-import org.derive4j.FieldNames;
+import org.derive4j.Flavour;
+import org.derive4j.Make;
 import org.derive4j.Visibility;
 
-@Data(@Derive(withVisibility = Visibility.Smart))
-public abstract class PersonName {
-
-  PersonName() {
-
-  }
-
-  public abstract <R> R match(@FieldNames("value") Function<String, R> Name);
-
-  /**
-   * This method is reexported with public modifier as {@link PersonNames#parseName(String)}. Also the javadoc is copied over.
-   *
-   * @param value unparse string
-   * @return a valid {@link PersonName}, maybe.
-   */
-  @ExportAsPublic
-  static Optional<PersonName> parseName(String value) {
-    // A name cannot be only spaces, must not start or and with space.
-    return (value.trim().isEmpty() || value.endsWith(" ") || value.startsWith(" "))
-        ? Optional.empty()
-        : Optional.of(PersonNames.Name0(value));
-  }
-
+@Data(flavour = Flavour.FJ,
+    value = @Derive(inClass = "{ClassName}Impl",
+        withVisibility = Visibility.Package,
+        make = { Make.constructors, Make.patternMatching }))
+public @interface data {
 }

@@ -37,37 +37,41 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import org.derive4j.Visibility;
 import org.derive4j.processor.Utils;
+import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DataArgument;
 import org.derive4j.processor.api.model.DataConstructions;
-import org.derive4j.processor.api.model.DeriveContext;
+import org.derive4j.processor.api.model.DeriveVisibilities;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.derivator.StrictConstructorDerivator.smartConstructor;
 
-public final class ModiersDerivator {
+public final class ModiersDerivator implements Derivator {
 
-  public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+  private final DeriveUtils deriveUtils;
 
-    return result(adt.fields()
-        .stream()
-        .map(da -> generateModfier(da, adt, deriveContext, deriveUtils))
-        .reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+  ModiersDerivator(DeriveUtils deriveUtils) {
+    this.deriveUtils = deriveUtils;
   }
 
-  private static DerivedCodeSpec generateModfier(DataArgument field, AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+  @Override
+  public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
+
+    return result(
+        adt.fields().stream().map(da -> generateModifier(da, adt)).reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+  }
+
+  private DerivedCodeSpec generateModifier(DataArgument field, AlgebraicDataType adt) {
 
     String moderArg = field.fieldName() + "Mod";
-    TypeElement f1 = FlavourImpl.findF(deriveContext.flavour(), deriveUtils.elements());
+    TypeElement f1 = deriveUtils.function1Model(adt.deriveConfig().flavour()).samClass();
     String f1Apply = deriveUtils.allAbstractMethods(f1).get(0).getSimpleName().toString();
 
     List<TypeVariable> uniqueTypeVariables = getUniqueTypeVariables(field, adt.fields(), deriveUtils);
@@ -79,10 +83,7 @@ public final class ModiersDerivator {
 
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
-    Visibility visibility = deriveContext.visibility();
-    String smartSuffix = visibility == Smart
-                         ? "0"
-                         : "";
+    String smartSuffix = DeriveVisibilities.cases().Smart("0").otherwise("").apply(adt.deriveConfig().targetClass().visibility());
 
     String modMethodName = "mod" + Utils.capitalize(field.fieldName()) + smartSuffix;
 
@@ -97,13 +98,12 @@ public final class ModiersDerivator {
         .addTypeVariables(uniqueTypeVariables.stream()
             .map(utv -> TypeVariableName.get(adt.matchMethod().returnTypeVariable().toString() + utv.toString()))
             .collect(Collectors.toList()))
-        .addParameter(ParameterSpec.builder(
-            ParameterizedTypeName.get(ClassName.get(f1), TypeName.get(boxedFieldType), deriveUtils.resolveToTypeName(boxedFieldType, polymorphism)),
-            moderArg).build())
+        .addParameter(ParameterSpec.builder(ParameterizedTypeName.get(ClassName.get(f1), TypeName.get(boxedFieldType),
+            deriveUtils.resolveToTypeName(boxedFieldType, polymorphism)), moderArg).build())
         .returns(ParameterizedTypeName.get(ClassName.get(f1), TypeName.get(adt.typeConstructor().declaredType()),
             deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)));
 
-    if (visibility != Smart) {
+    if (smartSuffix.isEmpty()) {
       modBuilder.addModifiers(Modifier.PUBLIC);
     }
 
@@ -113,29 +113,30 @@ public final class ModiersDerivator {
     }
 
     CodeBlock lambdas = adt.dataConstruction().constructors().stream().map(constructor -> {
-      String constructorName = smartConstructor(constructor, deriveContext)
-                               ? constructor.name() + "0"
-                               : constructor.name();
+      String constructorName = smartConstructor(constructor, adt.deriveConfig())
+          ? constructor.name() + "0"
+          : constructor.name();
       return CodeBlock.builder()
           .add("($L) -> " +
-                  (constructor.typeRestrictions().isEmpty()
+              (constructor.typeRestrictions().isEmpty()
                    ? "$L"
                    : "($T) ") +
-                  "$L($L)", joinStringsAsArguments(
-              Stream.concat(constructor.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
-                  constructor.typeRestrictions()
-                      .stream()
-                      .map(TypeRestriction::idFunction)
-                      .map(DataArgument::fieldName)
-                      .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
-                                                                                          ? ""
-                                                                                          : ClassName.get(adt.typeConstructor().typeElement()),
-              constructorName, joinStringsAsArguments(constructor.arguments()
+              "$L($L)", joinStringsAsArguments(Stream.concat(constructor.arguments()
+              .stream()
+              .map(DataArgument::fieldName)
+              .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor.typeRestrictions()
+              .stream()
+              .map(TypeRestriction::idFunction)
+              .map(DataArgument::fieldName)
+              .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
+              ? ""
+              : ClassName.get(adt.typeConstructor().typeElement()), constructorName, joinStringsAsArguments(
+              constructor.arguments()
                   .stream()
                   .map(DataArgument::fieldName)
                   .map(fn -> fn.equals(field.fieldName())
-                             ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
-                             : nameAllocator.clone().newName(fn, fn + " field"))))
+                      ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
+                      : nameAllocator.clone().newName(fn, fn + " field"))))
           .build();
     }).reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build()).orElse(CodeBlock.builder().build());
 
@@ -151,7 +152,7 @@ public final class ModiersDerivator {
             deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism)))
         .addStatement("return $L(__ -> $L)", modMethodName, setterArgName);
 
-    if (visibility != Smart) {
+    if (smartSuffix.isEmpty()) {
       setMethod.addModifiers(Modifier.PUBLIC);
     }
 
@@ -161,25 +162,28 @@ public final class ModiersDerivator {
 
               String visitorVarName = Utils.uncapitalize(visitorType.asElement().getSimpleName());
 
-              return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("$T $L = $T.$L($L)",
-                  deriveUtils.resolveToTypeName(visitorType, tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                                                                   ? Optional.of(
-                      deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
-                                                                   : Optional.empty()), visitorVarName,
-                  ClassName.get(deriveContext.targetPackage(), deriveContext.targetClassName()), MapperDerivator.visitorLambdaFactoryName(adt),
+              return DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(), modBuilder.addStatement("$T $L = $L($L)",
+                  deriveUtils.resolveToTypeName(visitorType,
+                      tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
+                          ? Optional.of(deriveUtils.resolveToTypeName(adt.typeConstructor().declaredType(), polymorphism))
+                          : Optional.empty()), visitorVarName,
+                  adt.deriveConfig().targetClass().className().nestedClass(MapperDerivator.visitorLambdaFactoryName(adt)),
                   lambdas)
                   .addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), visitorVarName)
                   .build()));
             })
             .functionsDispatch(constructors -> DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(),
-                modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build()))))
+                modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(),
+                    lambdas).build()))))
         .oneConstructor(constructor -> DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(),
-            modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas).build())))
+            modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas)
+                .build())))
         .noConstructor(DerivedCodeSpec::none)
         .apply(adt.dataConstruction());
   }
 
-  private static List<TypeVariable> getUniqueTypeVariables(DataArgument field, List<DataArgument> allFields, DeriveUtils deriveUtils) {
+  private static List<TypeVariable> getUniqueTypeVariables(DataArgument field, List<DataArgument> allFields,
+      DeriveUtils deriveUtils) {
 
     return deriveUtils.typeVariablesIn(field.type())
         .stream()

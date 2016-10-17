@@ -18,35 +18,13 @@
  */
 package org.derive4j.processor.api.model;
 
-import java.util.function.BiFunction;
-import javax.lang.model.type.TypeMirror;
-import org.derive4j.Data;
-import org.derive4j.FieldNames;
+import java.util.Optional;
 
-import static org.derive4j.processor.api.model.DataArguments.getFieldName;
-import static org.derive4j.processor.api.model.DataArguments.getType;
+public abstract class DerivedInstanceConfig {
 
-@Data
-public abstract class DataArgument {
-
-  public static DataArgument dataArgument(String fieldName, TypeMirror type) {
-
-    return DataArguments.dataArgument(fieldName, type);
+  public interface Case<X> {
+    X InstanceConfig(Optional<String> implSelector, DeriveTargetClass targetClass);
   }
 
-  DataArgument() {
-
-  }
-
-  public abstract <R> R match(@FieldNames({ "fieldName", "type" }) BiFunction<String, TypeMirror, R> dataArgument);
-
-  public String fieldName() {
-
-    return getFieldName(this);
-  }
-
-  public TypeMirror type() {
-
-    return getType(this);
-  }
+  public abstract <X> X match(Case<X> Case);
 }

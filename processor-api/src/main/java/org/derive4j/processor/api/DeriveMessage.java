@@ -31,8 +31,8 @@ import static org.derive4j.Visibility.Smart;
 @Data(@Derive(withVisibility = Smart))
 public abstract class DeriveMessage {
 
-  DeriveMessage() {
-
+  public interface Case<R> {
+    R message(String text, List<MessageLocalization> localizations);
   }
 
   public static DeriveMessage message(String msg, List<MessageLocalization> localizations) {
@@ -50,10 +50,10 @@ public abstract class DeriveMessage {
     return message(msg, Collections.emptyList());
   }
 
-  public abstract <R> R match(Case<R> message);
+  DeriveMessage() {
 
-  public interface Case<R> {
-    R message(String text, List<MessageLocalization> localizations);
   }
+
+  public abstract <R> R match(Case<R> message);
 
 }

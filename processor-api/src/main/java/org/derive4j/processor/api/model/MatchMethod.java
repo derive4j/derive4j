@@ -28,13 +28,17 @@ import static org.derive4j.processor.api.model.MatchMethods.getReturnTypeVariabl
 @Data
 public abstract class MatchMethod {
 
-  MatchMethod() {
-
+  public interface Case<R> {
+    R matchMethod(ExecutableElement element, TypeVariable returnTypeVariable);
   }
 
   public static MatchMethod matchMethod(ExecutableElement element, TypeVariable returnTypeVariable) {
 
     return MatchMethods.matchMethod(element, returnTypeVariable);
+  }
+
+  MatchMethod() {
+
   }
 
   public abstract <R> R match(Case<R> matchMethod);
@@ -47,10 +51,6 @@ public abstract class MatchMethod {
   public ExecutableElement element() {
 
     return getElement(this);
-  }
-
-  public interface Case<R> {
-    R matchMethod(ExecutableElement element, TypeVariable returnTypeVariable);
   }
 
 }

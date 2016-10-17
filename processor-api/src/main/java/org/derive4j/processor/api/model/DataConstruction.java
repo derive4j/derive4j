@@ -28,11 +28,13 @@ import static org.derive4j.processor.api.model.DataConstructions.cases;
 @Data
 public abstract class DataConstruction {
 
-  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases().multipleConstructors(
-      MultipleConstructorsSupport::getConstructors).oneConstructor(Collections::singletonList).noConstructor(Collections::emptyList);
+  public interface Cases<R> {
 
-  DataConstruction() {
+    R multipleConstructors(MultipleConstructors constructors);
 
+    R oneConstructor(DataConstructor constructor);
+
+    R noConstructor();
   }
 
   public static DataConstruction multipleConstructors(MultipleConstructors constructors) {
@@ -50,6 +52,15 @@ public abstract class DataConstruction {
     return DataConstructions.noConstructor();
   }
 
+  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases().multipleConstructors(
+      MultipleConstructorsSupport::getConstructors)
+      .oneConstructor(Collections::singletonList)
+      .noConstructor(Collections::emptyList);
+
+  DataConstruction() {
+
+  }
+
   public abstract <R> R match(Cases<R> cases);
 
   public List<DataConstructor> constructors() {
@@ -60,15 +71,6 @@ public abstract class DataConstruction {
   public boolean isVisitorDispatch() {
 
     return DataConstructions.getConstructors(this).map(MultipleConstructors::isVisitorDispatch).orElse(false);
-  }
-
-  public interface Cases<R> {
-
-    R multipleConstructors(MultipleConstructors constructors);
-
-    R oneConstructor(DataConstructor constructor);
-
-    R noConstructor();
   }
 
 }

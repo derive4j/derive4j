@@ -25,16 +25,16 @@
  */
 package org.derive4j.example;
 
-@JavasLangData
+import org.derive4j.ArgOption;
+import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Make;
+import org.derive4j.Visibility;
+
+@data
+@Data(arguments = ArgOption.checkedNotNull)
+@Derive(withVisibility = Visibility.Smart, make = Make.getters)
 public abstract class Event<T> {
-
-  interface Cases<T, R> {
-
-    R itemAdded(String itemName);
-
-    R itemRemoved(T ref, String itemName);
-
-  }
 
   public abstract <X> X match(Cases<T, X> cases);
 
@@ -46,4 +46,12 @@ public abstract class Event<T> {
 
   @Override
   public abstract String toString();
+
+  interface Cases<T, R> {
+
+    R itemAdded(String itemName);
+
+    R itemRemoved(T ref, String itemName);
+
+  }
 }

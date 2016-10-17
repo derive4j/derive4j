@@ -37,15 +37,21 @@ import static org.derive4j.processor.api.model.DataConstructors.getTypeVariables
 @Data(@Derive(withVisibility = Smart))
 public abstract class DataConstructor {
 
-  DataConstructor() {
-
+  public interface Case<R> {
+    R constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
+        List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor);
   }
 
   public static DataConstructor constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
       List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor) {
 
-    return DataConstructors.constructor0(name, unmodifiableList(new ArrayList<>(typeVariables)), unmodifiableList(new ArrayList<>(arguments)),
-        unmodifiableList(new ArrayList<>(typeRestrictions)), returnedType, deconstructor);
+    return DataConstructors.constructor0(name, unmodifiableList(new ArrayList<>(typeVariables)),
+        unmodifiableList(new ArrayList<>(arguments)), unmodifiableList(new ArrayList<>(typeRestrictions)), returnedType,
+        deconstructor);
+  }
+
+  DataConstructor() {
+
   }
 
   public abstract <R> R match(Case<R> constructor);
@@ -78,10 +84,5 @@ public abstract class DataConstructor {
   public List<TypeRestriction> typeRestrictions() {
 
     return getTypeRestrictions(this);
-  }
-
-  public interface Case<R> {
-    R constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
-        DeclaredType returnedType, DataDeconstructor deconstructor);
   }
 }

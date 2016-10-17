@@ -31,24 +31,30 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import org.derive4j.processor.Utils;
+import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
-import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.api.model.TypeConstructor;
 
 import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.codeSpec;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
-import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractEquals;
-import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractHashCode;
-import static org.derive4j.processor.derivator.StrictConstructorDerivator.findAbstractToString;
 
-public final class LazyConstructorDerivator {
+public final class LazyConstructorDerivator implements Derivator {
 
-  public static DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt, DeriveContext deriveContext, DeriveUtils deriveUtils) {
+  private final DeriveUtils deriveUtils;
+  private final StrictConstructorDerivator strictDerivator;
+
+  LazyConstructorDerivator(DeriveUtils deriveUtils) {
+    this.deriveUtils = deriveUtils;
+    strictDerivator = new StrictConstructorDerivator(deriveUtils);
+  }
+
+  @Override
+  public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
 
     // skip constructors for enums
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.ENUM) {
@@ -56,18 +62,24 @@ public final class LazyConstructorDerivator {
     }
 
     TypeConstructor typeConstructor = adt.typeConstructor();
-    TypeElement lazyTypeElement = FlavourImpl.findF0(deriveContext.flavour(), deriveUtils.elements());
+    TypeElement lazyTypeElement = deriveUtils.function0Model(adt.deriveConfig().flavour()).samClass();
     TypeName lazyArgTypeName = TypeName.get(deriveUtils.types().getDeclaredType(lazyTypeElement, typeConstructor.declaredType()));
     String lazyArgName = Utils.uncapitalize(typeConstructor.typeElement().getSimpleName());
     TypeName typeName = TypeName.get(typeConstructor.declaredType());
 
-    List<TypeVariableName> typeVariableNames = adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList());
+    List<TypeVariableName> typeVariableNames = adt.typeConstructor()
+        .typeVariables()
+        .stream()
+        .map(TypeVariableName::get)
+        .collect(Collectors.toList());
 
     String className = "Lazy";
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
         .addTypeVariables(typeVariableNames)
-        .addField(FieldSpec.builder(TypeName.get(Object.class), "lock", Modifier.PRIVATE, Modifier.FINAL).initializer("new Object()").build())
+        .addField(FieldSpec.builder(TypeName.get(Object.class), "lock", Modifier.PRIVATE, Modifier.FINAL)
+            .initializer("new Object()")
+            .build())
         .addField(FieldSpec.builder(lazyArgTypeName, "expression", Modifier.PRIVATE).build())
         .addField(FieldSpec.builder(typeName, "evaluation", Modifier.PRIVATE, Modifier.VOLATILE).build())
         .addMethod(MethodSpec.constructorBuilder()
@@ -103,18 +115,18 @@ public final class LazyConstructorDerivator {
       typeSpecBuilder.superclass(typeName);
     }
 
-    typeSpecBuilder.addMethods(optionalAsStream(findAbstractEquals(deriveUtils, typeConstructor.typeElement()).map(
-        equals -> deriveUtils.overrideMethodBuilder(equals, adt.typeConstructor().declaredType())
+    typeSpecBuilder.addMethods(optionalAsStream(strictDerivator.findAbstractEquals(typeConstructor.typeElement())
+        .map(equals -> deriveUtils.overrideMethodBuilder(equals, adt.typeConstructor().declaredType())
             .addStatement("return this.eval().equals($L)", equals.getParameters().get(0).getSimpleName())
             .build())).collect(Collectors.toList()));
 
-    typeSpecBuilder.addMethods(optionalAsStream(findAbstractHashCode(deriveUtils, typeConstructor.typeElement()).map(
-        hashCode -> deriveUtils.overrideMethodBuilder(hashCode, adt.typeConstructor().declaredType())
+    typeSpecBuilder.addMethods(optionalAsStream(strictDerivator.findAbstractHashCode(typeConstructor.typeElement())
+        .map(hashCode -> deriveUtils.overrideMethodBuilder(hashCode, adt.typeConstructor().declaredType())
             .addStatement("return this.eval().hashCode()")
             .build())).collect(Collectors.toList()));
 
-    typeSpecBuilder.addMethods(optionalAsStream(findAbstractToString(deriveUtils, typeConstructor.typeElement()).map(
-        toString -> deriveUtils.overrideMethodBuilder(toString, adt.typeConstructor().declaredType())
+    typeSpecBuilder.addMethods(optionalAsStream(strictDerivator.findAbstractToString(typeConstructor.typeElement())
+        .map(toString -> deriveUtils.overrideMethodBuilder(toString, adt.typeConstructor().declaredType())
             .addStatement("return this.eval().toString()")
             .build())).collect(Collectors.toList()));
 
@@ -124,8 +136,8 @@ public final class LazyConstructorDerivator {
         .addParameter(lazyArgTypeName, lazyArgName)
         .returns(typeName)
         .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty()
-                                                        ? ""
-                                                        : "<>", lazyArgName)
+            ? ""
+            : "<>", lazyArgName)
         .build()));
 
   }

@@ -33,18 +33,28 @@ import static org.derive4j.processor.api.model.MultipleConstructorsSupport.getCo
 @Data(@Derive(inClass = "MultipleConstructorsSupport", withVisibility = Smart))
 public abstract class MultipleConstructors {
 
-  MultipleConstructors() {
+  public interface Cases<R> {
+
+    R visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors);
+
+    R functionsDispatch(List<DataConstructor> constructors);
 
   }
 
-  public static MultipleConstructors visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors) {
+  public static MultipleConstructors visitorDispatch(VariableElement visitorParam, DeclaredType visitorType,
+      List<DataConstructor> constructors) {
 
-    return MultipleConstructorsSupport.visitorDispatch0(visitorParam, visitorType, unmodifiableList(new ArrayList<>(constructors)));
+    return MultipleConstructorsSupport.visitorDispatch0(visitorParam, visitorType,
+        unmodifiableList(new ArrayList<>(constructors)));
   }
 
   public static MultipleConstructors functionsDispatch(List<DataConstructor> constructors) {
 
     return MultipleConstructorsSupport.functionsDispatch0(unmodifiableList(new ArrayList<>(constructors)));
+  }
+
+  MultipleConstructors() {
+
   }
 
   public abstract <R> R match(Cases<R> cases);
@@ -57,14 +67,6 @@ public abstract class MultipleConstructors {
   public List<DataConstructor> constructors() {
 
     return getConstructors(this);
-  }
-
-  public interface Cases<R> {
-
-    R visitorDispatch(VariableElement visitorParam, DeclaredType visitorType, List<DataConstructor> constructors);
-
-    R functionsDispatch(List<DataConstructor> constructors);
-
   }
 
 }

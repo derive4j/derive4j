@@ -29,11 +29,6 @@ public abstract class P2<A, B> {
 
   }
 
-  static <A, B> P2<A, B> p2(A a, B b) {
-
-    return P2s.P2(a, b);
-  }
-
   public abstract <R> R match(@FieldNames({ "_1", "_2" }) BiFunction<A, B, R> P2);
 
   public final A _1() {
@@ -44,6 +39,11 @@ public abstract class P2<A, B> {
   public final B _2() {
 
     return P2s.get_2(this);
+  }
+
+  static <A, B> P2<A, B> p2(A a, B b) {
+
+    return P2s.P2(a, b);
   }
 
 }

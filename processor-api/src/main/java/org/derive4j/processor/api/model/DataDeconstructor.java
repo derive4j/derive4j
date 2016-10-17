@@ -32,14 +32,19 @@ import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType
 @Data
 public abstract class DataDeconstructor {
 
-  DataDeconstructor() {
-
+  public interface Case<R> {
+    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod,
+        ExecutableType visitorMethodType);
   }
 
-  public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod,
-      ExecutableType visitorMethodType) {
+  public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType,
+      ExecutableElement visitorMethod, ExecutableType visitorMethodType) {
 
     return DataDeconstructors.deconstructor(visitorParam, visitorType, visitorMethod, visitorMethodType);
+  }
+
+  DataDeconstructor() {
+
   }
 
   public ExecutableElement visitorMethod() {
@@ -63,9 +68,5 @@ public abstract class DataDeconstructor {
   }
 
   public abstract <R> R match(Case<R> deconstructor);
-
-  public interface Case<R> {
-    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod, ExecutableType visitorMethodType);
-  }
 
 }

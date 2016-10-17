@@ -43,8 +43,6 @@ import static org.derive4j.example.Persons.modContact;
 @Data
 public abstract class Person {
 
-  public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
-
   public static void main(String[] args) {
 
     Person joe = Person(Name0("Joe"), Contacts.byMail(Address(10, "Main St")));
@@ -61,5 +59,7 @@ public abstract class Person {
 
     System.out.println(newStreetNumber); // print "Optional[11]" !!
   }
+
+  public abstract <R> R match(@FieldNames({ "name", "contact" }) BiFunction<PersonName, Contact, R> Person);
 
 }

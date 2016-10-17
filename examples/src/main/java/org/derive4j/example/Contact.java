@@ -30,6 +30,8 @@ import org.derive4j.Data;
 @Data
 public abstract class Contact {
 
+  public abstract <R> R match(Cases<R> cases);
+
   interface Cases<R> {
     R byEmail(String email);
 
@@ -37,7 +39,5 @@ public abstract class Contact {
 
     R byMail(Address postalAddress);
   }
-
-  public abstract <R> R match(Cases<R> cases);
 
 }

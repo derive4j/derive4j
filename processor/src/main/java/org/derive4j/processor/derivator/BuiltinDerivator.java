@@ -22,16 +22,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.derive4j.Make;
 import org.derive4j.Makes;
+import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
-import org.derive4j.processor.api.model.AlgebraicDataType;
-import org.derive4j.processor.api.model.DeriveContext;
 import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
 
 import static java.util.stream.Collectors.toList;
@@ -40,33 +38,26 @@ import static java.util.stream.Stream.of;
 import static org.derive4j.Make.constructors;
 import static org.derive4j.Make.lambdaVisitor;
 import static org.derive4j.processor.Utils.traverseResults;
-import static org.derive4j.processor.api.DeriveResults.lazy;
 
 public class BuiltinDerivator {
 
-  private static final Function<Make, Stream<Make>> dependencies = Makes.cases()
-      .lambdaVisitor(Stream::<Make>of)
-      .constructors(Stream::of)
-      .lazyConstructor(Stream::of)
-      .patternMatching(() -> of(lambdaVisitor))
-      .getters(() -> of(lambdaVisitor))
-      .modifiers(() -> of(lambdaVisitor, constructors))
-      .catamorphism(() -> of(lambdaVisitor))
-      .hktCoerce(Stream::of);
+  public static Derivator derivator(DeriveUtils deriveUtils) {
 
-  public static BiFunction<AlgebraicDataType, DeriveContext, DeriveResult<DerivedCodeSpec>> derivator(DeriveUtils deriveUtils) {
-    ExportDerivator exportDerivator = new ExportDerivator(deriveUtils);
-    return (adt, deriveContext) -> traverseResults(concat(of(exportDerivator.derive(adt)), deriveContext.makes()
-        .stream()
-        .map(Makes.cases()
-            .lambdaVisitor(lazy(() -> MapperDerivator.derive(adt, deriveContext, deriveUtils)))
-            .constructors(lazy(() -> StrictConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
-            .lazyConstructor(lazy(() -> LazyConstructorDerivator.derive(adt, deriveContext, deriveUtils)))
-            .patternMatching(lazy(() -> PatternMatchingDerivator.derive(adt, deriveContext, deriveUtils)))
-            .getters(lazy(() -> GettersDerivator.derive(adt, deriveContext, deriveUtils)))
-            .modifiers(lazy(() -> ModiersDerivator.derive(adt, deriveContext, deriveUtils)))
-            .catamorphism(lazy(() -> new CataDerivator(deriveUtils, deriveContext, adt).derive()))
-            .hktCoerce(DeriveResult.result(DerivedCodeSpec.none())))).collect(toList())).map(
+    Derivator exportDerivator = new ExportDerivator(deriveUtils);
+
+    Function<Make, Derivator> makeDerivators = Makes.cases().<Derivator>lambdaVisitor(
+        new MapperDerivator(deriveUtils)).constructors(new StrictConstructorDerivator(deriveUtils))
+        .lazyConstructor(new LazyConstructorDerivator(deriveUtils))
+        .patternMatching(new PatternMatchingDerivator(deriveUtils))
+        .firstClassPatternMatching(__ -> DeriveResult.result(DerivedCodeSpec.none()))
+        .getters(new GettersDerivator(deriveUtils))
+        .modifiers(new ModiersDerivator(deriveUtils))
+        .catamorphism(new CataDerivator(deriveUtils))
+        .hktCoerce(__ -> DeriveResult.result(DerivedCodeSpec.none()));
+
+    return adt -> traverseResults(
+        concat(of(exportDerivator), adt.deriveConfig().makes().stream().map(makeDerivators)).map(d -> d.derive(adt))
+            .collect(toList())).map(
         codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
@@ -78,5 +69,16 @@ public class BuiltinDerivator {
 
     return Collections.unmodifiableSet(makeSet);
   }
+
+  private static final Function<Make, Stream<Make>> dependencies = Makes.cases()
+      .lambdaVisitor(Stream::<Make>of)
+      .constructors(Stream::of)
+      .lazyConstructor(Stream::of)
+      .patternMatching(() -> of(lambdaVisitor))
+      .firstClassPatternMatching(() -> of(lambdaVisitor))
+      .getters(() -> of(lambdaVisitor))
+      .modifiers(() -> of(lambdaVisitor, constructors))
+      .catamorphism(() -> of(lambdaVisitor))
+      .hktCoerce(Stream::of);
 
 }

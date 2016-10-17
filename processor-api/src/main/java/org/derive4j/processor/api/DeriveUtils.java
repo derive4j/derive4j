@@ -30,7 +30,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.Flavour;
 import org.derive4j.processor.api.model.TypeRestriction;
 
 public interface DeriveUtils {
@@ -38,8 +38,6 @@ public interface DeriveUtils {
   Types types();
 
   Elements elements();
-
-  DeriveResult<AlgebraicDataType> parseAlgebraicDataType(TypeElement typeElement);
 
   TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs);
 
@@ -59,11 +57,15 @@ public interface DeriveUtils {
 
   List<ExecutableElement> allAbstractMethods(TypeElement typeElement);
 
-  TypeElement object();
+  ObjectModel object();
 
-  ExecutableElement objectEquals();
+  Optional<SamInterface> samInterface(String qualifiedClassName);
 
-  ExecutableElement objectHashCode();
+  SamInterface function0Model(Flavour flavour);
 
-  ExecutableElement objectToString();
+  SamInterface function1Model(Flavour flavour);
+
+  OptionModel optionModel(Flavour flavour);
+
+  Optional<EitherModel> eitherModel(Flavour flavour);
 }

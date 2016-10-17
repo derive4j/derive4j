@@ -32,6 +32,8 @@ import static org.derive4j.Flavour.Guava;
 @Data(flavour = Guava)
 public abstract class GuavaRequest {
 
+  public abstract <R> R match(Cases<R> cases);
+
   interface Cases<R> {
     R GET(String path);
 
@@ -41,7 +43,5 @@ public abstract class GuavaRequest {
 
     R POST(String path, String body);
   }
-
-  public abstract <R> R match(Cases<R> cases);
 
 }

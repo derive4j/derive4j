@@ -18,25 +18,36 @@
  */
 package org.derive4j;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
 import static org.derive4j.Make.catamorphism;
 import static org.derive4j.Make.constructors;
 import static org.derive4j.Make.getters;
+import static org.derive4j.Make.hktCoerce;
 import static org.derive4j.Make.lambdaVisitor;
 import static org.derive4j.Make.lazyConstructor;
 import static org.derive4j.Make.modifiers;
 import static org.derive4j.Make.patternMatching;
 import static org.derive4j.Visibility.Same;
 
-@Target({})
+@Target(ElementType.TYPE)
+@Documented
 public @interface Derive {
 
   String inClass() default ":auto";
 
   Visibility withVisibility() default Same;
 
-  Make[] make() default { lambdaVisitor, constructors, getters, modifiers, lazyConstructor, patternMatching, catamorphism };
+  Make[] make() default { lambdaVisitor,
+                          constructors,
+                          getters,
+                          modifiers,
+                          lazyConstructor,
+                          patternMatching,
+                          catamorphism,
+                          hktCoerce };
 
   Instances[] value() default {};
 

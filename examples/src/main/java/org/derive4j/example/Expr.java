@@ -40,7 +40,8 @@ public abstract class Expr {
 
   public static Integer eval(Expr expression) {
 
-    return expression.match(i -> i, (left, right) -> eval(left) + eval(right), (left, right) -> eval(left) * eval(right), (expr) -> -eval(expr));
+    return expression.match(i -> i, (left, right) -> eval(left) + eval(right), (left, right) -> eval(left) * eval(right),
+        (expr) -> -eval(expr));
   }
 
   public static void main(String[] args) {
@@ -49,7 +50,8 @@ public abstract class Expr {
     System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
   }
 
-  public abstract <R> R match(@FieldNames("value") IntFunction<R> Const, @FieldNames({ "left", "right" }) BiFunction<Expr, Expr, R> Add,
+  public abstract <R> R match(@FieldNames("value") IntFunction<R> Const,
+      @FieldNames({ "left", "right" }) BiFunction<Expr, Expr, R> Add,
       @FieldNames({ "left", "right" }) BiFunction<Expr, Expr, R> Mult, @FieldNames("expr") Function<Expr, R> Neg);
 
 }

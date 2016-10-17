@@ -35,9 +35,6 @@ import static org.derive4j.example.Expressions.Mult;
 @Data
 public abstract class Expression {
 
-  private static final Function<Expression, Integer> eval = Expressions.cata(value -> value, (left, right) -> left.get() + right.get(),
-      (left, right) -> left.get() * right.get(), expr -> -expr.get());
-
   public static Integer eval(Expression expression) {
 
     return eval.apply(expression);
@@ -48,6 +45,9 @@ public abstract class Expression {
     Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
     System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
   }
+
+  private static final Function<Expression, Integer> eval = Expressions.cata(value -> value,
+      (left, right) -> left.get() + right.get(), (left, right) -> left.get() * right.get(), expr -> -expr.get());
 
   public abstract <R> R match(Cases<R> cases);
 

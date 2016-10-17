@@ -37,8 +37,8 @@ public abstract class Stream<A> {
   public static Stream<Integer> range(final int from, int toExclusive) {
 
     return nu(from, s -> (s == toExclusive)
-                         ? Steps.done()
-                         : Steps.yield(s, s + 1));
+        ? Steps.done()
+        : Steps.yield(s, s + 1));
   }
 
   public static <A> Stream<A> mu(Mu<A> mu) {
@@ -62,8 +62,6 @@ public abstract class Stream<A> {
       }
     };
   }
-
-  abstract <X> X match(Cases<A, X> cases);
 
   public final <B> Stream<B> map(F<A, B> f) {
 
@@ -120,6 +118,8 @@ public abstract class Stream<A> {
 
     return foldl((i, a) -> i + 1, 0);
   }
+
+  abstract <X> X match(Cases<A, X> cases);
 
   interface Cases<A, X> {
     X build(Mu<A> mu);

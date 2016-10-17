@@ -16,41 +16,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with "Derive4J - Processor API".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.api;
+package org.derive4j.processor.api.model;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
 import org.derive4j.Data;
 
 @Data
-public abstract class MessageLocalization {
+public abstract class DeriveVisibility {
 
   public interface Cases<R> {
-    R onElement(Element element);
+    R Public();
 
-    R onAnnotation(Element element, AnnotationMirror annotation);
+    R Package();
 
-    R onAnnotationValue(Element element, AnnotationMirror annotation, AnnotationValue annotationValue);
+    R Smart();
   }
 
-  public static MessageLocalization onElement(Element e) {
-
-    return MessageLocalizations.onElement(e);
-  }
-
-  public static MessageLocalization onAnnotation(Element e, AnnotationMirror a) {
-
-    return MessageLocalizations.onAnnotation(e, a);
-  }
-
-  public static MessageLocalization onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
-
-    return MessageLocalizations.onAnnotationValue(e, a, v);
-  }
-
-  MessageLocalization() {
-
+  DeriveVisibility() {
   }
 
   public abstract <R> R match(Cases<R> cases);

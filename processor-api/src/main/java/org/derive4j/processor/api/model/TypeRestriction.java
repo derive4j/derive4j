@@ -29,13 +29,17 @@ import static org.derive4j.processor.api.model.TypeRestrictions.getRestrictedTyp
 @Data
 public abstract class TypeRestriction {
 
-  TypeRestriction() {
-
+  public interface Case<R> {
+    R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument idFunction);
   }
 
   public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument idFunction) {
 
     return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, idFunction);
+  }
+
+  TypeRestriction() {
+
   }
 
   public TypeVariable restrictedTypeVariable() {
@@ -54,9 +58,5 @@ public abstract class TypeRestriction {
   }
 
   public abstract <R> R match(Case<R> typeRestriction);
-
-  public interface Case<R> {
-    R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument idFunction);
-  }
 
 }

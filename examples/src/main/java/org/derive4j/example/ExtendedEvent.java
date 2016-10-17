@@ -30,12 +30,6 @@ import org.derive4j.Data;
 @Data
 public abstract class ExtendedEvent<U> {
 
-  interface Cases<A, X> extends Event.Cases<A, X> {
-
-    X itemRenamed(A ref, String itemName);
-
-  }
-
   public abstract <X> X match(Cases<U, X> cases);
 
   @Override
@@ -46,4 +40,10 @@ public abstract class ExtendedEvent<U> {
 
   @Override
   public abstract String toString();
+
+  interface Cases<A, X> extends Event.Cases<A, X> {
+
+    X itemRenamed(A ref, String itemName);
+
+  }
 }

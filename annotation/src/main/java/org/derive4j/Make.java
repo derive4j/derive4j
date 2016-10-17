@@ -53,6 +53,14 @@ public enum Make {
     }
   },
 
+  firstClassPatternMatching {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.firstClassPatternMatching();
+    }
+  },
+
   getters {
     @Override
     public <R> R match(Cases<R> cases) {
@@ -85,8 +93,6 @@ public enum Make {
     }
   };
 
-  public abstract <R> R match(Cases<R> cases);
-
   public interface Cases<R> {
     R lambdaVisitor();
 
@@ -96,6 +102,8 @@ public enum Make {
 
     R patternMatching();
 
+    R firstClassPatternMatching();
+
     R getters();
 
     R modifiers();
@@ -104,5 +112,7 @@ public enum Make {
 
     R hktCoerce();
   }
+
+  public abstract <R> R match(Cases<R> cases);
 
 }

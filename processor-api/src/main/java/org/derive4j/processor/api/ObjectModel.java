@@ -16,23 +16,35 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with "Derive4J - Processor API".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.api.model;
+package org.derive4j.processor.api;
 
-import java.util.Set;
-import org.derive4j.Flavour;
-import org.derive4j.Make;
-import org.derive4j.Visibility;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import org.derive4j.Data;
 
-public interface DeriveContext {
+@Data
+public abstract class ObjectModel {
+  ObjectModel() {}
 
-  Flavour flavour();
+  public abstract <X> X match(Case<X> Case);
 
-  Visibility visibility();
+  public final TypeElement classModel() {
+    return ObjectModels.getClassModel(this);
+  }
 
-  String targetPackage();
+  public final ExecutableElement equalsMethod() {
+    return ObjectModels.getEquals(this);
+  }
 
-  String targetClassName();
+  public final ExecutableElement hashCodeMethod() {
+    return ObjectModels.getHashCode(this);
+  }
 
-  Set<Make> makes();
+  public final ExecutableElement toStringMethod() {
+    return ObjectModels.getToString(this);
+  }
 
+  interface Case<X> {
+    X ObjectModel(TypeElement classModel, ExecutableElement equals, ExecutableElement hashCode, ExecutableElement toString);
+  }
 }

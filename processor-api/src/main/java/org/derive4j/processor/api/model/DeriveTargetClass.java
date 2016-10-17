@@ -18,35 +18,30 @@
  */
 package org.derive4j.processor.api.model;
 
-import java.util.function.BiFunction;
-import javax.lang.model.type.TypeMirror;
+import com.squareup.javapoet.ClassName;
 import org.derive4j.Data;
-import org.derive4j.FieldNames;
 
-import static org.derive4j.processor.api.model.DataArguments.getFieldName;
-import static org.derive4j.processor.api.model.DataArguments.getType;
+import static org.derive4j.processor.api.model.DeriveTargetClasses.getClassName;
+import static org.derive4j.processor.api.model.DeriveTargetClasses.getVisibility;
 
 @Data
-public abstract class DataArgument {
+public abstract class DeriveTargetClass {
 
-  public static DataArgument dataArgument(String fieldName, TypeMirror type) {
-
-    return DataArguments.dataArgument(fieldName, type);
+  DeriveTargetClass() {
   }
 
-  DataArgument() {
+  public abstract <X> X match(Case<X> Case);
 
+  public final ClassName className() {
+    return getClassName(this);
   }
 
-  public abstract <R> R match(@FieldNames({ "fieldName", "type" }) BiFunction<String, TypeMirror, R> dataArgument);
-
-  public String fieldName() {
-
-    return getFieldName(this);
+  public final DeriveVisibility visibility() {
+    return getVisibility(this);
   }
 
-  public TypeMirror type() {
-
-    return getType(this);
+  interface Case<X> {
+    X TargetClass(ClassName className, DeriveVisibility visibility);
   }
+
 }

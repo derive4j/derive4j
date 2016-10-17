@@ -35,13 +35,18 @@ import static org.derive4j.processor.api.model.TypeConstructors.getTypeVariables
 @Data(@Derive(withVisibility = Smart))
 public abstract class TypeConstructor {
 
-  TypeConstructor() {
-
+  public interface Case<R> {
+    R typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables);
   }
 
-  public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables) {
+  public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType,
+      List<TypeVariable> typeVariables) {
 
     return TypeConstructors.typeConstructor0(typeElement, declaredType, unmodifiableList(new ArrayList<>(typeVariables)));
+  }
+
+  TypeConstructor() {
+
   }
 
   public abstract <R> R match(Case<R> typeConstructor);
@@ -59,10 +64,6 @@ public abstract class TypeConstructor {
   public List<TypeVariable> typeVariables() {
 
     return getTypeVariables(this);
-  }
-
-  public interface Case<R> {
-    R typeConstructor(TypeElement typeElement, DeclaredType declaredType, List<TypeVariable> typeVariables);
   }
 
 }

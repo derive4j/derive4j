@@ -26,10 +26,6 @@ import static org.derive4j.processor.api.DeriveResults.modResult;
 @Data
 public abstract class DeriveResult<A> {
 
-  DeriveResult() {
-
-  }
-
   public static <A> DeriveResult<A> error(DeriveMessage errorMsg) {
 
     return DeriveResults.error(errorMsg);
@@ -38,6 +34,10 @@ public abstract class DeriveResult<A> {
   public static <A> DeriveResult<A> result(A result) {
 
     return DeriveResults.result(result);
+  }
+
+  DeriveResult() {
+
   }
 
   public <B> DeriveResult<B> map(Function<A, B> f) {

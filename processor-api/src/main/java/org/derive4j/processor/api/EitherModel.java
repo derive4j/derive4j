@@ -18,41 +18,33 @@
  */
 package org.derive4j.processor.api;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import org.derive4j.Data;
 
 @Data
-public abstract class MessageLocalization {
+public abstract class EitherModel {
 
-  public interface Cases<R> {
-    R onElement(Element element);
-
-    R onAnnotation(Element element, AnnotationMirror annotation);
-
-    R onAnnotationValue(Element element, AnnotationMirror annotation, AnnotationValue annotationValue);
+  public interface Case<R> {
+    R EitherModel(TypeElement typeElement, ExecutableElement leftConstructor, ExecutableElement rightConstructor);
   }
 
-  public static MessageLocalization onElement(Element e) {
-
-    return MessageLocalizations.onElement(e);
+  EitherModel() {
   }
 
-  public static MessageLocalization onAnnotation(Element e, AnnotationMirror a) {
+  public abstract <R> R match(Case<R> Case);
 
-    return MessageLocalizations.onAnnotation(e, a);
+  public TypeElement typeElement() {
+    return EitherModels.getTypeElement(this);
   }
 
-  public static MessageLocalization onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
+  public ExecutableElement leftConstructor() {
 
-    return MessageLocalizations.onAnnotationValue(e, a, v);
+    return EitherModels.getLeftConstructor(this);
   }
 
-  MessageLocalization() {
+  public ExecutableElement rightConstructor() {
 
+    return EitherModels.getRightConstructor(this);
   }
-
-  public abstract <R> R match(Cases<R> cases);
-
 }

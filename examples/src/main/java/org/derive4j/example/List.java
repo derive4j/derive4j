@@ -41,10 +41,6 @@ import static org.derive4j.example.Lists.nil;
 @Data
 public abstract class List<A> {
 
-  List() {
-
-  }
-
   public static List<Integer> naturals() {
 
     return integersFrom(0);
@@ -58,13 +54,17 @@ public abstract class List<A> {
   public static List<Integer> range(final int from, int toExclusive) {
 
     return (from == toExclusive)
-           ? nil()
-           : cons(from, lazy(() -> range(from + 1, toExclusive)));
+        ? nil()
+        : cons(from, lazy(() -> range(from + 1, toExclusive)));
   }
 
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
 
     return lazy(() -> cons(seed, iterate(op.apply(seed), op)));
+  }
+
+  List() {
+
   }
 
   public abstract <X> X list(Supplier<X> nil, @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
@@ -82,8 +82,8 @@ public abstract class List<A> {
   public final List<A> filter(Predicate<A> p) {
 
     return lazy(() -> list(Lists::nil, (h, tail) -> p.test(h)
-                                                    ? cons(h, tail.filter(p))
-                                                    : tail.filter(p)));
+        ? cons(h, tail.filter(p))
+        : tail.filter(p)));
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {
@@ -96,8 +96,8 @@ public abstract class List<A> {
   public final List<A> take(int n) {
 
     return (n <= 0)
-           ? nil()
-           : lazy(() -> list(Lists::nil, (head, tail) -> cons(head, tail.take(n - 1))));
+        ? nil()
+        : lazy(() -> list(Lists::nil, (head, tail) -> cons(head, tail.take(n - 1))));
   }
 
   public final void forEach(Consumer<A> effect) {

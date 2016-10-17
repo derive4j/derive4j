@@ -18,32 +18,32 @@
  */
 package org.derive4j.processor.api.model;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static java.util.Collections.unmodifiableList;
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getDataConstruction;
+import static org.derive4j.processor.api.model.AlgebraicDataTypes.getDeriveConfig;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getFields;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getMatchMethod;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.getTypeConstructor;
 
-@Data(@Derive(withVisibility = Smart))
+@Data
 public abstract class AlgebraicDataType {
 
-  AlgebraicDataType() {
-
+  public interface Case<R> {
+    R adt(DeriveConfig deriveConfig, TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction,
+        List<DataArgument> fields);
   }
 
-  public static AlgebraicDataType adt(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction,
-      List<DataArgument> fields) {
-
-    return AlgebraicDataTypes.adt0(typeConstructor, matchMethod, dataConstruction, unmodifiableList(new ArrayList<>(fields)));
+  AlgebraicDataType() {
   }
 
   public abstract <R> R match(Case<R> adt);
+
+  public DeriveConfig deriveConfig() {
+
+    return getDeriveConfig(this);
+  }
 
   public TypeConstructor typeConstructor() {
 
@@ -63,10 +63,6 @@ public abstract class AlgebraicDataType {
   public List<DataArgument> fields() {
 
     return getFields(this);
-  }
-
-  public interface Case<R> {
-    R adt(TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction, List<DataArgument> fields);
   }
 
 }

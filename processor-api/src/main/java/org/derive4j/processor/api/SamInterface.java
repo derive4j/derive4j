@@ -18,41 +18,28 @@
  */
 package org.derive4j.processor.api;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import org.derive4j.Data;
 
+import static org.derive4j.processor.api.SamInterfaces.getSam;
+import static org.derive4j.processor.api.SamInterfaces.getSamClass;
+
 @Data
-public abstract class MessageLocalization {
+public abstract class SamInterface {
+  SamInterface() {}
 
-  public interface Cases<R> {
-    R onElement(Element element);
+  public abstract <X> X match(Case<X> samInterface);
 
-    R onAnnotation(Element element, AnnotationMirror annotation);
-
-    R onAnnotationValue(Element element, AnnotationMirror annotation, AnnotationValue annotationValue);
+  public final TypeElement samClass() {
+    return getSamClass(this);
   }
 
-  public static MessageLocalization onElement(Element e) {
-
-    return MessageLocalizations.onElement(e);
+  public final ExecutableElement sam() {
+    return getSam(this);
   }
 
-  public static MessageLocalization onAnnotation(Element e, AnnotationMirror a) {
-
-    return MessageLocalizations.onAnnotation(e, a);
+  interface Case<X> {
+    X SamInterface(TypeElement samClass, ExecutableElement sam);
   }
-
-  public static MessageLocalization onAnnotationValue(Element e, AnnotationMirror a, AnnotationValue v) {
-
-    return MessageLocalizations.onAnnotationValue(e, a, v);
-  }
-
-  MessageLocalization() {
-
-  }
-
-  public abstract <R> R match(Cases<R> cases);
-
 }

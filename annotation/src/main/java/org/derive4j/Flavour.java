@@ -77,8 +77,6 @@ public enum Flavour {
     }
   };
 
-  public abstract <R> R match(Cases<R> cases);
-
   public interface Cases<R> {
     R Jdk();
 
@@ -94,5 +92,7 @@ public enum Flavour {
 
     R Guava();
   }
+
+  public abstract <R> R match(Cases<R> cases);
 
 }

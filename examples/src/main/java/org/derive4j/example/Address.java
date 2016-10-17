@@ -30,10 +30,10 @@ import org.derive4j.Data;
 @Data
 public abstract class Address {
 
+  public abstract <R> R match(Cases<R> cases);
+
   interface Cases<R> {
     R Address(int number, String street);
   }
-
-  public abstract <R> R match(Cases<R> cases);
 
 }

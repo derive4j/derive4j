@@ -45,8 +45,6 @@ public enum Visibility {
     }
   };
 
-  public abstract <R> R match(VisibilityCases<R> cases);
-
   public interface VisibilityCases<R> {
     R Same();
 
@@ -54,5 +52,7 @@ public enum Visibility {
 
     R Smart();
   }
+
+  public abstract <R> R match(VisibilityCases<R> cases);
 
 }

@@ -44,8 +44,10 @@ import static org.derive4j.example.Terms.Zero;
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
 @Data
 public abstract class Term<T> {
-  Term() {
+  public interface F<A, B> {// Could be java.util.function.Function,
 
+    //used only for the visualy lighter apply method.
+    B __(A a);
   }
 
   public static <T> T eval(final Term<T> term) {
@@ -56,8 +58,8 @@ public abstract class Term<T> {
         Pred((t, __) -> __.__(eval(t) - 1)).
         IsZero((t, __) -> __.__(eval(t) == 0)).
         If((cond, then, otherwise) -> eval(cond)
-                                      ? eval(then)
-                                      : eval(otherwise));
+            ? eval(then)
+            : eval(otherwise));
 
     return eval.apply(term);
   }
@@ -79,6 +81,10 @@ public abstract class Term<T> {
     //  else IsZero(Succ(0))"
   }
 
+  Term() {
+
+  }
+
   public abstract <X> X match(Cases<T, X> cases);
 
   @Override
@@ -89,12 +95,6 @@ public abstract class Term<T> {
 
   @Override
   public abstract String toString();
-
-  public interface F<A, B> {// Could be java.util.function.Function,
-
-    //used only for the visualy lighter apply method.
-    B __(A a);
-  }
 
   interface Cases<A, R> {
     R Zero(F<Integer, A> id);

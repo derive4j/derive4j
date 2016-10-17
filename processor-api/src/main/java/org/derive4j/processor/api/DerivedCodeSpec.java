@@ -40,43 +40,47 @@ import static org.derive4j.processor.api.DerivedCodeSpecs.getWarnings;
 @Data(@Derive(withVisibility = Smart))
 public abstract class DerivedCodeSpec {
 
-  DerivedCodeSpec() {
-
+  public interface Cases<R> {
+    R codeSpec(List<TypeSpec> classes, List<FieldSpec> fields, List<MethodSpec> methods, List<DeriveMessage> infos,
+        List<DeriveMessage> warnings);
   }
 
-  public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, List<FieldSpec> fields, List<MethodSpec> methods, List<DeriveMessage> infos,
-      List<DeriveMessage> warnings) {
+  public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, List<FieldSpec> fields, List<MethodSpec> methods,
+      List<DeriveMessage> infos, List<DeriveMessage> warnings) {
 
     return DerivedCodeSpecs.codeSpec0(unmodifiableList(new ArrayList<>(classes)), unmodifiableList(new ArrayList<>(fields)),
-        unmodifiableList(new ArrayList<>(methods)), unmodifiableList(new ArrayList<>(infos)), unmodifiableList(new ArrayList<>(warnings)));
+        unmodifiableList(new ArrayList<>(methods)), unmodifiableList(new ArrayList<>(infos)),
+        unmodifiableList(new ArrayList<>(warnings)));
   }
 
   public static DerivedCodeSpec codeSpec(TypeSpec classes, FieldSpec field, MethodSpec method) {
 
-    return codeSpec(Collections.singletonList(classes), Collections.singletonList(field), Collections.singletonList(method), Collections.emptyList(),
-        Collections.emptyList());
+    return codeSpec(Collections.singletonList(classes), Collections.singletonList(field), Collections.singletonList(method),
+        Collections.emptyList(), Collections.emptyList());
   }
 
   public static DerivedCodeSpec codeSpec(TypeSpec clazz, MethodSpec method) {
 
-    return codeSpec(Collections.singletonList(clazz), Collections.emptyList(), Collections.singletonList(method), Collections.emptyList(),
-        Collections.emptyList());
+    return codeSpec(Collections.singletonList(clazz), Collections.emptyList(), Collections.singletonList(method),
+        Collections.emptyList(), Collections.emptyList());
   }
 
   public static DerivedCodeSpec codeSpec(FieldSpec field, MethodSpec method) {
 
-    return codeSpec(Collections.emptyList(), Collections.singletonList(field), Collections.singletonList(method), Collections.emptyList(),
-        Collections.emptyList());
+    return codeSpec(Collections.emptyList(), Collections.singletonList(field), Collections.singletonList(method),
+        Collections.emptyList(), Collections.emptyList());
   }
 
   public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, MethodSpec method) {
 
-    return codeSpec(classes, Collections.emptyList(), Collections.singletonList(method), Collections.emptyList(), Collections.emptyList());
+    return codeSpec(classes, Collections.emptyList(), Collections.singletonList(method), Collections.emptyList(),
+        Collections.emptyList());
   }
 
   public static DerivedCodeSpec codeSpec(List<TypeSpec> classes, FieldSpec field, MethodSpec method) {
 
-    return codeSpec(classes, Collections.singletonList(field), Collections.singletonList(method), Collections.emptyList(), Collections.emptyList());
+    return codeSpec(classes, Collections.singletonList(field), Collections.singletonList(method), Collections.emptyList(),
+        Collections.emptyList());
   }
 
   public static DerivedCodeSpec methodSpecs(List<MethodSpec> methods) {
@@ -94,17 +98,16 @@ public abstract class DerivedCodeSpec {
     return methodSpecs(Collections.emptyList());
   }
 
-  private static <A> List<A> concat(List<A> as1, List<A> as2) {
+  DerivedCodeSpec() {
 
-    return Stream.concat(as1.stream(), as2.stream()).collect(Collectors.toList());
   }
 
   public abstract <R> R match(Cases<R> cases);
 
   public final DerivedCodeSpec append(DerivedCodeSpec cs) {
 
-    return codeSpec(concat(classes(), cs.classes()), concat(fields(), cs.fields()), concat(methods(), cs.methods()), concat(infos(), cs.infos()),
-        concat(warnings(), cs.warnings()));
+    return codeSpec(concat(classes(), cs.classes()), concat(fields(), cs.fields()), concat(methods(), cs.methods()),
+        concat(infos(), cs.infos()), concat(warnings(), cs.warnings()));
   }
 
   public final List<TypeSpec> classes() {
@@ -132,8 +135,9 @@ public abstract class DerivedCodeSpec {
     return getWarnings(this);
   }
 
-  public interface Cases<R> {
-    R codeSpec(List<TypeSpec> classes, List<FieldSpec> fields, List<MethodSpec> methods, List<DeriveMessage> infos, List<DeriveMessage> warnings);
+  private static <A> List<A> concat(List<A> as1, List<A> as2) {
+
+    return Stream.concat(as1.stream(), as2.stream()).collect(Collectors.toList());
   }
 
 }
