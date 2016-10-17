@@ -122,7 +122,7 @@ You can also ask Derive4J to generate null checks with:
   public abstract String toString();
 ```
 The safer solution would be to never use those methods and use 'type classes' instead, eg. [Equal](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Equal.java), [Hash](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Hash.java) and [Show](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Show.java).
-The project [Derive4J for Functiona Java](https://github.com/derive4j/derive4j-fj) aims at generating them automatically.
+The project [Derive4J for Functional Java](https://github.com/derive4j/derive4j-fj) aims at generating them automatically.
 
 ## Pattern matching syntax
 Now let's say that you want a function that returns the body size of a ```Request```. Without Derive4J you would write something like:
