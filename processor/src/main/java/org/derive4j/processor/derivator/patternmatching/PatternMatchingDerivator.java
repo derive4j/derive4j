@@ -127,7 +127,7 @@ public class PatternMatchingDerivator implements Derivator {
 
     NameAllocator nameAllocator = new NameAllocator();
     String argName = uncapitalize(adt.matchMethod().returnTypeVariable().toString());
-    return MethodSpec.methodBuilder(currentConstructor.name())
+    return MethodSpec.methodBuilder(currentConstructor.name() + '_')
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addParameter(TypeName.get(adt.matchMethod().returnTypeVariable()), nameAllocator.newName(argName))
         .addStatement("return this.$L(($L) -> $L)", currentConstructor.name(),
