@@ -107,7 +107,7 @@ public class PatternMatchingDerivator implements Derivator {
 
           // Partial matching path:
           (constructors.size() > 1)
-              ? IntStream.rangeClosed(1, constructors.size())
+              ? IntStream.rangeClosed(2, constructors.size())
               .mapToObj(i -> (i < constructors.size())
                   ? partialMatching.partialMatchingStepTypeSpec(adt, constructors.subList(0, i), constructors.get(i),
                   constructors.subList(i + 1, constructors.size()))
