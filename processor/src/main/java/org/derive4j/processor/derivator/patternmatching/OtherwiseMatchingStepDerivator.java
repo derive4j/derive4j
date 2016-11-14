@@ -55,6 +55,7 @@ import org.derive4j.processor.derivator.MapperDerivator;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.Utils.uncapitalize;
 import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
+import static org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator.matcherVariables;
 
 public class OtherwiseMatchingStepDerivator {
 
@@ -69,7 +70,7 @@ public class OtherwiseMatchingStepDerivator {
   TypeSpec stepTypeSpec(AlgebraicDataType adt) {
 
     TypeSpec.Builder otherwiseMatchBuilder = TypeSpec.classBuilder(otherwiseBuilderClassName())
-        .addTypeVariables(PatternMatchingDerivator.matcherVariables(adt).map(TypeVariableName::get).collect(Collectors.toList()))
+        .addTypeVariables(matcherVariables(adt).map(TypeVariableName::get).collect(Collectors.toList()))
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .addFields(adt.dataConstruction()
             .constructors()
@@ -80,7 +81,6 @@ public class OtherwiseMatchingStepDerivator {
             .collect(Collectors.toList()));
 
     MethodSpec.Builder otherwiseMatchConstructorBuilder = MethodSpec.constructorBuilder()
-        .addModifiers(Modifier.PRIVATE)
         .addParameters(adt.dataConstruction()
             .constructors()
             .stream()
@@ -465,8 +465,13 @@ public class OtherwiseMatchingStepDerivator {
         .build();
   }
 
+  static ParameterizedTypeName otherwiseMatcherTypeName(AlgebraicDataType adt) {
+    return ParameterizedTypeName.get(ClassName.bestGuess(otherwiseBuilderClassName()),
+        matcherVariables(adt).map(TypeVariableName::get).toArray(TypeName[]::new));
+  }
+
   static String otherwiseBuilderClassName() {
-    return "PartialMatchBuilder";
+    return "PartialMatcher";
   }
 
 }

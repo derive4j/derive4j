@@ -27,6 +27,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -44,6 +45,8 @@ import org.derive4j.processor.derivator.MapperDerivator;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.Utils.uncapitalize;
 import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
+import static org.derive4j.processor.derivator.patternmatching.OtherwiseMatchingStepDerivator.otherwiseMatcherTypeName;
+import static org.derive4j.processor.derivator.patternmatching.PartialMatchingStepDerivator.superClass;
 
 public class TotalMatchingStepDerivator {
 
@@ -80,32 +83,27 @@ public class TotalMatchingStepDerivator {
       currentConstructorTotalMatchMethod.addTypeVariable(returnTypeVarName);
       currentConstructorTotalMatchConstantMethod.addTypeVariable(returnTypeVarName);
 
-      totalMatchBuilder.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build());
+      totalMatchBuilder.addMethod(MethodSpec.constructorBuilder().build());
 
-      partialMatchMethods = partialMatching.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors)
+      partialMatchMethods = IntStream.rangeClosed(1, nextConstructors.size())
+          .mapToObj(i -> partialMatching.partialMatchMethodBuilder(adt, previousConstructors, i, nextConstructors.get(i - 1),
+              superClass(adt, nextConstructors.subList(i, nextConstructors.size()))))
+          .flatMap(Function.identity())
           .map(mb -> mb.addTypeVariable(returnTypeVarName).build());
 
     } else {
 
       totalMatchBuilder.addTypeVariable(returnTypeVarName)
-          .superclass(ParameterizedTypeName.get(adt.deriveConfig()
-                  .targetClass()
-                  .className()
-                  .nestedClass(OtherwiseMatchingStepDerivator.otherwiseBuilderClassName()),
-              PatternMatchingDerivator.matcherVariables(adt).map(TypeName::get).toArray(TypeName[]::new)))
+          .superclass(superClass(adt, nextConstructors))
           .addMethod(MethodSpec.constructorBuilder()
-              .addModifiers(Modifier.PRIVATE)
               .addParameters(previousConstructors.stream()
                   .map(dc -> ParameterSpec.builder(mapperDerivator.mapperTypeName(adt, dc), mapperFieldName(dc)).build())
                   .collect(Collectors.toList()))
               .addStatement("super($L)", joinStringsAsArguments(
-                  Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName),
-                      IntStream.range(previousConstructors.size(), adt.dataConstruction().constructors().size())
-                          .mapToObj(__ -> "null"))))
+                  Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName), Stream.of("null"))))
               .build());
 
-      partialMatchMethods = partialMatching.partialMatchMethodBuilders(adt, previousConstructors, nextConstructors)
-          .map(MethodSpec.Builder::build);
+      partialMatchMethods = Stream.empty();
     }
 
     if (nextConstructors.isEmpty()) {
@@ -136,10 +134,13 @@ public class TotalMatchingStepDerivator {
           adt.deriveConfig().targetClass().className().nestedClass(totalMatchBuilderClassName(firstNextConstructor)),
           PatternMatchingDerivator.matcherVariables(adt).map(TypeName::get).toArray(TypeName[]::new));
 
+      ParameterizedTypeName otherwiseMatcherTypeName = otherwiseMatcherTypeName(adt);
+
       currentConstructorTotalMatchMethod.returns(returnType)
-          .addStatement("return new $L<>($L)", totalMatchBuilderClassName(firstNextConstructor),
-              Stream.concat(previousConstructors.stream().map(dc -> "super." + mapperFieldName(dc)),
-                  Stream.of(mapperFieldName(currentConstructor))).reduce((s1, s2) -> s1 + ", " + s2).orElse(""));
+          .addStatement("return new $L<>($L)", totalMatchBuilderClassName(firstNextConstructor), Stream.concat(
+              previousConstructors.stream()
+                  .map(dc -> "((" + otherwiseMatcherTypeName.toString() + ") this)." + mapperFieldName(dc)),
+              Stream.of(mapperFieldName(currentConstructor))).reduce((s1, s2) -> s1 + ", " + s2).orElse(""));
 
       currentConstructorTotalMatchConstantMethod.returns(returnType);
 
@@ -186,10 +187,13 @@ public class TotalMatchingStepDerivator {
     nameAllocator.newName(adtLambdaParam, "adt var");
     nameAllocator.newName(visitorVarName, "visitor var");
 
+    ParameterizedTypeName otherwiseMatcherTypeName = otherwiseMatcherTypeName(adt);
+
     return CodeBlock.builder()
         .addStatement("$T $L = $T.$L($L)", TypeName.get(visitorType), nameAllocator.get("visitor var"),
             adt.deriveConfig().targetClass().className(), MapperDerivator.visitorLambdaFactoryName(adt), joinStringsAsArguments(
-                Stream.concat(previousConstructors.stream().map(dc -> "super." + mapperFieldName(dc)),
+                Stream.concat(previousConstructors.stream()
+                        .map(dc -> "((" + otherwiseMatcherTypeName.toString() + ") this)." + mapperFieldName(dc)),
                     Stream.of(mapperFieldName(currentConstructor)))))
         .addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"), adt.matchMethod().element().getSimpleName(),
             nameAllocator.get("visitor var"))
@@ -198,7 +202,7 @@ public class TotalMatchingStepDerivator {
 
   static String totalMatchBuilderClassName(DataConstructor currentConstructor) {
 
-    return "TotalMatchBuilder" + Utils.capitalize(currentConstructor.name());
+    return "TotalMatcher_" + Utils.capitalize(currentConstructor.name());
   }
 
   private static CodeBlock oneConstructorImpl(DataConstructor currentConstructor, AlgebraicDataType adt) {
