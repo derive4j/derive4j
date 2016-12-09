@@ -31,6 +31,7 @@ import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
+import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator.MatchingKind;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -48,8 +49,8 @@ public class BuiltinDerivator {
     Function<Make, Derivator> makeDerivators = Makes.cases().<Derivator>lambdaVisitor(
         new MapperDerivator(deriveUtils)).constructors(new StrictConstructorDerivator(deriveUtils))
         .lazyConstructor(new LazyConstructorDerivator(deriveUtils))
-        .patternMatching(new PatternMatchingDerivator(deriveUtils))
-        .firstClassPatternMatching(__ -> DeriveResult.result(DerivedCodeSpec.none()))
+        .casesMatching(new PatternMatchingDerivator(deriveUtils, MatchingKind.Cases))
+        .caseOfMatching(new PatternMatchingDerivator(deriveUtils, MatchingKind.CaseOf))
         .getters(new GettersDerivator(deriveUtils))
         .modifiers(new ModiersDerivator(deriveUtils))
         .catamorphism(new CataDerivator(deriveUtils))
@@ -60,25 +61,5 @@ public class BuiltinDerivator {
             .collect(toList())).map(
         codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
-
-  public static Set<Make> makeWithDependencies(Make... makes) {
-
-    EnumSet<Make> makeSet = EnumSet.noneOf(Make.class);
-
-    makeSet.addAll(Arrays.asList(makes).stream().flatMap(m -> concat(dependencies.apply(m), of(m))).collect(toList()));
-
-    return Collections.unmodifiableSet(makeSet);
-  }
-
-  private static final Function<Make, Stream<Make>> dependencies = Makes.cases()
-      .lambdaVisitor(Stream::<Make>of)
-      .constructors(Stream::of)
-      .lazyConstructor(Stream::of)
-      .patternMatching(() -> of(lambdaVisitor))
-      .firstClassPatternMatching(() -> of(lambdaVisitor))
-      .getters(() -> of(lambdaVisitor))
-      .modifiers(() -> of(lambdaVisitor, constructors))
-      .catamorphism(() -> of(lambdaVisitor))
-      .hktCoerce(Stream::of);
 
 }

@@ -8,8 +8,8 @@ dependencies {
   compile "org.functionaljava:functionaljava:4.6"
   compile 'io.atlassian.fugue:fugue:4.3.1'
   compile 'com.atlassian.fugue:fugue:2.6.1'
-  compile 'com.google.guava:guava:20.0-rc1'
-  compile "io.javaslang:javaslang:2.0.4"
+  compile 'com.google.guava:guava:20.0'
+  compile "io.javaslang:javaslang:2.0.5"
   testCompile dependencyJunit
 }
 

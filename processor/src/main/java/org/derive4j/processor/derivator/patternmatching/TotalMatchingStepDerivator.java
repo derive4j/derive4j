@@ -19,6 +19,7 @@
 package org.derive4j.processor.derivator.patternmatching;
 
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
@@ -41,23 +42,29 @@ import org.derive4j.processor.api.model.DataConstructions;
 import org.derive4j.processor.api.model.DataConstructor;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.derivator.MapperDerivator;
+import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator.MatchingKind;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.Utils.uncapitalize;
 import static org.derive4j.processor.derivator.MapperDerivator.mapperFieldName;
 import static org.derive4j.processor.derivator.patternmatching.OtherwiseMatchingStepDerivator.otherwiseMatcherTypeName;
 import static org.derive4j.processor.derivator.patternmatching.PartialMatchingStepDerivator.superClass;
+import static org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator.asFieldSpec;
 
 public class TotalMatchingStepDerivator {
 
   private final DeriveUtils deriveUtils;
   private final MapperDerivator mapperDerivator;
   private final PartialMatchingStepDerivator partialMatching;
+  private final PatternMatchingDerivator.MatchingKind matchingKind;
 
-  TotalMatchingStepDerivator(DeriveUtils deriveUtils) {
+  TotalMatchingStepDerivator(DeriveUtils deriveUtils, MatchingKind matchingKind) {
     this.deriveUtils = deriveUtils;
     mapperDerivator = new MapperDerivator(deriveUtils);
-    partialMatching = new PartialMatchingStepDerivator(deriveUtils);
+    partialMatching = new PartialMatchingStepDerivator(deriveUtils, matchingKind);
+    this.matchingKind = matchingKind;
   }
 
   TypeSpec stepTypeSpec(AlgebraicDataType adt, List<DataConstructor> previousConstructors, DataConstructor currentConstructor,
@@ -78,29 +85,44 @@ public class TotalMatchingStepDerivator {
 
     final Stream<MethodSpec> partialMatchMethods;
 
+    ParameterSpec adtParamSpec = PatternMatchingDerivator.asParameterSpec(adt);
+    MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
+        .addParameters(matchingKind == MatchingKind.CaseOf
+            ? singleton(adtParamSpec)
+            : emptyList());
+
+    FieldSpec adtFieldSpec = asFieldSpec(adt);
+
     if (previousConstructors.isEmpty()) {
+
+      if (matchingKind == MatchingKind.CaseOf) {
+        totalMatchBuilder.addField(adtFieldSpec);
+        constructor.addStatement("this.$N = $N", adtFieldSpec, adtParamSpec);
+      }
+
+      totalMatchBuilder.addMethod(constructor.build());
 
       currentConstructorTotalMatchMethod.addTypeVariable(returnTypeVarName);
       currentConstructorTotalMatchConstantMethod.addTypeVariable(returnTypeVarName);
 
-      totalMatchBuilder.addMethod(MethodSpec.constructorBuilder().build());
-
       partialMatchMethods = IntStream.rangeClosed(1, nextConstructors.size())
           .mapToObj(i -> partialMatching.partialMatchMethodBuilder(adt, previousConstructors, i, nextConstructors.get(i - 1),
-              superClass(adt, nextConstructors.subList(i, nextConstructors.size()))))
+              superClass(adt, matchingKind, nextConstructors.subList(i, nextConstructors.size()))))
           .flatMap(Function.identity())
           .map(mb -> mb.addTypeVariable(returnTypeVarName).build());
 
     } else {
 
       totalMatchBuilder.addTypeVariable(returnTypeVarName)
-          .superclass(superClass(adt, nextConstructors))
-          .addMethod(MethodSpec.constructorBuilder()
-              .addParameters(previousConstructors.stream()
-                  .map(dc -> ParameterSpec.builder(mapperDerivator.mapperTypeName(adt, dc), mapperFieldName(dc)).build())
-                  .collect(Collectors.toList()))
-              .addStatement("super($L)", joinStringsAsArguments(
-                  Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName), Stream.of("null"))))
+          .superclass(superClass(adt, matchingKind, nextConstructors))
+          .addMethod(constructor.addParameters(previousConstructors.stream()
+              .map(dc -> ParameterSpec.builder(mapperDerivator.mapperTypeName(adt, dc), mapperFieldName(dc)).build())
+              .collect(Collectors.toList()))
+              .addStatement("super($L)", (matchingKind == MatchingKind.CaseOf
+                                              ? adtParamSpec.name + ", "
+                                              : "") +
+                  joinStringsAsArguments(
+                      Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName), Stream.of("null"))))
               .build());
 
       partialMatchMethods = Stream.empty();
@@ -108,9 +130,11 @@ public class TotalMatchingStepDerivator {
 
     if (nextConstructors.isEmpty()) {
 
-      TypeName returnType = TypeName.get(deriveUtils.types()
+      TypeName returnType = matchingKind == MatchingKind.Cases
+          ? TypeName.get(deriveUtils.types()
           .getDeclaredType(deriveUtils.function1Model(adt.deriveConfig().flavour()).samClass(),
-              adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable()));
+              adt.typeConstructor().declaredType(), adt.matchMethod().returnTypeVariable()))
+          : TypeName.get(adt.matchMethod().returnTypeVariable());
 
       currentConstructorTotalMatchMethod.returns(returnType)
           .addCode(DataConstructions.cases()
@@ -118,7 +142,7 @@ public class TotalMatchingStepDerivator {
                   .visitorDispatch((visitorParam, visitorType, constructors) -> vistorDispatchImpl(adt, visitorType, visitorParam,
                       previousConstructors, currentConstructor))
                   .functionsDispatch(constructors1 -> functionDispatchImpl(adt, previousConstructors, currentConstructor)))
-              .oneConstructor(constructor -> oneConstructorImpl(currentConstructor, adt))
+              .oneConstructor(__ -> oneConstructorImpl(currentConstructor, adt))
               .noConstructor(() -> {
                 throw new IllegalArgumentException();
               })
@@ -130,17 +154,26 @@ public class TotalMatchingStepDerivator {
 
       DataConstructor firstNextConstructor = nextConstructors.get(0);
 
-      ParameterizedTypeName returnType = ParameterizedTypeName.get(
-          adt.deriveConfig().targetClass().className().nestedClass(totalMatchBuilderClassName(firstNextConstructor)),
+      ParameterizedTypeName returnType = ParameterizedTypeName.get(adt.deriveConfig()
+              .targetClass()
+              .className()
+              .nestedClass(matchingKind.wrapperClassName())
+              .nestedClass(totalMatchBuilderClassName(firstNextConstructor)),
           PatternMatchingDerivator.matcherVariables(adt).map(TypeName::get).toArray(TypeName[]::new));
 
       ParameterizedTypeName otherwiseMatcherTypeName = otherwiseMatcherTypeName(adt);
 
-      currentConstructorTotalMatchMethod.returns(returnType)
-          .addStatement("return new $L<>($L)", totalMatchBuilderClassName(firstNextConstructor), Stream.concat(
-              previousConstructors.stream()
+      String args = (matchingKind == MatchingKind.CaseOf
+                         ? (previousConstructors.isEmpty()
+                                ? "this."
+                                : "((" + otherwiseMatcherTypeName.toString() + ") this).") + adtFieldSpec.name + ", "
+                         : "") +
+          Stream.concat(previousConstructors.stream()
                   .map(dc -> "((" + otherwiseMatcherTypeName.toString() + ") this)." + mapperFieldName(dc)),
-              Stream.of(mapperFieldName(currentConstructor))).reduce((s1, s2) -> s1 + ", " + s2).orElse(""));
+              Stream.of(mapperFieldName(currentConstructor))).reduce((s1, s2) -> s1 + ", " + s2).orElse("");
+
+      currentConstructorTotalMatchMethod.returns(returnType)
+          .addStatement("return new $L<>($L)", totalMatchBuilderClassName(firstNextConstructor), args);
 
       currentConstructorTotalMatchConstantMethod.returns(returnType);
 
@@ -170,10 +203,18 @@ public class TotalMatchingStepDerivator {
 
     nameAllocator.newName(adtLambdaParam, "adt var");
 
-    return codeBlock.addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"),
-        adt.matchMethod().element().getSimpleName(), joinStringsAsArguments(
-            Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName),
-                Stream.of(mapperFieldName(currentConstructor))))).build();
+    String template;
+    Object templateArg;
+    if (matchingKind == MatchingKind.Cases) {
+      template = "$1L -> $1L";
+      templateArg = nameAllocator.get("adt var");
+    } else {
+      template = "((" + otherwiseMatcherTypeName(adt).toString() + ") this).$1N";
+      templateArg = asFieldSpec(adt);
+    }
+    return codeBlock.addStatement("return " + template + ".$2L($3L)", templateArg, adt.matchMethod().element().getSimpleName(),
+        joinStringsAsArguments(Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName),
+            Stream.of(mapperFieldName(currentConstructor))))).build();
   }
 
   private CodeBlock vistorDispatchImpl(AlgebraicDataType adt, DeclaredType visitorType, VariableElement visitorParam,
@@ -189,15 +230,21 @@ public class TotalMatchingStepDerivator {
 
     ParameterizedTypeName otherwiseMatcherTypeName = otherwiseMatcherTypeName(adt);
 
-    return CodeBlock.builder()
+    CodeBlock.Builder implBuilder = CodeBlock.builder()
         .addStatement("$T $L = $T.$L($L)", TypeName.get(visitorType), nameAllocator.get("visitor var"),
             adt.deriveConfig().targetClass().className(), MapperDerivator.visitorLambdaFactoryName(adt), joinStringsAsArguments(
                 Stream.concat(previousConstructors.stream()
                         .map(dc -> "((" + otherwiseMatcherTypeName.toString() + ") this)." + mapperFieldName(dc)),
-                    Stream.of(mapperFieldName(currentConstructor)))))
-        .addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"), adt.matchMethod().element().getSimpleName(),
-            nameAllocator.get("visitor var"))
-        .build();
+                    Stream.of(mapperFieldName(currentConstructor)))));
+
+    if (matchingKind == MatchingKind.Cases) {
+      implBuilder.addStatement("return $1L -> $1L.$2L($3L)", nameAllocator.get("adt var"),
+          adt.matchMethod().element().getSimpleName(), nameAllocator.get("visitor var"));
+    } else {
+      implBuilder.addStatement("return ((" + otherwiseMatcherTypeName(adt).toString() + ") this).$1N.$2L($3L)", asFieldSpec(adt),
+          adt.matchMethod().element().getSimpleName(), nameAllocator.get("visitor var"));
+    }
+    return implBuilder.build();
   }
 
   static String totalMatchBuilderClassName(DataConstructor currentConstructor) {

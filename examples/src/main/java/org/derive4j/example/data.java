@@ -34,6 +34,6 @@ import org.derive4j.Visibility;
 @Data(flavour = Flavour.FJ,
     value = @Derive(inClass = "{ClassName}Impl",
         withVisibility = Visibility.Package,
-        make = { Make.constructors, Make.patternMatching }))
+        make = { Make.constructors, Make.casesMatching }))
 public @interface data {
 }

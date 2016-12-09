@@ -45,19 +45,28 @@ public enum Make {
     }
   },
 
+  casesMatching {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.casesMatching();
+    }
+  },
+
+  @Deprecated
   patternMatching {
     @Override
     public <R> R match(Cases<R> cases) {
 
-      return cases.patternMatching();
+      return cases.casesMatching();
     }
   },
 
-  firstClassPatternMatching {
+  caseOfMatching {
     @Override
     public <R> R match(Cases<R> cases) {
 
-      return cases.firstClassPatternMatching();
+      return cases.caseOfMatching();
     }
   },
 
@@ -100,9 +109,9 @@ public enum Make {
 
     R lazyConstructor();
 
-    R patternMatching();
+    R casesMatching();
 
-    R firstClassPatternMatching();
+    R caseOfMatching();
 
     R getters();
 
