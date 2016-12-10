@@ -213,7 +213,7 @@ public final class GettersDerivator implements Derivator {
               .map(DataArgument::fieldName)
               .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor.typeRestrictions()
               .stream()
-              .map(TypeRestriction::idFunction)
+              .map(TypeRestriction::typeEq)
               .map(DataArgument::fieldName)
               .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), ClassName.get(optionModel.typeElement()));
       if (constructor.arguments().stream().anyMatch(da -> da.fieldName().equals(field.fieldName()))) {
@@ -245,7 +245,7 @@ public final class GettersDerivator implements Derivator {
                 dc.arguments().stream().map(DataArgument::fieldName).map(fn -> nameAllocator.clone().newName(fn, fn + " field")),
                 dc.typeRestrictions()
                     .stream()
-                    .map(TypeRestriction::idFunction)
+                    .map(TypeRestriction::typeEq)
                     .map(DataArgument::fieldName)
                     .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))) +
             ") -> " +

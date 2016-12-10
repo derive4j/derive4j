@@ -22,20 +22,20 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
 
-import static org.derive4j.processor.api.model.TypeRestrictions.getIdFunction;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRefinementType;
 import static org.derive4j.processor.api.model.TypeRestrictions.getRestrictedTypeVariable;
+import static org.derive4j.processor.api.model.TypeRestrictions.getTypeEq;
 
 @Data
 public abstract class TypeRestriction {
 
   public interface Case<R> {
-    R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument idFunction);
+    R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument typeEq);
   }
 
-  public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument idFunction) {
+  public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument typeEq) {
 
-    return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, idFunction);
+    return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, typeEq);
   }
 
   TypeRestriction() {
@@ -52,9 +52,9 @@ public abstract class TypeRestriction {
     return getRefinementType(this);
   }
 
-  public DataArgument idFunction() {
+  public DataArgument typeEq() {
 
-    return getIdFunction(this);
+    return getTypeEq(this);
   }
 
   public abstract <R> R match(Case<R> typeRestriction);

@@ -27,6 +27,7 @@ package org.derive4j.example;
 
 import java.util.function.Function;
 import org.derive4j.Data;
+import org.derive4j.hkt.TypeEq;
 
 import static java.lang.System.out;
 import static org.derive4j.example.Terms.If;
@@ -44,19 +45,14 @@ import static org.derive4j.example.Terms.Zero;
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
 @Data
 public abstract class Term<T> {
-  public interface F<A, B> {// Could be java.util.function.Function,
-
-    //used only for the visualy lighter apply method.
-    B __(A a);
-  }
 
   public static <T> T eval(final Term<T> term) {
 
     return Terms.caseOf(term).
-        Zero(__ -> __.__(0)).
-        Succ((t, __) -> __.__(eval(t) + 1)).
-        Pred((t, __) -> __.__(eval(t) - 1)).
-        IsZero((t, __) -> __.__(eval(t) == 0)).
+        Zero(__ -> __.coerce(0)).
+        Succ((t, __) -> __.coerce(eval(t) + 1)).
+        Pred((t, __) -> __.coerce(eval(t) - 1)).
+        IsZero((t, __) -> __.coerce(eval(t) == 0)).
         If((cond, then, otherwise) -> eval(cond)
             ? eval(then)
             : eval(otherwise));
@@ -95,13 +91,13 @@ public abstract class Term<T> {
   public abstract String toString();
 
   interface Cases<A, R> {
-    R Zero(F<Integer, A> id);
+    R Zero(TypeEq<Integer, A> id);
 
-    R Succ(Term<Integer> pred, F<Integer, A> id);
+    R Succ(Term<Integer> pred, TypeEq<Integer, A> id);
 
-    R Pred(Term<Integer> succ, F<Integer, A> id);
+    R Pred(Term<Integer> succ, TypeEq<Integer, A> id);
 
-    R IsZero(Term<Integer> a, F<Boolean, A> id);
+    R IsZero(Term<Integer> a, TypeEq<Boolean, A> id);
 
     R If(Term<Boolean> cond, Term<A> then, Term<A> otherwise);
   }

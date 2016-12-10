@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -57,6 +56,7 @@ import org.derive4j.processor.api.model.TypeRestriction;
 import static java.util.Collections.emptyList;
 import static org.derive4j.processor.P2.p2;
 import static org.derive4j.processor.Utils.asDeclaredType;
+import static org.derive4j.processor.Utils.asTypeElement;
 import static org.derive4j.processor.Utils.asTypeVariable;
 import static org.derive4j.processor.Utils.findOnlyOne;
 import static org.derive4j.processor.Utils.fold;
@@ -276,7 +276,8 @@ final class AdtParser {
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
         if (!typeRestrictions.isEmpty()) {
-          return error(message("Please put type constraints exclusively at the end of parameter list", onElement(visitorMethod)));
+          return error(message("Please put type equality constraints exclusively at the end of parameter list", onElement
+              (visitorMethod)));
         }
         constructorArguments.add(dataArgument(paramElement.getSimpleName().toString(), paramType));
       }
@@ -290,6 +291,7 @@ final class AdtParser {
     Optional<AnnotationMirror> fieldNamesAnnotationMirror = fieldNamesAnnotation(visitorArg);
 
     DeclaredType returnedType = deriveUtils.resolve(adtDeclaredType, deriveUtils.typeRestrictions(typeRestrictions));
+
     return fold(fieldNamesAnnotationMirror, result(
         constructor(visitorMethod.getSimpleName().toString(), seenVariables, constructorArguments, typeRestrictions, returnedType,
             deconstructor)), am -> {
@@ -306,7 +308,7 @@ final class AdtParser {
                   IntStream.range(constructorArguments.size(), totalNbArgs).mapToObj(i -> {
                     TypeRestriction typeRestriction = typeRestrictions.get(i - constructorArguments.size());
                     return typeRestriction(typeRestriction.restrictedTypeVariable(), typeRestriction.refinementType(),
-                        dataArgument(fieldNames.value()[i], typeRestriction.idFunction().type()));
+                        dataArgument(fieldNames.value()[i], typeRestriction.typeEq().type()));
                   }).collect(Collectors.toList()), returnedType, deconstructor));
         }
 
@@ -326,20 +328,14 @@ final class AdtParser {
   private Optional<TypeRestriction> parseGadtConstraint(String argName, TypeMirror paramType,
       List<TypeVariable> adtTypeVariables) {
 
-    return argName.startsWith("id") || argName.startsWith("uni")
-        ? asDeclaredType.visit(paramType)
-        .filter(dt -> dt.asElement().getKind() == ElementKind.INTERFACE)
-        .flatMap(dt -> findOnlyOne(deriveUtils.allAbstractMethods(dt)).filter(m -> m.getTypeParameters().isEmpty())
-            .flatMap(m -> asTypeVariable.visit(m.getReturnType())
-                .flatMap(deriveUtils.typeArgs(dt))
-                .flatMap(asTypeVariable::visit)
-                .map(rt -> p2(m, rt)))
-            .flatMap(p2 -> p2.match((abstractMethod, rt) -> findOnlyOne(abstractMethod.getParameters()).map(Element::asType)
-                .flatMap(t -> IntStream.range(0, adtTypeVariables.size())
-                    .filter(i -> types.isSameType(adtTypeVariables.get(i), rt))
-                    .mapToObj(i -> typeRestriction(adtTypeVariables.get(i), deriveUtils.resolve(t, deriveUtils.typeArgs(dt)),
-                        dataArgument(argName, paramType)))
-                    .findFirst()))))
-        : Optional.empty();
+    return asDeclaredType.visit(paramType)
+        .filter(dt -> asTypeElement.visit(dt.asElement())
+            .filter(te -> te.getQualifiedName().contentEquals("org.derive4j.hkt.TypeEq"))
+            .isPresent())
+        .flatMap(typeEq -> adtTypeVariables.stream()
+            .filter(tv -> types.isSameType(tv, typeEq.getTypeArguments().get(1)))
+            .findFirst()
+            .map(restrictedTypeVariable -> typeRestriction(restrictedTypeVariable, typeEq.getTypeArguments().get(0),
+                dataArgument(argName, paramType))));
   }
 }

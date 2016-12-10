@@ -116,28 +116,24 @@ public final class ModiersDerivator implements Derivator {
       String constructorName = smartConstructor(constructor, adt.deriveConfig())
           ? constructor.name() + "0"
           : constructor.name();
-      return CodeBlock.builder()
-          .add("($L) -> " +
-              (constructor.typeRestrictions().isEmpty()
-                   ? "$L"
-                   : "($T) ") +
-              "$L($L)", joinStringsAsArguments(Stream.concat(constructor.arguments()
+      return constructor.arguments().stream().map(DataArgument::fieldName).anyMatch(fn -> fn.equals(field.fieldName()))
+          ? CodeBlock.builder()
+          .add("($L) -> " + "$L($L)", joinStringsAsArguments(Stream.concat(constructor.arguments()
               .stream()
               .map(DataArgument::fieldName)
               .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor.typeRestrictions()
               .stream()
-              .map(TypeRestriction::idFunction)
+              .map(TypeRestriction::typeEq)
               .map(DataArgument::fieldName)
-              .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.typeRestrictions().isEmpty()
-              ? ""
-              : ClassName.get(adt.typeConstructor().typeElement()), constructorName, joinStringsAsArguments(
-              constructor.arguments()
-                  .stream()
+              .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructorName, joinStringsAsArguments(
+              Stream.concat(constructor.arguments().stream(),
+                  constructor.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(fn -> fn.equals(field.fieldName())
                       ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
                       : nameAllocator.clone().newName(fn, fn + " field"))))
-          .build();
+          .build()
+          : CodeBlock.of("$T::$L", adt.deriveConfig().targetClass().className(), constructorName);
     }).reduce((cb1, cb2) -> CodeBlock.builder().add(cb1).add(",\n").add(cb2).build()).orElse(CodeBlock.builder().build());
 
     String setterArgName = "new" + Utils.capitalize(field.fieldName());

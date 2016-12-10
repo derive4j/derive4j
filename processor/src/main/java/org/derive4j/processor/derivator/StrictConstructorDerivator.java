@@ -29,10 +29,12 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -52,6 +54,7 @@ import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
+import org.derive4j.processor.api.DerivedCodeSpecs;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DataArgument;
 import org.derive4j.processor.api.model.DataConstructions;
@@ -257,7 +260,10 @@ public final class StrictConstructorDerivator implements Derivator {
 
     NameAllocator nameAllocator = new NameAllocator();
     nameAllocator.newName(adt.typeConstructor().declaredType().asElement().getSimpleName().toString());
-    adt.typeConstructor().typeVariables().stream().forEachOrdered(tv -> nameAllocator.newName(tv.asElement().getSimpleName().toString()));
+    adt.typeConstructor()
+        .typeVariables()
+        .stream()
+        .forEachOrdered(tv -> nameAllocator.newName(tv.asElement().getSimpleName().toString()));
     constructor.arguments()
         .stream()
         .filter(da -> da.type().getKind() == TypeKind.DECLARED)
@@ -292,10 +298,12 @@ public final class StrictConstructorDerivator implements Derivator {
 
     boolean smartConstructor = smartConstructor(constructor, adt.deriveConfig());
 
-    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructor.name() +
+    String constructorName = constructor.name() +
         (smartConstructor
              ? '0'
-             : ""))
+             : "");
+
+    MethodSpec.Builder factory = MethodSpec.methodBuilder(constructorName)
         .addModifiers(Modifier.STATIC)
         .addTypeVariables(typeVariableNames)
         .addParameters(constructor.arguments()
@@ -305,8 +313,25 @@ public final class StrictConstructorDerivator implements Derivator {
         .varargs(constructor.deconstructor().visitorMethod().isVarArgs())
         .returns(constructedType);
 
+    Optional<MethodSpec.Builder> gadtFactory = constructor.typeRestrictions().isEmpty()
+        ? Optional.empty()
+        : Optional.of(MethodSpec.methodBuilder(constructorName)
+            .addModifiers(Modifier.STATIC)
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
+            .addTypeVariables(
+                adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
+            .addParameters(Stream.concat(constructor.arguments().stream(),
+                constructor.typeRestrictions().stream().map(TypeRestriction::typeEq))
+                .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build())
+                .collect(Collectors.toList()))
+            .varargs(constructor.deconstructor().visitorMethod().isVarArgs())
+            .returns(TypeName.get(adt.typeConstructor().declaredType()))
+            .addStatement("return ($T) $L($L)", TypeName.get(adt.typeConstructor().declaredType()), constructorName, Utils
+                .asArgumentsString(constructor.arguments())));
+
     if (!smartConstructor) {
       factory.addModifiers(Modifier.PUBLIC);
+      gadtFactory.ifPresent(f -> f.addModifiers(Modifier.PUBLIC));
     }
 
     if (adt.deriveConfig().argOptions().contains(ArgOption.checkedNotNull)) {
@@ -343,7 +368,7 @@ public final class StrictConstructorDerivator implements Derivator {
               : "<>", Utils.asArgumentsString(constructor.arguments())).build());
     }
 
-    return result;
+    return gadtFactory.map(f -> result.append(DerivedCodeSpec.methodSpec(f.build()))).orElse(result);
   }
 
   private boolean needLambdaVisitorGeneration(AlgebraicDataType adt) {

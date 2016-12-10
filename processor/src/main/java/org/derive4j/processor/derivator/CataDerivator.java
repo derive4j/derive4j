@@ -85,7 +85,7 @@ public final class CataDerivator implements Derivator {
   TypeName cataMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
 
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
-        dc.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::type)).map(
+        dc.typeRestrictions().stream().map(TypeRestriction::typeEq).map(DataArgument::type)).map(
         t -> Utils.asBoxedType.visit(t, utils.types()))
         .map(tm -> substituteTypeWithRecursionVar(adt, tm))
         .map(TypeName::get)
@@ -154,7 +154,7 @@ public final class CataDerivator implements Derivator {
                                     .map(DataArgument::fieldName)
                                     .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor.typeRestrictions()
                                     .stream()
-                                    .map(TypeRestriction::idFunction)
+                                    .map(TypeRestriction::typeEq)
                                     .map(DataArgument::fieldName)
                                     .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
                                 mapperDerivator.mapperApplyMethod(adt.deriveConfig(), constructor), Utils.joinStringsAsArguments(
@@ -170,7 +170,7 @@ public final class CataDerivator implements Derivator {
                                                    ')')
                                             : argument.fieldName()), constructor.typeRestrictions()
                                         .stream()
-                                        .map(TypeRestriction::idFunction)
+                                        .map(TypeRestriction::typeEq)
                                         .map(DataArgument::fieldName))))
                             .build()
                             .toString())))
@@ -214,7 +214,7 @@ public final class CataDerivator implements Derivator {
                                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")), constructor
                                         .typeRestrictions()
                                         .stream()
-                                        .map(TypeRestriction::idFunction)
+                                        .map(TypeRestriction::typeEq)
                                         .map(DataArgument::fieldName)
                                         .map(fn -> nameAllocator.clone().newName(fn, fn + " field")))), constructor.name(),
                                     mapperDerivator.mapperApplyMethod(adt.deriveConfig(), constructor),
@@ -232,7 +232,7 @@ public final class CataDerivator implements Derivator {
                                                    ')')
                                             : argument.fieldName()), constructor.typeRestrictions()
                                         .stream()
-                                        .map(TypeRestriction::idFunction)
+                                        .map(TypeRestriction::typeEq)
                                         .map(DataArgument::fieldName))))
                                 .build()
                                 .toString())

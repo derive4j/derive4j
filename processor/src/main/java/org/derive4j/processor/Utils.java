@@ -196,22 +196,21 @@ public class Utils {
 
   public static String asArgumentsString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
-    return Stream.concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream()
-        .map(tr -> uncapitalize(tr.restrictedTypeVariable().toString()) +
-            " -> " +
-            uncapitalize(tr.restrictedTypeVariable().toString()))).reduce((s1, s2) -> s1 + ", " + s2).orElse("");
+    return Stream.concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream().map(tr -> "TypeEq.refl()"))
+        .reduce((s1, s2) -> s1 + ", " + s2)
+        .orElse("");
   }
 
   public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
-        restrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)));
+        restrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)));
   }
 
   public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
       NameAllocator nameAllocator) {
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
-        typeRestrictions.stream().map(TypeRestriction::idFunction).map(DataArgument::fieldName)).map(nameAllocator::newName));
+        typeRestrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)).map(nameAllocator::newName));
   }
 
   public static String asArgumentsString(List<DataArgument> arguments) {

@@ -96,7 +96,7 @@ public class MapperDerivator implements Derivator {
   public TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, TypeName returnType) {
 
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
-        dc.typeRestrictions().stream().map(TypeRestriction::idFunction).map(DataArgument::type)).map(
+        dc.typeRestrictions().stream().map(TypeRestriction::typeEq).map(DataArgument::type)).map(
         t -> Utils.asBoxedType.visit(t, deriveUtils.types())).map(TypeName::get).toArray(TypeName[]::new);
 
     return adt.dataConstruction().isVisitorDispatch()
@@ -144,7 +144,7 @@ public class MapperDerivator implements Derivator {
         .addTypeVariables(mapperVariables(adt, dc).collect(Collectors.toList()))
         .addMethod(MethodSpec.methodBuilder(dc.deconstructor().visitorMethod().getSimpleName().toString())
             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-            .addParameters(concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction)).map(
+            .addParameters(concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq)).map(
                 da -> ParameterSpec.builder(deriveUtils.types().isSameType(da.type(), adt.typeConstructor().declaredType())
                     ? TypeVariableName.get(inductionTypeVarName(adt, dc))
                     : TypeName.get(da.type()), da.fieldName()).build()).collect(Collectors.toList()))

@@ -10,6 +10,7 @@ dependencies {
   compile 'com.atlassian.fugue:fugue:2.6.1'
   compile 'com.google.guava:guava:20.0'
   compile "io.javaslang:javaslang:2.0.5"
+  compile "org.derive4j.hkt:hkt:0.9.1"
   testCompile dependencyJunit
 }
 

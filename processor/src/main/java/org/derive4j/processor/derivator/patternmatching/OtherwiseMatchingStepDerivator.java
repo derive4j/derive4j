@@ -179,7 +179,7 @@ public class OtherwiseMatchingStepDerivator {
       NameAllocator nameAllocator = new NameAllocator();
       nameAllocator.newName("left", argName);
       nameAllocator.newName(mapperFieldName(dc), "case var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       String lambdaArgs = joinStringsAsArguments(
@@ -199,7 +199,7 @@ public class OtherwiseMatchingStepDerivator {
               deriveUtils.allAbstractMethods(dc.deconstructor().visitorType()).get(0).getSimpleName().toString(),
               eitherModel.leftConstructor().getSimpleName(),
               deriveUtils.allAbstractMethods(f0).get(0).getSimpleName().toString()),
-              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(nameAllocator::get)).toArray(Object[]::new));
     }
@@ -232,7 +232,7 @@ public class OtherwiseMatchingStepDerivator {
       nameAllocator.newName(argName, "left arg");
       nameAllocator.newName(adtLambdaParam, "adt var");
       nameAllocator.newName(visitorVarName, "visitor var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       String lambdaArg = joinStringsAsArguments(
@@ -250,7 +250,7 @@ public class OtherwiseMatchingStepDerivator {
               Stream.of(mapperFieldName(dc), ClassName.get(eitherTypeElement), eitherModel.rightConstructor().getSimpleName(),
                   mapperDerivator.mapperApplyMethod(adt.deriveConfig(), dc), eitherModel.leftConstructor().getSimpleName(),
                   deriveUtils.allAbstractMethods(f0).get(0).getSimpleName().toString()),
-              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(nameAllocator::get)).toArray(Object[]::new))
           .build();
@@ -285,7 +285,7 @@ public class OtherwiseMatchingStepDerivator {
     for (DataConstructor dc : constructors) {
       NameAllocator nameAllocator = new NameAllocator();
       nameAllocator.newName(mapperFieldName(dc), "case var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       String lambdaArgs = joinStringsAsArguments(
@@ -306,7 +306,7 @@ public class OtherwiseMatchingStepDerivator {
               optionModel.someConstructor().getSimpleName(),
               deriveUtils.allAbstractMethods(dc.deconstructor().visitorType()).get(0).getSimpleName().toString(),
               optionModel.noneConstructor().getSimpleName()),
-              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(nameAllocator::get)).toArray(Object[]::new));
     }
@@ -337,7 +337,7 @@ public class OtherwiseMatchingStepDerivator {
       NameAllocator nameAllocator = new NameAllocator();
       nameAllocator.newName(adtLambdaParam, "adt var");
       nameAllocator.newName(visitorVarName, "visitor var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       String lambdaArg = joinStringsAsArguments(
@@ -354,7 +354,7 @@ public class OtherwiseMatchingStepDerivator {
               ") -> $2T.$5L()", Stream.<Object>concat(Stream.of(mapperFieldName(dc), ClassName.get(optionModel.typeElement()),
               optionModel.someConstructor().getSimpleName(), mapperDerivator.mapperApplyMethod(adt.deriveConfig(), dc),
               optionModel.noneConstructor().getSimpleName()),
-              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(nameAllocator::get)).toArray(Object[]::new))
           .build();
@@ -454,7 +454,7 @@ public class OtherwiseMatchingStepDerivator {
       NameAllocator nameAllocator = new NameAllocator();
       nameAllocator.newName("otherwise", "otherwise arg");
       nameAllocator.newName(mapperFieldName(dc), "case var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       codeBlock.addStatement("$1T $2L = (this.$3L != null) ? this.$3L : (" +
@@ -463,7 +463,7 @@ public class OtherwiseMatchingStepDerivator {
           ") -> otherwise.$4L()", Stream.concat(
           Stream.of(mapperDerivator.mapperTypeName(adt, dc), nameAllocator.get("case var"), mapperFieldName(dc),
               deriveUtils.allAbstractMethods(f0).get(0).getSimpleName().toString()),
-          Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+          Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
               .map(DataArgument::fieldName)
               .map(nameAllocator::get)).toArray(Object[]::new));
     }
@@ -494,7 +494,7 @@ public class OtherwiseMatchingStepDerivator {
       nameAllocator.newName("otherwise", "otherwise arg");
       nameAllocator.newName(adtLambdaParam, "adt var");
       nameAllocator.newName(visitorVarName, "visitor var");
-      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+      Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
           .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
 
       return CodeBlock.builder()
@@ -503,7 +503,7 @@ public class OtherwiseMatchingStepDerivator {
                   IntStream.range(3, 3 + dc.arguments().size() + dc.typeRestrictions().size()).mapToObj(i -> "$" + i + 'L')) +
               ") -> otherwise.$2L()", (Object[]) Stream.concat(
               Stream.of(mapperFieldName(dc), deriveUtils.allAbstractMethods(f0).get(0).getSimpleName().toString()),
-              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::idFunction))
+              Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(nameAllocator::get)).toArray(String[]::new))
           .build();
