@@ -19,8 +19,6 @@
 package org.derive4j.processor;
 
 import com.squareup.javapoet.ClassName;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -65,6 +63,7 @@ import static org.derive4j.processor.Utils.getPackage;
 import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.model.DeriveConfigs.Config;
 import static org.derive4j.processor.api.model.DeriveConfigs.modArgOptions;
+import static org.derive4j.processor.api.model.DeriveConfigs.modMakes;
 import static org.derive4j.processor.api.model.DeriveConfigs.modTargetClass;
 import static org.derive4j.processor.api.model.DeriveConfigs.setFlavour;
 import static org.derive4j.processor.api.model.DeriveConfigs.setMakes;
@@ -139,9 +138,19 @@ public final class DeriveConfigBuilder {
 
     @Override
     public Object visitArray(List<? extends AnnotationValue> vals, Void aVoid) {
-      return vals.stream().map(this::visit).collect(Collectors.toList());
+      return vals.stream().map(this::visit).collect(toList());
     }
   };
+  private static final Function<Make, Stream<Make>> makeDependencies = Makes.cases()
+      .lambdaVisitor(Stream::<Make>of)
+      .constructors(Stream::of)
+      .lazyConstructor(Stream::of)
+      .casesMatching(() -> of(lambdaVisitor))
+      .caseOfMatching(() -> of(lambdaVisitor))
+      .getters(() -> of(lambdaVisitor))
+      .modifiers(() -> of(lambdaVisitor, constructors))
+      .catamorphism(() -> of(lambdaVisitor))
+      .hktCoerce(Stream::of);
   private final TypeElement dataAnnotation;
   private final TypeElement deriveAnnotation;
   private final ExecutableElement flavour;
@@ -172,9 +181,9 @@ public final class DeriveConfigBuilder {
       AnnotationMirror annotationMirror) {
     Element annotationElement = annotationMirror.getAnnotationType().asElement();
     return annotationElement.equals(dataAnnotation)
-        ? Stream.of(dataConfig(typeElement, annotationMirror.getElementValues()))
+        ? of(dataConfig(typeElement, annotationMirror.getElementValues()))
         : annotationElement.equals(deriveAnnotation)
-            ? Stream.of(deriveConfig(typeElement, annotationMirror.getElementValues()))
+            ? of(addToDeriveConfig(typeElement, annotationMirror.getElementValues()))
             : Stream.empty();
   }
 
@@ -182,7 +191,7 @@ public final class DeriveConfigBuilder {
       HashSet<AnnotationMirror> seenAnnotations) {
     return element.getAnnotationMirrors().stream().sequential().filter(a -> !seenAnnotations.contains(a)).flatMap(a -> {
       seenAnnotations.add(a);
-      return Stream.concat(deriveConfigs(typeElement, a.getAnnotationType().asElement(), seenAnnotations),
+      return concat(deriveConfigs(typeElement, a.getAnnotationType().asElement(), seenAnnotations),
           annotationConfig(typeElement, a));
     });
   }
@@ -190,22 +199,50 @@ public final class DeriveConfigBuilder {
   private Function<DeriveConfig, DeriveConfig> deriveConfig(TypeElement typeElement,
       Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
 
-    Optional<Function<DeriveConfig, DeriveConfig>> setInClass = ofNullable(elementValues.get(inClass)).map(
-        inClassValue -> modTargetClass(setClassName(ClassName.get(getPackage.visit(typeElement).getQualifiedName().toString(),
-            deduceDerivedClassName(getValue.visit(inClassValue).toString(), typeElement)))));
+    Optional<Function<DeriveConfig, DeriveConfig>> setInClass = inClass(typeElement, elementValues);
 
-    Optional<Function<DeriveConfig, DeriveConfig>> setVisibility = ofNullable(elementValues.get(withVisibility)).map(
-        withVisibilityValue -> modTargetClass(setVisibility(
-            deduceDeriveVisibility(typeElement, Visibility.valueOf(getValue.visit(withVisibilityValue).toString())))));
+    Optional<Function<DeriveConfig, DeriveConfig>> setVisibility = visibility(typeElement, elementValues);
 
-    Optional<Function<DeriveConfig, DeriveConfig>> modMake = ofNullable(elementValues.get(make)).map(
+    @SuppressWarnings("unchecked")
+    Optional<Function<DeriveConfig, DeriveConfig>> setMake = ofNullable(elementValues.get(make)).map(
         makeValue -> (List<String>) getValue.visit(makeValue))
         .map(newMakes -> setMakes(makeWithDependencies(newMakes.stream().map(Make::valueOf))));
+
+    return Stream.of(setInClass, setVisibility, setMake)
+        .flatMap(Utils::optionalAsStream)
+        .reduce(Function::andThen)
+        .orElse(Function.identity());
+  }
+
+  private Function<DeriveConfig, DeriveConfig> addToDeriveConfig(TypeElement typeElement,
+      Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
+
+    Optional<Function<DeriveConfig, DeriveConfig>> setInClass = inClass(typeElement, elementValues);
+
+    Optional<Function<DeriveConfig, DeriveConfig>> setVisibility = visibility(typeElement, elementValues);
+
+    @SuppressWarnings("unchecked")
+    Optional<Function<DeriveConfig, DeriveConfig>> modMake = ofNullable(elementValues.get(make)).map(
+        makeValue -> (List<String>) getValue.visit(makeValue))
+        .map(newMakes -> modMakes(makes -> makeWithDependencies(concat(makes.stream(), newMakes.stream().map(Make::valueOf)))));
 
     return Stream.of(setInClass, setVisibility, modMake)
         .flatMap(Utils::optionalAsStream)
         .reduce(Function::andThen)
         .orElse(Function.identity());
+  }
+
+  private Optional<Function<DeriveConfig, DeriveConfig>> visibility(TypeElement typeElement,
+      Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
+    return ofNullable(elementValues.get(withVisibility)).map(withVisibilityValue -> modTargetClass(
+        setVisibility(deduceDeriveVisibility(typeElement, Visibility.valueOf(getValue.visit(withVisibilityValue).toString())))));
+  }
+
+  private Optional<Function<DeriveConfig, DeriveConfig>> inClass(TypeElement typeElement,
+      Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
+    return ofNullable(elementValues.get(inClass)).map(inClassValue -> modTargetClass(setClassName(
+        ClassName.get(getPackage.visit(typeElement).getQualifiedName().toString(),
+            deduceDerivedClassName(getValue.visit(inClassValue).toString(), typeElement)))));
   }
 
   private Function<DeriveConfig, DeriveConfig> dataConfig(TypeElement typeElement,
@@ -214,17 +251,17 @@ public final class DeriveConfigBuilder {
     Optional<Function<DeriveConfig, DeriveConfig>> setFlavour = ofNullable(elementValues.get(flavour)).map(
         flavourValue -> setFlavour(Flavour.valueOf(getValue.visit(flavourValue).toString())));
 
+    @SuppressWarnings("unchecked")
     Optional<Function<DeriveConfig, DeriveConfig>> modArguments = ofNullable(elementValues.get(arguments)).map(
         argumentsValue -> (List<String>) getValue.visit(argumentsValue))
         .map(newArgOptions -> modArgOptions(argOptions -> newArgOptions.size() == 0
             ? EnumSet.noneOf(ArgOption.class)
-            : argOptions.size() == ArgOption.values().length
-                ? EnumSet.copyOf(newArgOptions.stream().map(ArgOption::valueOf).collect(Collectors.toList()))
-                : EnumSet.copyOf(
-                    Stream.of(argOptions, newArgOptions.stream().map(ArgOption::valueOf).collect(Collectors.toList()))
-                        .flatMap(m -> m.stream())
-                        .collect(Collectors.toList()))));
+            : EnumSet.copyOf(argOptions.size() == ArgOption.values().length
+                ? newArgOptions.stream().map(ArgOption::valueOf).collect(toList())
+                : of(argOptions, newArgOptions.stream().map(ArgOption::valueOf).collect(toList())).flatMap(
+                    m -> m.stream()).collect(toList()))));
 
+    @SuppressWarnings("unchecked")
     Optional<Function<DeriveConfig, DeriveConfig>> deriveConfig = ofNullable(elementValues.get(deriveValue)).map(
         value -> deriveConfig(typeElement, (Map<? extends ExecutableElement, ? extends AnnotationValue>) getValue.visit(value)));
 
@@ -285,15 +322,4 @@ public final class DeriveConfigBuilder {
     makeSet.addAll(makes.flatMap(m -> concat(makeDependencies.apply(m), of(m))).collect(toList()));
     return Collections.unmodifiableSet(makeSet);
   }
-
-  private static final Function<Make, Stream<Make>> makeDependencies = Makes.cases()
-      .lambdaVisitor(Stream::<Make>of)
-      .constructors(Stream::of)
-      .lazyConstructor(Stream::of)
-      .casesMatching(() -> of(lambdaVisitor))
-      .caseOfMatching(() -> of(lambdaVisitor))
-      .getters(() -> of(lambdaVisitor))
-      .modifiers(() -> of(lambdaVisitor, constructors))
-      .catamorphism(() -> of(lambdaVisitor))
-      .hktCoerce(Stream::of);
 }
