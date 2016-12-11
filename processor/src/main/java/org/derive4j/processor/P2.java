@@ -23,20 +23,20 @@ import org.derive4j.Data;
 import org.derive4j.FieldNames;
 
 @Data
-public abstract class P2<A, B> {
+abstract class P2<A, B> {
 
   P2() {
 
   }
 
-  public abstract <R> R match(@FieldNames({ "_1", "_2" }) BiFunction<A, B, R> P2);
+  abstract <R> R match(@FieldNames({ "_1", "_2" }) BiFunction<A, B, R> P2);
 
-  public final A _1() {
+  final A _1() {
 
     return P2s.get_1(this);
   }
 
-  public final B _2() {
+  final B _2() {
 
     return P2s.get_2(this);
   }

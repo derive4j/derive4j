@@ -92,7 +92,7 @@ final class AdtParser {
     this.deriveUtils = deriveUtils;
   }
 
-  public DeriveResult<AlgebraicDataType> parseAlgebraicDataType(final TypeElement adtTypeElement, DeriveConfig deriveConfig) {
+  DeriveResult<AlgebraicDataType> parseAlgebraicDataType(final TypeElement adtTypeElement, DeriveConfig deriveConfig) {
 
     return fold(asDeclaredType.visit(adtTypeElement.asType())
             .filter(t -> (t.asElement().getEnclosingElement().getKind() == ElementKind.PACKAGE) ||
@@ -130,7 +130,7 @@ final class AdtParser {
                             matchMethod(adtAcceptMethod, expectedReturnType), dc, fields)))))));
   }
 
-  public DeriveResult<List<DataArgument>> validateFieldTypeUniformity(DataConstruction construction) {
+  private DeriveResult<List<DataArgument>> validateFieldTypeUniformity(DataConstruction construction) {
 
     return DataConstructions.cases()
 
@@ -147,8 +147,7 @@ final class AdtParser {
               .map(Map.Entry::getKey)
               .collect(Collectors.toList());
 
-          DeriveResult<List<DataArgument>> res;
-          res = !fieldsWithNonUniformType.isEmpty()
+          DeriveResult<List<DataArgument>> res = !fieldsWithNonUniformType.isEmpty()
               ? error(message("Field(s) " + fieldsWithNonUniformType + " should have uniform type across all constructors"))
               : result(multipleConstructors.constructors()
                   .stream()
@@ -271,7 +270,7 @@ final class AdtParser {
 
       Optional<TypeRestriction> gadtConstraint = parseGadtConstraint(paramElement.getSimpleName().toString(), paramType,
           adtTypeParameters).filter(
-          tr -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
+          tr -> seenVariables.stream().noneMatch(seenTv -> types.isSameType(seenTv, tr.restrictedTypeVariable())));
 
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
@@ -283,7 +282,7 @@ final class AdtParser {
       }
       seenVariables.addAll(deriveUtils.typeVariablesIn(paramType)
           .stream()
-          .filter(tv -> !seenVariables.stream().anyMatch(seenTv -> types.isSameType(seenTv, tv)))
+          .filter(tv -> seenVariables.stream().noneMatch(seenTv -> types.isSameType(seenTv, tv)))
           .collect(Collectors.toList()));
     }
 

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -49,9 +48,9 @@ import org.derive4j.processor.api.model.TypeRestriction;
 
 import static java.util.stream.Stream.concat;
 
-public class MapperDerivator implements Derivator {
+class MapperDerivator implements Derivator {
 
-  public MapperDerivator(DeriveUtils deriveUtils) {
+  MapperDerivator(DeriveUtils deriveUtils) {
     this.deriveUtils = deriveUtils;
   }
 
@@ -83,9 +82,9 @@ public class MapperDerivator implements Derivator {
     int nbArgs = dc.arguments().size() + dc.typeRestrictions().size();
     return (nbArgs == 0)
         ? deriveUtils.function0Model(deriveConfig.flavour()).sam().getSimpleName().toString()
-        : ((nbArgs == 1)
+        : nbArgs == 1
                ? deriveUtils.function1Model(deriveConfig.flavour()).sam().getSimpleName().toString()
-               : dc.deconstructor().visitorMethod().getSimpleName().toString());
+               : dc.deconstructor().visitorMethod().getSimpleName().toString();
   }
 
   public TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
@@ -100,10 +99,10 @@ public class MapperDerivator implements Derivator {
         t -> Utils.asBoxedType.visit(t, deriveUtils.types())).map(TypeName::get).toArray(TypeName[]::new);
 
     return adt.dataConstruction().isVisitorDispatch()
-        ? ((argsTypeNames.length == 0)
+        ? argsTypeNames.length == 0
                ? ParameterizedTypeName.get(ClassName.get(deriveUtils.function0Model(adt.deriveConfig().flavour()).samClass()),
         returnType)
-               : ((argsTypeNames.length == 1)
+               : argsTypeNames.length == 1
                       ? ParameterizedTypeName.get(
                    ClassName.get(deriveUtils.function1Model(adt.deriveConfig().flavour()).samClass()), argsTypeNames[0],
                    returnType)
@@ -111,14 +110,14 @@ public class MapperDerivator implements Derivator {
                           adt.deriveConfig().targetClass().className().nestedClass(mapperInterfaceName(dc)), concat(
                               concat(dc.typeVariables().stream().map(TypeVariableName::get),
                                   Utils.fold(findInductiveArgument(adt, dc), Stream.of(), tm -> Stream.of(TypeName.get(tm)))),
-                              Stream.of(returnType)).toArray(TypeName[]::new))))
+                              Stream.of(returnType)).toArray(TypeName[]::new))
         : deriveUtils.resolveToTypeName(dc.deconstructor().visitorType(),
             tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
                 ? Optional.of(returnType)
                 : Optional.empty());
   }
 
-  Stream<TypeVariableName> mapperVariables(AlgebraicDataType adt, DataConstructor dc) {
+  private Stream<TypeVariableName> mapperVariables(AlgebraicDataType adt, DataConstructor dc) {
 
     String recursionTypeVar = inductionTypeVarName(adt, dc);
 
@@ -211,7 +210,7 @@ public class MapperDerivator implements Derivator {
   private static String inductionTypeVarName(AlgebraicDataType adt, DataConstructor dc) {
 
     NameAllocator nameAllocator = new NameAllocator();
-    dc.typeVariables().stream().forEach(variable -> nameAllocator.newName(variable.toString(), variable.toString()));
+    dc.typeVariables().forEach(variable -> nameAllocator.newName(variable.toString(), variable.toString()));
     nameAllocator.newName(adt.matchMethod().returnTypeVariable().toString(), "returnTypeVar");
     return nameAllocator.newName("R", "recursionTypeVar");
   }

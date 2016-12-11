@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -34,7 +34,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -53,11 +52,10 @@ import static java.util.stream.Stream.concat;
 import static org.derive4j.processor.Utils.fold;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.methodSpec;
-import static org.derive4j.processor.derivator.MapperDerivator.mapperInterfaceName;
 
-public final class CataDerivator implements Derivator {
+final class CataDerivator implements Derivator {
 
-  public CataDerivator(DeriveUtils utils) {
+  CataDerivator(DeriveUtils utils) {
 
     this.utils = utils;
     mapperDerivator = new MapperDerivator(utils);
@@ -82,7 +80,7 @@ public final class CataDerivator implements Derivator {
         : result(DerivedCodeSpec.none());
   }
 
-  TypeName cataMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
+  private TypeName cataMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
 
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
         dc.typeRestrictions().stream().map(TypeRestriction::typeEq).map(DataArgument::type)).map(
@@ -92,20 +90,20 @@ public final class CataDerivator implements Derivator {
         .toArray(TypeName[]::new);
 
     return adt.dataConstruction().isVisitorDispatch()
-        ? ((argsTypeNames.length == 0)
+        ? argsTypeNames.length == 0
                ? ParameterizedTypeName.get(ClassName.get(utils.function0Model(adt.deriveConfig().flavour()).samClass()),
         TypeName.get(adt.matchMethod().returnTypeVariable()))
-               : ((argsTypeNames.length == 1)
+               : argsTypeNames.length == 1
                       ? ParameterizedTypeName.get(ClassName.get(utils.function1Model(adt.deriveConfig().flavour()).samClass()),
                    argsTypeNames[0], TypeName.get(adt.matchMethod().returnTypeVariable()))
                       : ParameterizedTypeName.get(
-                          adt.deriveConfig().targetClass().className().nestedClass(mapperInterfaceName(dc)), concat(
+                          adt.deriveConfig().targetClass().className().nestedClass(MapperDerivator.mapperInterfaceName(dc)), concat(
                               concat(dc.typeVariables().stream().map(TypeVariableName::get),
                                   fold(mapperDerivator.findInductiveArgument(adt, dc), Stream.of(), tm -> Stream.of(
                                       ParameterizedTypeName.get(
                                           ClassName.get(utils.function0Model(adt.deriveConfig().flavour()).samClass()),
                                           TypeName.get(adt.matchMethod().returnTypeVariable()))))),
-                              Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))).toArray(TypeName[]::new))))
+                              Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))).toArray(TypeName[]::new))
 
         : TypeName.get(utils.types()
             .getDeclaredType(Utils.asTypeElement.visit(dc.deconstructor().visitorType().asElement()).get(), dc.deconstructor()
@@ -116,7 +114,7 @@ public final class CataDerivator implements Derivator {
                 .toArray(TypeMirror[]::new)));
   }
 
-  TypeMirror substituteTypeWithRecursionVar(AlgebraicDataType adt, TypeMirror tm) {
+  private TypeMirror substituteTypeWithRecursionVar(AlgebraicDataType adt, TypeMirror tm) {
 
     return utils.types().isSameType(tm, adt.typeConstructor().declaredType())
         ? utils.types()
@@ -261,10 +259,10 @@ public final class CataDerivator implements Derivator {
     return result(methodSpec(cataMethod));
   }
 
-  private NameAllocator nameAllocator(AlgebraicDataType adt, List<DataConstructor> constructors) {
+  private static NameAllocator nameAllocator(AlgebraicDataType adt, List<DataConstructor> constructors) {
 
     NameAllocator nameAllocator = new NameAllocator();
-    constructors.stream()
+    constructors
         .forEach(dc -> nameAllocator.newName(MapperDerivator.mapperFieldName(dc), MapperDerivator.mapperFieldName(dc) + " arg"));
     nameAllocator.newName("cata", "cata");
     nameAllocator.newName(Utils.uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName()), "adt var");

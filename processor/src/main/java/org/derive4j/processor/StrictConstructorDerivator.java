@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
@@ -29,7 +29,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,12 +48,10 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.TypeKindVisitor7;
 import org.derive4j.ArgOption;
 import org.derive4j.Make;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
-import org.derive4j.processor.api.DerivedCodeSpecs;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DataArgument;
 import org.derive4j.processor.api.model.DataConstructions;
@@ -69,9 +66,9 @@ import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
 
-public final class StrictConstructorDerivator implements Derivator {
+final class StrictConstructorDerivator implements Derivator {
 
-  public StrictConstructorDerivator(DeriveUtils deriveUtils) {
+  StrictConstructorDerivator(DeriveUtils deriveUtils) {
     this.deriveUtils = deriveUtils;
     mapperDerivator = new MapperDerivator(deriveUtils);
   }
@@ -262,8 +259,7 @@ public final class StrictConstructorDerivator implements Derivator {
     nameAllocator.newName(adt.typeConstructor().declaredType().asElement().getSimpleName().toString());
     adt.typeConstructor()
         .typeVariables()
-        .stream()
-        .forEachOrdered(tv -> nameAllocator.newName(tv.asElement().getSimpleName().toString()));
+        .forEach(tv -> nameAllocator.newName(tv.asElement().getSimpleName().toString()));
     constructor.arguments()
         .stream()
         .filter(da -> da.type().getKind() == TypeKind.DECLARED)

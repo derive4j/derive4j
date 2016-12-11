@@ -21,15 +21,12 @@ package org.derive4j.processor.api;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static org.derive4j.processor.api.DerivedCodeSpecs.codeSpec;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getClasses;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getFields;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getInfos;

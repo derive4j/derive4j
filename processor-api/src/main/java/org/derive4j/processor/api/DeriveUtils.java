@@ -41,8 +41,6 @@ public interface DeriveUtils {
 
   TypeName resolveToTypeName(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeName>> typeArgs);
 
-  Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt);
-
   Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions);
 
   TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs);

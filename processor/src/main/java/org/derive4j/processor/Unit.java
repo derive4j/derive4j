@@ -18,9 +18,9 @@
  */
 package org.derive4j.processor;
 
-public final class Unit {
+final class Unit {
 
-  public static Unit unit = new Unit();
+  static Unit unit = new Unit();
 
   private Unit() {
 

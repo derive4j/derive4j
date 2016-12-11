@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator.patternmatching;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
@@ -34,7 +34,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeVariable;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -45,9 +44,9 @@ import org.derive4j.processor.api.model.DataConstructor;
 import static org.derive4j.processor.Utils.fold;
 import static org.derive4j.processor.Utils.uncapitalize;
 
-public class PatternMatchingDerivator implements Derivator {
+class PatternMatchingDerivator implements Derivator {
 
-  public enum MatchingKind {
+  enum MatchingKind {
     Cases {
       @Override
       String wrapperClassName() {
@@ -75,7 +74,7 @@ public class PatternMatchingDerivator implements Derivator {
     abstract String factoryMethodName();
   }
 
-  public PatternMatchingDerivator(DeriveUtils deriveUtils, MatchingKind matchingKind) {
+  PatternMatchingDerivator(DeriveUtils deriveUtils, MatchingKind matchingKind) {
     this.matchingKind = matchingKind;
     totalMatching = new TotalMatchingStepDerivator(deriveUtils, matchingKind);
     partialMatching = new PartialMatchingStepDerivator(deriveUtils, matchingKind);
@@ -92,7 +91,7 @@ public class PatternMatchingDerivator implements Derivator {
 
     List<DataConstructor> constructors = adt.dataConstruction().constructors();
 
-    return matchingKind == MatchingKind.CaseOf && constructors.size() <= 1
+    return ((matchingKind == MatchingKind.CaseOf) && (constructors.size() <= 1))
         ? DeriveResult.result(DerivedCodeSpec.none())
         : fold(constructors.stream().findFirst(), DeriveResult.result(DerivedCodeSpec.none()), firstConstructor -> {
 

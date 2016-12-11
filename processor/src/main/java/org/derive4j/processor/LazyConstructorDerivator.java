@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -44,7 +43,7 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.codeSpec;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
 
-public final class LazyConstructorDerivator implements Derivator {
+final class LazyConstructorDerivator implements Derivator {
 
   private final DeriveUtils deriveUtils;
   private final StrictConstructorDerivator strictDerivator;

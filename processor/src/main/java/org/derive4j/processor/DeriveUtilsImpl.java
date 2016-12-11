@@ -159,16 +159,6 @@ final class DeriveUtilsImpl implements DeriveUtils {
   }
 
   @Override
-  public Function<TypeVariable, Optional<TypeMirror>> typeArgs(DeclaredType dt) {
-
-    return tv -> IntStream.range(0, dt.getTypeArguments().size())
-        .filter(i -> Types.isSameType(tv, asTypeElement.visit(dt.asElement()).get().getTypeParameters().get(i).asType()))
-        .mapToObj(i -> dt.getTypeArguments().get(i))
-        .findFirst()
-        .map(tm -> tm);
-  }
-
-  @Override
   public Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions) {
 
     return tv -> typeRestrictions.stream()
@@ -288,25 +278,25 @@ final class DeriveUtilsImpl implements DeriveUtils {
                 .stream()
                 .flatMap(e -> optionalAsStream(asExecutableElement.visit(e)))
                 .filter(e -> e.getParameters().isEmpty() &&
-                    e.getTypeParameters().size() == 1 &&
+                    (e.getTypeParameters().size() == 1) &&
                     e.getModifiers().contains(Modifier.STATIC) &&
                     e.getModifiers().contains(Modifier.PUBLIC) &&
                     e.getSimpleName().contentEquals(noneConstructor))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Constructor not found at " + optionClassQualifiedName + "#" + noneConstructor)),
+                    "Constructor not found at " + optionClassQualifiedName + '#' + noneConstructor)),
 
             typeElement.getEnclosedElements()
                 .stream()
                 .flatMap(e -> optionalAsStream(asExecutableElement.visit(e)))
-                .filter(e -> e.getParameters().size() == 1 &&
-                    e.getTypeParameters().size() == 1 &&
+                .filter(e -> (e.getParameters().size() == 1) &&
+                    (e.getTypeParameters().size() == 1) &&
                     e.getModifiers().contains(Modifier.STATIC) &&
                     e.getModifiers().contains(Modifier.PUBLIC) &&
                     e.getSimpleName().contentEquals(someConstructor))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Constructor not found at " + optionClassQualifiedName + "#" + someConstructor))))
+                    "Constructor not found at " + optionClassQualifiedName + '#' + someConstructor))))
 
         .orElseThrow(() -> new IllegalArgumentException(optionClassQualifiedName + " not found in classpath")));
   }
@@ -316,26 +306,26 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .map(typeElement -> EitherModels.lazy(() -> EitherModel(typeElement, typeElement.getEnclosedElements()
                 .stream()
                 .flatMap(e -> optionalAsStream(asExecutableElement.visit(e)))
-                .filter(e -> e.getParameters().size() == 1 &&
-                    e.getTypeParameters().size() == 2 &&
+                .filter(e -> (e.getParameters().size() == 1) &&
+                    (e.getTypeParameters().size() == 2) &&
                     e.getModifiers().contains(Modifier.STATIC) &&
                     e.getModifiers().contains(Modifier.PUBLIC) &&
                     e.getSimpleName().contentEquals(leftConstructor))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Constructor not found at " + eitherClassQualifiedName + "#" + leftConstructor)),
+                    "Constructor not found at " + eitherClassQualifiedName + '#' + leftConstructor)),
 
             typeElement.getEnclosedElements()
                 .stream()
                 .flatMap(e -> optionalAsStream(asExecutableElement.visit(e)))
-                .filter(e -> e.getParameters().size() == 1 &&
-                    e.getTypeParameters().size() == 2 &&
+                .filter(e -> (e.getParameters().size() == 1) &&
+                    (e.getTypeParameters().size() == 2) &&
                     e.getModifiers().contains(Modifier.STATIC) &&
                     e.getModifiers().contains(Modifier.PUBLIC) &&
                     e.getSimpleName().contentEquals(rightConstructor))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                    "Constructor not found at " + eitherClassQualifiedName + "#" + rightConstructor)))));
+                    "Constructor not found at " + eitherClassQualifiedName + '#' + rightConstructor)))));
   }
 
   private SamInterface lazySamInterface(String samInterfaceQualifiedName) {

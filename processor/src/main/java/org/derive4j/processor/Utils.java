@@ -61,9 +61,10 @@ import org.derive4j.processor.api.model.TypeRestriction;
 import static java.util.stream.Collectors.toList;
 import static org.derive4j.processor.P2.p2;
 
-public class Utils {
+final class Utils {
+  private Utils(){}
 
-  public static final TypeVisitor<Optional<DeclaredType>, Unit>
+  static final TypeVisitor<Optional<DeclaredType>, Unit>
       asDeclaredType
       = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(Optional.empty()) {
     @Override
@@ -73,7 +74,7 @@ public class Utils {
     }
   };
 
-  public static final TypeVisitor<Optional<TypeVariable>, Unit>
+  static final TypeVisitor<Optional<TypeVariable>, Unit>
       asTypeVariable
       = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(Optional.empty()) {
     @Override
@@ -83,7 +84,7 @@ public class Utils {
     }
   };
 
-  public static final ElementVisitor<Optional<TypeElement>, Unit>
+  static final ElementVisitor<Optional<TypeElement>, Unit>
       asTypeElement
       = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(Optional.empty()) {
 
@@ -95,7 +96,7 @@ public class Utils {
 
   };
 
-  public static final SimpleElementVisitor6<PackageElement, Void> getPackage = new SimpleElementVisitor6<PackageElement, Void>() {
+  static final SimpleElementVisitor6<PackageElement, Void> getPackage = new SimpleElementVisitor6<PackageElement, Void>() {
 
     @Override
     public PackageElement visitPackage(final PackageElement e, final Void p) {
@@ -111,7 +112,7 @@ public class Utils {
 
   };
 
-  public static final SimpleElementVisitor6<Optional<ExecutableElement>, Void>
+  static final SimpleElementVisitor6<Optional<ExecutableElement>, Void>
       asExecutableElement
       = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
 
@@ -129,7 +130,7 @@ public class Utils {
 
   };
 
-  public static TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
+  static final TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
 
     @Override
     public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
@@ -144,31 +145,31 @@ public class Utils {
     }
   };
 
-  public static String capitalize(final String s) {
+  static String capitalize(final String s) {
 
-    return (s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1))
-        ? s.substring(0, 2).toUpperCase(Locale.US) + s.substring(2)
-        : s.substring(0, 1).toUpperCase(Locale.US) + s.substring(1);
+    return ((s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1)))
+        ? (s.substring(0, 2).toUpperCase(Locale.US) + s.substring(2))
+        : (s.substring(0, 1).toUpperCase(Locale.US) + s.substring(1));
   }
 
-  public static <A, R> R fold(Optional<A> oa, R none, Function<A, R> some) {
+  static <A, R> R fold(Optional<A> oa, R none, Function<A, R> some) {
 
     return oa.map(some).orElse(none);
   }
 
-  public static <A> Optional<A> findOnlyOne(List<A> as) {
+  static <A> Optional<A> findOnlyOne(List<A> as) {
 
     return (as.size() == 1)
         ? Optional.of(as.get(0))
         : Optional.empty();
   }
 
-  public static <A> Stream<A> optionalAsStream(Optional<A> o) {
+  static <A> Stream<A> optionalAsStream(Optional<A> o) {
 
     return fold(o, Stream.<A>empty(), Stream::of);
   }
 
-  public static <A, B> Optional<List<B>> traverseOptional(List<A> as, Function<A, Optional<B>> f) {
+  static <A, B> Optional<List<B>> traverseOptional(List<A> as, Function<A, Optional<B>> f) {
 
     List<B> bs = new ArrayList<>();
     for (A a : as) {
@@ -182,53 +183,53 @@ public class Utils {
     return Optional.of(bs);
   }
 
-  public static String uncapitalize(final CharSequence s) {
+  static String uncapitalize(final CharSequence s) {
 
-    return (s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1))
-        ? s.toString().substring(0, 2).toLowerCase(Locale.US) + s.toString().substring(2)
-        : s.toString().substring(0, 1).toLowerCase(Locale.US) + s.toString().substring(1);
+    return ((s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1)))
+        ? (s.toString().substring(0, 2).toLowerCase(Locale.US) + s.toString().substring(2))
+        : (s.toString().substring(0, 1).toLowerCase(Locale.US) + s.toString().substring(1));
   }
 
-  public static String asArgumentsStringOld(final List<? extends VariableElement> parameters) {
+  static String asArgumentsStringOld(final List<? extends VariableElement> parameters) {
 
     return parameters.stream().map(p -> p.getSimpleName().toString()).reduce((s1, s2) -> s1 + ", " + s2).orElse("");
   }
 
-  public static String asArgumentsString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
+  static String asArgumentsString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
     return Stream.concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream().map(tr -> "TypeEq.refl()"))
         .reduce((s1, s2) -> s1 + ", " + s2)
         .orElse("");
   }
 
-  public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
+  static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
         restrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)));
   }
 
-  public static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
+  static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
       NameAllocator nameAllocator) {
     return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
         typeRestrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)).map(nameAllocator::newName));
   }
 
-  public static String asArgumentsString(List<DataArgument> arguments) {
+  static String asArgumentsString(List<DataArgument> arguments) {
 
     return joinStringsAsArguments(arguments.stream().map(DataArgument::fieldName));
   }
 
-  public static String joinStringsAsArguments(Stream<String> arguments) {
+  static String joinStringsAsArguments(Stream<String> arguments) {
 
     return joinStrings(arguments, ", ");
   }
 
-  public static String joinStrings(Stream<String> strings, String joiner) {
+  static String joinStrings(Stream<String> strings, String joiner) {
 
     return strings.reduce((s1, s2) -> s1 + joiner + s2).orElse("");
   }
 
-  public static TypeName typeName(ClassName className, Stream<TypeName> typeArguments) {
+  static TypeName typeName(ClassName className, Stream<TypeName> typeArguments) {
 
     TypeName[] typeArgs = typeArguments.toArray(TypeName[]::new);
 
@@ -237,21 +238,21 @@ public class Utils {
         : ParameterizedTypeName.get(className, typeArgs);
   }
 
-  public static Stream<ExecutableElement> getMethods(final List<? extends Element> amongElements) {
+  static Stream<ExecutableElement> getMethods(final List<? extends Element> amongElements) {
 
     return amongElements.stream().map(asExecutableElement::visit).flatMap(Utils::optionalAsStream);
   }
 
-  public static <T> Predicate<T> p(Predicate<T> p) {
+  static <T> Predicate<T> p(Predicate<T> p) {
     return p;
   }
 
-  public static <A, B> Function<A, B> f(Function<A, B> f) {
+  static <A, B> Function<A, B> f(Function<A, B> f) {
 
     return f;
   }
 
-  public static MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod) {
+  static MethodSpec.Builder overrideMethodBuilder(final ExecutableElement abstractMethod) {
 
     return MethodSpec.methodBuilder(abstractMethod.getSimpleName().toString())
         .addAnnotation(Override.class)
@@ -270,12 +271,12 @@ public class Utils {
             .collect(toList()));
   }
 
-  public static <A, B> DeriveResult<List<B>> traverseResults(Collection<A> as, Function<A, DeriveResult<B>> f) {
+  static <A, B> DeriveResult<List<B>> traverseResults(Collection<A> as, Function<A, DeriveResult<B>> f) {
 
     return traverseResults(as.stream().map(f).collect(toList()));
   }
 
-  public static <A> DeriveResult<List<A>> traverseResults(List<DeriveResult<A>> as) {
+  static <A> DeriveResult<List<A>> traverseResults(List<DeriveResult<A>> as) {
 
     List<A> results = new ArrayList<>();
     for (DeriveResult<A> a : as) {
@@ -290,7 +291,7 @@ public class Utils {
     return DeriveResult.result(results);
   }
 
-  public static <A, B> List<P2<A, B>> zip(List<? extends A> as, List<? extends B> bs) {
+  static <A, B> List<P2<A, B>> zip(List<? extends A> as, List<? extends B> bs) {
 
     return IntStream.range(0, Math.min(as.size(), bs.size())).<P2<A, B>>mapToObj(i -> p2(as.get(i), bs.get(i))).collect(toList());
   }
