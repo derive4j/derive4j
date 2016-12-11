@@ -436,9 +436,9 @@ public abstract class Option<A> {
 # Generalized Algebraic Data Types
 
 GADTs are also supported out of the box by Derive4J (within the limitations of Java type system). Below is how you can translate the example from [Fun with phantom types](http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf):
-
-import org.derive4j.hkt.TypeEq;
 ```java
+import org.derive4j.hkt.TypeEq;
+
 @Data
 public abstract class Term<T> {
   interface Cases<A, R> {
@@ -482,7 +482,7 @@ public abstract class Term<T> {
 }
 
 ```
-For GADT you will need add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two type, `A` and `B`.
+For GADT you will need to add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two types, `A` and `B`.
 
 # DRY annotation configuration
 By default the `@Data` annotation triggers the generation of [all of what is available]
