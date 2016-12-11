@@ -124,7 +124,7 @@ You can also ask Derive4J to generate null checks with:
 The safer solution would be to never use those methods and use 'type classes' instead, eg. [Equal](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Equal.java), [Hash](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Hash.java) and [Show](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Show.java).
 The project [Derive4J for Functional Java](https://github.com/derive4j/derive4j-fj) aims at generating them automatically.
 
-## Pattern matching syntax
+## Pattern matching syntaxes
 Now let's say that you want a function that returns the body size of a ```Request```. Without Derive4J you would write something like:
 ```java
   static final Function<Request, Integer> getBodySize = request -> 
@@ -143,11 +143,11 @@ Now let's say that you want a function that returns the body size of a ```Reques
         }
       });
 ```
-With Derive4J you can do that a lot less verbosely, thanks to a generated fluent [structural pattern matching](http://www.deadcoderising.com/pattern-matching-syntax-comparison-in-scala-haskell-ml/) syntax! And it does exhaustivity check! (you must handle all cases). The above can be rewritten into:
+With Derive4J you can do that a lot less verbosely, thanks to a generated fluent [structural pattern matching](http://www.deadcoderising.com/pattern-matching-syntax-comparison-in-scala-haskell-ml/) syntaxes! And it does exhaustivity check! (you must handle all cases). The above can be rewritten into:
 ```java
 static final Function<Request, Integer> getBodySize = Requests.cases()
-      .GET(path          -> 0)
-      .DELETE(path       -> 0)
+      .GET_(0) // shortcut for .Get(path -> 0)
+      .DELETE_(0)
       .PUT((path, body)  -> body.length())
       .POST((path, body) -> body.length())
 ```
@@ -156,7 +156,16 @@ or even (because you don't care of GET and DELETE cases):
 static final Function<Request, Integer> getBodySize = Requests.cases()
       .PUT((path, body)  -> body.length())
       .POST((path, body) -> body.length())
-      .otherwise(0)
+      .otherwise_(0)
+```
+Derive4j also allows to match directly against a value:
+```java
+static int getBodyLength(Request request) {
+  return Requests.caseOf(request)
+      .PUT((path, body)  -> body.length())
+      .POST((path, body) -> body.length())
+      .otherwise_(0)
+}
 ```
 
 ## Accessors (getters)
@@ -425,8 +434,77 @@ public abstract class Option<A> {
 
 # Generalized Algebraic Data Types
 
-GADTs are also supported out of the box by Derive4J (within the limitations of Java type system).
-Have a look at this gist to know how to define GADTs in Java and how they can help create type-safe DSL: https://gist.github.com/jbgi/208a1733f15cdcf78eb5
+GADTs are also supported out of the box by Derive4J (within the limitations of Java type system). Below is how you can translate the example from [Fun with phantom types](http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf):
+
+import org.derive4j.hkt.TypeEq;
+```java
+@Data
+public abstract class Term<T> {
+  interface Cases<A, R> {
+    R Zero(TypeEq<Integer, A> id);
+    R Succ(Term<Integer> pred, TypeEq<Integer, A> id);
+    R Pred(Term<Integer> succ, TypeEq<Integer, A> id);
+    R IsZero(Term<Integer> a, TypeEq<Boolean, A> id);
+    R If(Term<Boolean> cond, Term<A> then, Term<A> otherwise);
+  }
+
+  public abstract <X> X match(Cases<T, X> cases);
+
+  public static <T> T eval(final Term<T> term) {
+
+    return Terms.caseOf(term).
+        Zero(id -> id.coerce(0)).
+        Succ((t, id) -> id.coerce(eval(t) + 1)).
+        Pred((t, id) -> id.coerce(eval(t) - 1)).
+        IsZero((t, id) -> id.coerce(eval(t) == 0)).
+        If((cond, then, otherwise) -> eval(cond)
+            ? eval(then)
+            : eval(otherwise));
+  }
+
+  public static void main(final String[] args) {
+
+    Term<Integer> one = Succ(Zero());
+    out.println(eval(one)); // "1"
+    out.println(eval(IsZero(one))); // "false"
+    // IsZero(IsZero(one)); // does not compile:
+    // "The method IsZero(Term<Integer>) in the type Term<T> is not
+    // applicable for the arguments (Term<Boolean>)"
+    out.println(eval(If(IsZero(one), Zero(), one))); // "1"
+    Term<Boolean> True = IsZero(Zero());
+    Term<Boolean> False = IsZero(one);
+    out.println(eval(If(True, True, False))); // "true"
+    // out.println(prettyPrint(If(True, True, False), 0)); // "if IsZero(0)
+    //  then IsZero(0)
+    //  else IsZero(Succ(0))"
+  }
+}
+
+```
+For GADT you will need add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two type, `A` and `B`.
+
+# DRY annotation configuration
+By default the `@Data` trigger the generation of [all of what is available]
+(derive4j/derive4j/blob/master/annotation/src/main/java/org/derive4j/Make.java#L22) in a file which name is the english plural of the annotated class. But you may want to restrict the scope of what is generated or the name of the file, and you usually want all you ADTs to use the same flavour. You may even not like the name of the annotation because it clash with another framework...
+
+For example, let's say that you want to always use the `FJ` flavour (FunctionalJava), make the generated code package private in a class suffixed by `Impl` and only generate the pattern matching syntax and the constructors. The all you have to do is create the following annotation:
+```java
+@Data(flavour = Flavour.FJ, value = @Derive(
+    inClass = "{ClassName}Impl",
+    withVisibility = Visibility.Package,
+    make = { Make.constructors, Make.caseOfMatching }
+))
+public @interface myADT {}
+```
+And then all you have to do is annotate your classes with `@myADT` instead of `@Data` and you save on repeating all that configuration every time.
+
+But now for some of your ADT you may want to also generate getters and functional setters. In order to not lose the benefice of your `@myADT`, derive4j allows to do this:
+```java
+@myADT
+@Derive(make = { Make.getters, Make.modifiers }) // add-up to the @myADT configuration
+public abstract class Adt {...}
+
+```
 
 # Use it in your project
 Derive4J should be declared as a compile-time only dependency (not needed at runtime). So while derive4j is (L)GPL-licensed, the generated code is not linked to derive4j, and thus __derive4j can be used in any project (proprietary or not)__.
@@ -435,7 +513,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>0.9.1</version>
+  <version>0.10.0</version>
   <optional>true</optional>
 </dependency>
 ```
@@ -443,12 +521,12 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '0.9.1', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '0.10.0', ext: 'jar')
 ```
 or better using the [gradle-apt-plugin](https://github.com/tbroyer/gradle-apt-plugin):
 ```
-compileOnly "org.derive4j:derive4j-annotation:0.9.1"
-apt "org.derive4j:derive4j:0.9.1"
+compileOnly "org.derive4j:derive4j-annotation:0.10.0"
+apt "org.derive4j:derive4j:0.10.0"
 ```
 ## Contributing
 
