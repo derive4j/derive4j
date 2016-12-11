@@ -254,12 +254,9 @@ public final class DeriveConfigBuilder {
     @SuppressWarnings("unchecked")
     Optional<Function<DeriveConfig, DeriveConfig>> modArguments = ofNullable(elementValues.get(arguments)).map(
         argumentsValue -> (List<String>) getValue.visit(argumentsValue))
-        .map(newArgOptions -> modArgOptions(argOptions -> newArgOptions.size() == 0
+        .map(newArgOptions -> modArgOptions(argOptions -> newArgOptions.isEmpty()
             ? EnumSet.noneOf(ArgOption.class)
-            : EnumSet.copyOf(argOptions.size() == ArgOption.values().length
-                ? newArgOptions.stream().map(ArgOption::valueOf).collect(toList())
-                : of(argOptions, newArgOptions.stream().map(ArgOption::valueOf).collect(toList())).flatMap(
-                    m -> m.stream()).collect(toList()))));
+            : EnumSet.copyOf(newArgOptions.stream().map(ArgOption::valueOf).collect(toList()))));
 
     @SuppressWarnings("unchecked")
     Optional<Function<DeriveConfig, DeriveConfig>> deriveConfig = ofNullable(elementValues.get(deriveValue)).map(
