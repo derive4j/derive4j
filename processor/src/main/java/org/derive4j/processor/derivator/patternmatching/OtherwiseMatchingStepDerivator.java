@@ -160,7 +160,7 @@ public class OtherwiseMatchingStepDerivator {
               throw new IllegalArgumentException();
             })
             .apply(adt.dataConstruction()))
-        .build(), MethodSpec.methodBuilder(otherwiseLeftMethodName)
+        .build(), MethodSpec.methodBuilder(otherwiseLeftMethodName + '_')
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addTypeVariable(leftTypeVarName)
         .addParameter(leftTypeVarName, arg)
