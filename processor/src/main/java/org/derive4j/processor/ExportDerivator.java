@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
@@ -49,9 +49,9 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.methodSpec;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
 
-public final class ExportDerivator implements Derivator {
+final class ExportDerivator implements Derivator {
 
-  public ExportDerivator(DeriveUtils utils) {
+  ExportDerivator(DeriveUtils utils) {
     this.utils = utils;
     exportAsPublicAnnotation = utils.elements().getTypeElement(ExportAsPublic.class.getName());
   }

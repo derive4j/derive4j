@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
@@ -37,7 +37,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import org.derive4j.processor.Utils;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -51,9 +50,8 @@ import org.derive4j.processor.api.model.TypeRestriction;
 
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
-import static org.derive4j.processor.derivator.StrictConstructorDerivator.smartConstructor;
 
-public final class ModiersDerivator implements Derivator {
+final class ModiersDerivator implements Derivator {
 
   private final DeriveUtils deriveUtils;
 
@@ -113,8 +111,8 @@ public final class ModiersDerivator implements Derivator {
     }
 
     CodeBlock lambdas = adt.dataConstruction().constructors().stream().map(constructor -> {
-      String constructorName = smartConstructor(constructor, adt.deriveConfig())
-          ? constructor.name() + "0"
+      String constructorName = StrictConstructorDerivator.smartConstructor(constructor, adt.deriveConfig())
+          ? (constructor.name() + '0')
           : constructor.name();
       return constructor.arguments().stream().map(DataArgument::fieldName).anyMatch(fn -> fn.equals(field.fieldName()))
           ? CodeBlock.builder()
@@ -130,7 +128,7 @@ public final class ModiersDerivator implements Derivator {
                   constructor.typeRestrictions().stream().map(TypeRestriction::typeEq))
                   .map(DataArgument::fieldName)
                   .map(fn -> fn.equals(field.fieldName())
-                      ? (moderArg + '.' + f1Apply + "(" + nameAllocator.clone().newName(fn, fn + " field") + ")")
+                      ? (moderArg + '.' + f1Apply + '(' + nameAllocator.clone().newName(fn, fn + " field") + ')')
                       : nameAllocator.clone().newName(fn, fn + " field"))))
           .build()
           : CodeBlock.of("$T::$L", adt.deriveConfig().targetClass().className(), constructorName);

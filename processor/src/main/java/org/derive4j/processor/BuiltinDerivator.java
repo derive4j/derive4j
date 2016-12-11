@@ -16,41 +16,34 @@
  * You should have received a copy of the GNU General Public License
  * along with "Derive4J - Annotation Processor".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.derivator;
+package org.derive4j.processor;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import org.derive4j.Make;
 import org.derive4j.Makes;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
-import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator;
-import org.derive4j.processor.derivator.patternmatching.PatternMatchingDerivator.MatchingKind;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.of;
-import static org.derive4j.Make.constructors;
-import static org.derive4j.Make.lambdaVisitor;
 import static org.derive4j.processor.Utils.traverseResults;
 
-public class BuiltinDerivator {
+final class BuiltinDerivator {
 
-  public static Derivator derivator(DeriveUtils deriveUtils) {
+  private BuiltinDerivator(){}
+
+  static Derivator derivator(DeriveUtils deriveUtils) {
 
     Derivator exportDerivator = new ExportDerivator(deriveUtils);
 
     Function<Make, Derivator> makeDerivators = Makes.cases().<Derivator>lambdaVisitor(
         new MapperDerivator(deriveUtils)).constructors(new StrictConstructorDerivator(deriveUtils))
         .lazyConstructor(new LazyConstructorDerivator(deriveUtils))
-        .casesMatching(new PatternMatchingDerivator(deriveUtils, MatchingKind.Cases))
-        .caseOfMatching(new PatternMatchingDerivator(deriveUtils, MatchingKind.CaseOf))
+        .casesMatching(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
+        .caseOfMatching(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
         .getters(new GettersDerivator(deriveUtils))
         .modifiers(new ModiersDerivator(deriveUtils))
         .catamorphism(new CataDerivator(deriveUtils))

@@ -50,7 +50,6 @@ import org.derive4j.processor.api.MessageLocalizations;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveConfig;
 import org.derive4j.processor.api.model.DeriveVisibilities;
-import org.derive4j.processor.derivator.BuiltinDerivator;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -67,7 +66,6 @@ public final class DerivingProcessor extends AbstractProcessor {
   private final Set<String> remainingElements = new HashSet<>();
   private final List<String> errors = new ArrayList<>();
 
-  private DeriveUtilsImpl deriveUtils;
   private Derivator builtinDerivator;
   private AdtParser adtParser;
   private DeriveConfigBuilder deriveConfigBuilder;
@@ -76,7 +74,7 @@ public final class DerivingProcessor extends AbstractProcessor {
   public synchronized void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
 
-    deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
+    DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
     builtinDerivator = BuiltinDerivator.derivator(deriveUtils);
     adtParser = new AdtParser(deriveUtils);
     deriveConfigBuilder = new DeriveConfigBuilder(deriveUtils);
@@ -93,9 +91,9 @@ public final class DerivingProcessor extends AbstractProcessor {
     } else {
       final Map<TypeElement, DeriveConfig> elements = concat(
           remainingElements.stream().map(path -> processingEnv.getElementUtils().getTypeElement(path)),
-          findAllElements(roundEnv.getRootElements().stream()).filter(e -> e.getKind() == ElementKind.CLASS ||
-              e.getKind() == ElementKind.INTERFACE ||
-              e.getKind() == ElementKind.ENUM)).flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
+          findAllElements(roundEnv.getRootElements().stream()).filter(e -> (e.getKind() == ElementKind.CLASS) ||
+              (e.getKind() == ElementKind.INTERFACE) ||
+              (e.getKind() == ElementKind.ENUM))).flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
           .collect(Collectors.toMap(P2s::get_1, P2s::get_2));
 
       remainingElements.clear();

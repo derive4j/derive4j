@@ -25,7 +25,6 @@
  */
 package org.derive4j.example;
 
-import java.util.function.Function;
 import org.derive4j.Data;
 import org.derive4j.hkt.TypeEq;
 
