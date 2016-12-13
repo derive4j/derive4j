@@ -100,7 +100,7 @@ public final class DerivingProcessor extends AbstractProcessor {
       remainingElements.clear();
       processElements(elements);
     }
-    return true;
+    return false;
   }
 
   private void processElements(final Map<TypeElement, DeriveConfig> dataTypes) {
