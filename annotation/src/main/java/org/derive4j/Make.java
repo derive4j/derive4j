@@ -53,15 +53,6 @@ public enum Make {
     }
   },
 
-  @Deprecated
-  patternMatching {
-    @Override
-    public <R> R match(Cases<R> cases) {
-
-      return cases.casesMatching();
-    }
-  },
-
   caseOfMatching {
     @Override
     public <R> R match(Cases<R> cases) {
