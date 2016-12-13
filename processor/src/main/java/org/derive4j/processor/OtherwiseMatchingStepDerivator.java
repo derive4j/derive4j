@@ -52,6 +52,7 @@ import org.derive4j.processor.api.model.TypeRestriction;
 
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.Utils.uncapitalize;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 
 class OtherwiseMatchingStepDerivator {
 
@@ -142,7 +143,7 @@ class OtherwiseMatchingStepDerivator {
         .addTypeVariable(leftTypeVarName)
         .addParameter(ParameterizedTypeName.get(ClassName.get(f0), leftTypeVarName), arg)
         .returns(returnType)
-        .addCode(DataConstructions.cases()
+        .addCode(caseOf(adt.dataConstruction())
             .multipleConstructors(MultipleConstructorsSupport.cases()
                 .visitorDispatch(
                     (visitorParam, visitorType, constructors) -> visitorDispatchEitherImpl(f0, eitherModel, eitherTypeName, adt,
@@ -151,8 +152,7 @@ class OtherwiseMatchingStepDerivator {
                     constructors -> functionsDispatchEitherImpl(f0, eitherModel, eitherTypeName, adt, constructors, arg)))
             .otherwise(() -> {
               throw new IllegalArgumentException();
-            })
-            .apply(adt.dataConstruction()))
+            }))
         .build(), MethodSpec.methodBuilder(otherwiseLeftMethodName + '_')
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addTypeVariable(leftTypeVarName)
@@ -392,15 +392,14 @@ class OtherwiseMatchingStepDerivator {
             ParameterSpec.builder(TypeName.get(deriveUtils.types().getDeclaredType(f0, adt.matchMethod().returnTypeVariable())),
                 "otherwise").build())
         .returns(returnType)
-        .addCode(DataConstructions.cases()
+        .addCode(caseOf(adt.dataConstruction())
             .multipleConstructors(MultipleConstructorsSupport.cases()
                 .visitorDispatch(
                     (visitorParam, visitorType, constructors) -> visitorDispatchImpl(f0, adt, visitorType, visitorParam))
                 .functionsDispatch(constructors -> functionsDispatchImpl(f0, adt, constructors)))
             .otherwise(() -> {
               throw new IllegalArgumentException();
-            })
-            .apply(adt.dataConstruction()))
+            }))
         .build(), MethodSpec.methodBuilder("otherwise_")
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addParameter(TypeName.get(adt.matchMethod().returnTypeVariable()),
@@ -426,7 +425,7 @@ class OtherwiseMatchingStepDerivator {
     return MethodSpec.methodBuilder("otherwise" + Utils.capitalize(optionModel.noneConstructor().getSimpleName().toString()))
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .returns(returnType)
-        .addCode(DataConstructions.cases()
+        .addCode(caseOf(adt.dataConstruction())
             .multipleConstructors(MultipleConstructorsSupport.cases()
                 .visitorDispatch(
                     (visitorParam, visitorType, constructors) -> visitorDispatchOptionImpl(optionModel, adt, visitorType,
@@ -434,8 +433,7 @@ class OtherwiseMatchingStepDerivator {
                 .functionsDispatch(constructors -> functionsDispatchOptionImpl(optionModel, adt, constructors)))
             .otherwise(() -> {
               throw new IllegalArgumentException();
-            })
-            .apply(adt.dataConstruction()))
+            }))
         .build();
   }
 

@@ -50,6 +50,8 @@ import org.derive4j.processor.api.model.TypeRestriction;
 
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
+import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
 final class ModiersDerivator implements Derivator {
 
@@ -81,7 +83,9 @@ final class ModiersDerivator implements Derivator {
 
     TypeMirror boxedFieldType = field.type().accept(Utils.asBoxedType, deriveUtils.types());
 
-    String smartSuffix = DeriveVisibilities.cases().Smart("0").otherwise("").apply(adt.deriveConfig().targetClass().visibility());
+    String smartSuffix = caseOf(adt.deriveConfig().targetClass().visibility())
+        .Smart_("0")
+        .otherwise_("");
 
     String modMethodName = "mod" + Utils.capitalize(field.fieldName()) + smartSuffix;
 
@@ -150,7 +154,7 @@ final class ModiersDerivator implements Derivator {
       setMethod.addModifiers(Modifier.PUBLIC);
     }
 
-    return DataConstructions.cases()
+    return caseOf(adt.dataConstruction())
         .multipleConstructors(MultipleConstructorsSupport.cases()
             .visitorDispatch((visitorParam, visitorType, constructors) -> {
 
@@ -172,8 +176,7 @@ final class ModiersDerivator implements Derivator {
         .oneConstructor(constructor -> DerivedCodeSpec.methodSpecs(Arrays.asList(setMethod.build(),
             modBuilder.addStatement("return $1L -> $1L.$2L($3L)", adtArg, adt.matchMethod().element().getSimpleName(), lambdas)
                 .build())))
-        .noConstructor(DerivedCodeSpec::none)
-        .apply(adt.dataConstruction());
+        .noConstructor(DerivedCodeSpec::none);
   }
 
   private static List<TypeVariable> getUniqueTypeVariables(DataArgument field, List<DataArgument> allFields,

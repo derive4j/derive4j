@@ -72,6 +72,7 @@ import static org.derive4j.processor.api.model.AlgebraicDataTypes.adt;
 import static org.derive4j.processor.api.model.DataArgument.dataArgument;
 import static org.derive4j.processor.api.model.DataConstruction.multipleConstructors;
 import static org.derive4j.processor.api.model.DataConstruction.noConstructor;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 import static org.derive4j.processor.api.model.DataConstructor.constructor;
 import static org.derive4j.processor.api.model.DataDeconstructor.deconstructor;
 import static org.derive4j.processor.api.model.MatchMethod.matchMethod;
@@ -132,7 +133,7 @@ final class AdtParser {
 
   private DeriveResult<List<DataArgument>> validateFieldTypeUniformity(DataConstruction construction) {
 
-    return DataConstructions.cases()
+    return caseOf(construction)
 
         .multipleConstructors(multipleConstructors -> {
 
@@ -160,9 +161,7 @@ final class AdtParser {
 
         .oneConstructor(constructor -> result(constructor.arguments()))
 
-        .noConstructor(() -> result(emptyList()))
-
-        .apply(construction);
+        .noConstructor(() -> result(emptyList()));
   }
 
   private boolean isEqualHashcodeToString(ExecutableElement executableElement) {

@@ -57,7 +57,6 @@ import org.derive4j.processor.api.model.DataArgument;
 import org.derive4j.processor.api.model.DataConstructions;
 import org.derive4j.processor.api.model.DataConstructor;
 import org.derive4j.processor.api.model.DeriveConfig;
-import org.derive4j.processor.api.model.DeriveVisibilities;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
@@ -65,6 +64,9 @@ import static org.derive4j.processor.Utils.joinStrings;
 import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
+import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
 final class StrictConstructorDerivator implements Derivator {
 
@@ -93,14 +95,13 @@ final class StrictConstructorDerivator implements Derivator {
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.ENUM) {
       codeSpec = none();
     } else {
-      codeSpec = DataConstructions.cases()
+      codeSpec = caseOf(adt.dataConstruction())
           .multipleConstructors(constructors -> constructors.constructors()
               .stream()
               .map(dc -> constructorSpec(adt, dc))
               .reduce(none(), DerivedCodeSpec::append))
           .oneConstructor(constructor -> constructorSpec(adt, constructor))
-          .noConstructor(DerivedCodeSpec::none)
-          .apply(adt.dataConstruction());
+          .noConstructor(DerivedCodeSpec::none);
     }
 
     return needLambdaVisitorGeneration(adt)
@@ -192,7 +193,7 @@ final class StrictConstructorDerivator implements Derivator {
         equalBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build());
       }
 
-      return DataConstructions.cases()
+      return caseOf(adt.dataConstruction())
           .multipleConstructors(MultipleConstructorsSupport.cases()
               .visitorDispatch((visitorParam, visitorType, constructors) ->
 
@@ -226,8 +227,7 @@ final class StrictConstructorDerivator implements Derivator {
                       .findFirst())), adt.matchMethod().element().getSimpleName(), lambdas).build())
           .noConstructor(() -> {
             throw new IllegalArgumentException();
-          })
-          .apply(adt.dataConstruction());
+          });
     });
   }
 
@@ -373,9 +373,7 @@ final class StrictConstructorDerivator implements Derivator {
   }
 
   static boolean smartConstructor(DataConstructor constructor, DeriveConfig deriveConfig) {
-
-    return DeriveVisibilities.cases().Smart(true).otherwise(false).apply(deriveConfig.targetClass().visibility()) &&
-        !constructor.arguments().isEmpty();
+    return !constructor.arguments().isEmpty() && caseOf(deriveConfig.targetClass().visibility()).Smart_(true).otherwise_(false);
   }
 
   private static String equalityTest(DataArgument da) {

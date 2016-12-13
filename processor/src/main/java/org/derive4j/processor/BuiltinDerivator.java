@@ -33,21 +33,22 @@ import static org.derive4j.processor.Utils.traverseResults;
 
 final class BuiltinDerivator {
 
-  private BuiltinDerivator(){}
+  private BuiltinDerivator() {}
 
   static Derivator derivator(DeriveUtils deriveUtils) {
 
     Derivator exportDerivator = new ExportDerivator(deriveUtils);
 
-    Function<Make, Derivator> makeDerivators = Makes.cases().<Derivator>lambdaVisitor(
-        new MapperDerivator(deriveUtils)).constructors(new StrictConstructorDerivator(deriveUtils))
-        .lazyConstructor(new LazyConstructorDerivator(deriveUtils))
-        .casesMatching(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
-        .caseOfMatching(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
-        .getters(new GettersDerivator(deriveUtils))
-        .modifiers(new ModiersDerivator(deriveUtils))
-        .catamorphism(new CataDerivator(deriveUtils))
-        .hktCoerce(__ -> DeriveResult.result(DerivedCodeSpec.none()));
+    Function<Make, Derivator> makeDerivators = Makes.cases().
+        <Derivator>lambdaVisitor_(new MapperDerivator(deriveUtils))
+        .constructors_(new StrictConstructorDerivator(deriveUtils))
+        .lazyConstructor_(new LazyConstructorDerivator(deriveUtils))
+        .casesMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
+        .caseOfMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
+        .getters_(new GettersDerivator(deriveUtils))
+        .modifiers_(new ModiersDerivator(deriveUtils))
+        .catamorphism_(new CataDerivator(deriveUtils))
+        .hktCoerce_(__ -> DeriveResult.result(DerivedCodeSpec.none()));
 
     return adt -> traverseResults(
         concat(of(exportDerivator), adt.deriveConfig().makes().stream().map(makeDerivators)).map(d -> d.derive(adt))

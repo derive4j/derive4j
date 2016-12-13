@@ -277,15 +277,14 @@ final class DeriveConfigBuilder {
   }
 
   private static DeriveVisibility deduceDeriveVisibility(TypeElement typeElement, Visibility visibility) {
-    return Visibilities.cases()
-        .Same(typeElement.getModifiers().contains(Modifier.PUBLIC)
+    return Visibilities.caseOf(visibility)
+        .Same(() -> typeElement.getModifiers().contains(Modifier.PUBLIC)
             ? DeriveVisibilities.Public()
             : DeriveVisibilities.Package())
-        .Package(DeriveVisibilities.Package())
-        .Smart(typeElement.getModifiers().contains(Modifier.PUBLIC)
+        .Package_(DeriveVisibilities.Package())
+        .Smart(() -> typeElement.getModifiers().contains(Modifier.PUBLIC)
             ? DeriveVisibilities.Smart()
-            : DeriveVisibilities.Package())
-        .apply(visibility);
+            : DeriveVisibilities.Package());
   }
 
   private static ExecutableElement unsafeGetExecutableElement(TypeElement typeElement, String methodName) {

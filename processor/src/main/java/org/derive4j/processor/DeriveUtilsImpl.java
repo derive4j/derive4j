@@ -96,43 +96,43 @@ final class DeriveUtilsImpl implements DeriveUtils {
     SamInterface guavaSupplier = lazySamInterface("com.google.common.base.Supplier");
 
     function0Model = Flavours.cases()
-        .Jdk(jdkSupplier)
-        .Fj(lazySamInterface("fj.F0"))
-        .Fugue(jdkSupplier)
-        .Fugue2(guavaSupplier)
-        .Javaslang(jdkSupplier)
-        .HighJ(jdkSupplier)
-        .Guava(guavaSupplier);
+        .Jdk_(jdkSupplier)
+        .Fj_(lazySamInterface("fj.F0"))
+        .Fugue_(jdkSupplier)
+        .Fugue2_(guavaSupplier)
+        .Javaslang_(jdkSupplier)
+        .HighJ_(jdkSupplier)
+        .Guava_(guavaSupplier);
 
     SamInterface jdkFunction = samInterface(Function.class.getName()).get();
     SamInterface guavaFunction = lazySamInterface("com.google.common.base.Function");
 
     function1Model = Flavours.cases()
-        .Jdk(jdkFunction)
-        .Fj(lazySamInterface("fj.F"))
-        .Fugue(jdkFunction)
-        .Fugue2(guavaFunction)
-        .Javaslang(lazySamInterface("javaslang.Function1"))
-        .HighJ(lazySamInterface("org.highj.function.F1"))
-        .Guava(guavaFunction);
+        .Jdk_(jdkFunction)
+        .Fj_(lazySamInterface("fj.F"))
+        .Fugue_(jdkFunction)
+        .Fugue2_(guavaFunction)
+        .Javaslang_(lazySamInterface("javaslang.Function1"))
+        .HighJ_(lazySamInterface("org.highj.function.F1"))
+        .Guava_(guavaFunction);
 
     optionModel = Flavours.cases()
-        .Jdk(lazyOptionModel(Optional.class.getName(), "empty", "of"))
-        .Fj(lazyOptionModel("fj.data.Option", "none", "some"))
-        .Fugue(lazyOptionModel("io.atlassian.fugue.Option", "none", "some"))
-        .Fugue2(lazyOptionModel("com.atlassian.fugue.Option", "none", "some"))
-        .Javaslang(lazyOptionModel("javaslang.control.Option", "none", "some"))
-        .HighJ(lazyOptionModel("org.highj.data.Maybe", "Nothing", "Just"))
-        .Guava(lazyOptionModel("com.google.common.base.Optional", "absent", "of"));
+        .Jdk_(lazyOptionModel(Optional.class.getName(), "empty", "of"))
+        .Fj_(lazyOptionModel("fj.data.Option", "none", "some"))
+        .Fugue_(lazyOptionModel("io.atlassian.fugue.Option", "none", "some"))
+        .Fugue2_(lazyOptionModel("com.atlassian.fugue.Option", "none", "some"))
+        .Javaslang_(lazyOptionModel("javaslang.control.Option", "none", "some"))
+        .HighJ_(lazyOptionModel("org.highj.data.Maybe", "Nothing", "Just"))
+        .Guava_(lazyOptionModel("com.google.common.base.Optional", "absent", "of"));
 
     eitherModel = Flavours.cases()
-        .Jdk(Optional.<EitherModel>empty())
-        .Fj(eitherModel("fj.data.Either", "left", "right"))
-        .Fugue(eitherModel("io.atlassian.fugue.Either", "left", "right"))
-        .Fugue2(eitherModel("com.atlassian.fugue.Either", "left", "right"))
-        .Javaslang(eitherModel("javaslang.control.Either", "left", "right"))
-        .HighJ(eitherModel("org.highj.data.Either", "Left", "Right"))
-        .Guava(Optional.empty());
+        .Jdk_(Optional.<EitherModel>empty())
+        .Fj_(eitherModel("fj.data.Either", "left", "right"))
+        .Fugue_(eitherModel("io.atlassian.fugue.Either", "left", "right"))
+        .Fugue2_(eitherModel("com.atlassian.fugue.Either", "left", "right"))
+        .Javaslang_(eitherModel("javaslang.control.Either", "left", "right"))
+        .HighJ_(eitherModel("org.highj.data.Either", "Left", "Right"))
+        .Guava_(Optional.empty());
   }
 
   @Override

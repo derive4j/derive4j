@@ -50,6 +50,7 @@ import org.derive4j.processor.api.model.TypeRestriction;
 import static org.derive4j.processor.Utils.asBoxedType;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.api.DeriveResult.result;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 
 final class GettersDerivator implements Derivator {
 
@@ -81,15 +82,14 @@ final class GettersDerivator implements Derivator {
     DeclaredType returnType = deriveUtils.types()
         .getDeclaredType(optionModel.typeElement(), field.type().accept(asBoxedType, deriveUtils.types()));
 
-    return DataConstructions.cases()
+    return caseOf(adt.dataConstruction())
         .multipleConstructors(MultipleConstructorsSupport.cases()
             .visitorDispatch(
                 (visitorParam, visitorType, constructors) -> visitorDispatchOptionalGetterImpl(optionModel, adt, visitorType,
                     constructors, arg, field, returnType))
             .functionsDispatch(
                 constructors -> functionsDispatchOptionalGetterImpl(optionModel, adt, arg, constructors, field, returnType)))
-        .otherwise(DerivedCodeSpec::none)
-        .apply(adt.dataConstruction());
+        .otherwise(DerivedCodeSpec::none);
   }
 
   private DerivedCodeSpec visitorDispatchOptionalGetterImpl(OptionModel optionModel, AlgebraicDataType adt,
@@ -132,14 +132,13 @@ final class GettersDerivator implements Derivator {
 
     String arg = asParameterName(adt);
 
-    return DataConstructions.cases()
+    return caseOf(adt.dataConstruction())
         .multipleConstructors(MultipleConstructorsSupport.cases()
             .visitorDispatch(
                 (visitorParam, visitorType, constructors) -> visitorDispatchLensGetterImpl(adt, arg, visitorType, field))
             .functionsDispatch(constructors -> functionsDispatchLensGetterImpl(adt, arg, field)))
         .oneConstructor(constructor -> functionsDispatchLensGetterImpl(adt, arg, field))
-        .noConstructor(DerivedCodeSpec::none)
-        .apply(adt.dataConstruction());
+        .noConstructor(DerivedCodeSpec::none);
   }
 
   private DerivedCodeSpec visitorDispatchLensGetterImpl(AlgebraicDataType adt, String arg, DeclaredType visitorType,

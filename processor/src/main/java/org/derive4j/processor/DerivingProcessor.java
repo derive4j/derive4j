@@ -57,6 +57,7 @@ import static org.derive4j.processor.P2s.P2;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getClasses;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getFields;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getMethods;
+import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -129,10 +130,9 @@ public final class DerivingProcessor extends AbstractProcessor {
               return report;
             }), codeSpec -> {
               TypeSpec classSpec = TypeSpec.classBuilder(deriveConfig.targetClass().className())
-                  .addModifiers(Modifier.FINAL, DeriveVisibilities.cases()
-                      .Package(Modifier.FINAL)
-                      .otherwise(Modifier.PUBLIC)
-                      .apply(deriveConfig.targetClass().visibility()))
+                  .addModifiers(Modifier.FINAL, caseOf(deriveConfig.targetClass().visibility())
+                      .Package_(Modifier.FINAL)
+                      .otherwise_(Modifier.PUBLIC))
                   .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
                   .addTypes(getClasses(codeSpec))
                   .addFields(getFields(codeSpec))

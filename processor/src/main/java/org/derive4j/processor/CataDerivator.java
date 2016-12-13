@@ -52,6 +52,7 @@ import static java.util.stream.Stream.concat;
 import static org.derive4j.processor.Utils.fold;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.methodSpec;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 
 final class CataDerivator implements Derivator {
 
@@ -71,12 +72,11 @@ final class CataDerivator implements Derivator {
         .stream()
         .map(DataArguments::getType)
         .anyMatch(tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-        ? DataConstructions.cases()
-        .multipleConstructors(MultipleConstructorsSupport.cases()
+        ? caseOf(adt.dataConstruction())
+          .multipleConstructors(MultipleConstructorsSupport.cases()
             .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchImpl(adt, visitorType, constructors))
             .functionsDispatch(dataConstructors -> functionDispatchImpl(adt, dataConstructors)))
-        .otherwise(() -> result(DerivedCodeSpec.none()))
-        .apply(adt.dataConstruction())
+          .otherwise(() -> result(DerivedCodeSpec.none()))
         : result(DerivedCodeSpec.none());
   }
 

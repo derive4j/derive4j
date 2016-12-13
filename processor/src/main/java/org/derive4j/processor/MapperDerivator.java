@@ -68,13 +68,12 @@ class MapperDerivator implements Derivator {
   @Override
   public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
 
-    return DeriveResult.result(DataConstructions.cases()
+    return DeriveResult.result(DataConstructions.caseOf(adt.dataConstruction())
         .multipleConstructors(MultipleConstructorsSupport.cases()
             .visitorDispatch(
                 (visitorParam, visitorType, constructors) -> createVisitorFactoryAndMappers(adt, visitorType, constructors))
             .otherwise(DerivedCodeSpec::none))
-        .otherwise(DerivedCodeSpec::none)
-        .apply(adt.dataConstruction()));
+        .otherwise(DerivedCodeSpec::none));
   }
 
   public String mapperApplyMethod(DeriveConfig deriveConfig, DataConstructor dc) {

@@ -45,6 +45,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static org.derive4j.processor.Utils.joinStringsAsArguments;
 import static org.derive4j.processor.Utils.uncapitalize;
+import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 
 class TotalMatchingStepDerivator {
 
@@ -130,7 +131,7 @@ class TotalMatchingStepDerivator {
           : TypeName.get(adt.matchMethod().returnTypeVariable());
 
       currentConstructorTotalMatchMethod.returns(returnType)
-          .addCode(DataConstructions.cases()
+          .addCode(caseOf(adt.dataConstruction())
               .multipleConstructors(MultipleConstructorsSupport.cases()
                   .visitorDispatch((visitorParam, visitorType, constructors) -> vistorDispatchImpl(adt, visitorType, visitorParam,
                       previousConstructors, currentConstructor))
@@ -138,8 +139,7 @@ class TotalMatchingStepDerivator {
               .oneConstructor(__ -> oneConstructorImpl(currentConstructor, adt))
               .noConstructor(() -> {
                 throw new IllegalArgumentException();
-              })
-              .apply(adt.dataConstruction()));
+              }));
 
       currentConstructorTotalMatchConstantMethod.returns(returnType);
 
