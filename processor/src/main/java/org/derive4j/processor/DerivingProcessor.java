@@ -105,7 +105,7 @@ public final class DerivingProcessor extends AbstractProcessor {
 
   private void processElements(final Map<TypeElement, DeriveConfig> dataTypes) {
 
-    dataTypes.entrySet().stream().parallel().<P2<TypeElement, Runnable>>map(entry -> {
+    dataTypes.entrySet().stream().<P2<TypeElement, Runnable>>map(entry -> {
       TypeElement element = entry.getKey();
       try {
         DeriveConfig deriveConfig = entry.getValue();
@@ -173,6 +173,6 @@ public final class DerivingProcessor extends AbstractProcessor {
   }
 
   private static Stream<Element> findAllElements(Stream<? extends Element> elements) {
-    return elements.parallel().flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
+    return elements.flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
   }
 }
