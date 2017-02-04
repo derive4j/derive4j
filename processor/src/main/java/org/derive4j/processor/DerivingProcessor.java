@@ -94,7 +94,7 @@ public final class DerivingProcessor extends AbstractProcessor {
           remainingElements.stream().map(path -> processingEnv.getElementUtils().getTypeElement(path)),
           findAllElements(roundEnv.getRootElements().stream()).filter(e -> (e.getKind() == ElementKind.CLASS) ||
               (e.getKind() == ElementKind.INTERFACE) ||
-              (e.getKind() == ElementKind.ENUM))).flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
+              (e.getKind() == ElementKind.ENUM))).sequential().flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
           .collect(Collectors.toMap(P2s::get_1, P2s::get_2));
 
       remainingElements.clear();
@@ -105,7 +105,7 @@ public final class DerivingProcessor extends AbstractProcessor {
 
   private void processElements(final Map<TypeElement, DeriveConfig> dataTypes) {
 
-    dataTypes.entrySet().stream().<P2<TypeElement, Runnable>>map(entry -> {
+    dataTypes.entrySet().stream().parallel().<P2<TypeElement, Runnable>>map(entry -> {
       TypeElement element = entry.getKey();
       try {
         DeriveConfig deriveConfig = entry.getValue();
@@ -173,6 +173,6 @@ public final class DerivingProcessor extends AbstractProcessor {
   }
 
   private static Stream<Element> findAllElements(Stream<? extends Element> elements) {
-    return elements.flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
+    return elements.parallel().flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
   }
 }
