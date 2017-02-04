@@ -94,7 +94,7 @@ public final class DerivingProcessor extends AbstractProcessor {
           remainingElements.stream().map(path -> processingEnv.getElementUtils().getTypeElement(path)),
           findAllElements(roundEnv.getRootElements().stream()).filter(e -> (e.getKind() == ElementKind.CLASS) ||
               (e.getKind() == ElementKind.INTERFACE) ||
-              (e.getKind() == ElementKind.ENUM))).flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
+              (e.getKind() == ElementKind.ENUM))).sequential().flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
           .collect(Collectors.toMap(P2s::get_1, P2s::get_2));
 
       remainingElements.clear();
