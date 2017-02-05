@@ -69,7 +69,7 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.MessageLocalization.onAnnotation;
 import static org.derive4j.processor.api.MessageLocalization.onElement;
 import static org.derive4j.processor.api.model.AlgebraicDataTypes.adt;
-import static org.derive4j.processor.api.model.DataArgument.dataArgument;
+import static org.derive4j.processor.api.model.DataArguments.dataArgument;
 import static org.derive4j.processor.api.model.DataConstruction.multipleConstructors;
 import static org.derive4j.processor.api.model.DataConstruction.noConstructor;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;

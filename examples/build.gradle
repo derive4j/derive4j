@@ -5,6 +5,8 @@ archivesBaseName = "${project.projectName}-${project.name}"
 dependencies {
   compileOnly project(":annotation")
   apt project(":processor")
+  compileOnly 'com.google.auto.value:auto-value:1.3'
+  apt 'com.google.auto.value:auto-value:1.3'
   compile "org.functionaljava:functionaljava:4.6"
   compile 'io.atlassian.fugue:fugue:4.3.1'
   compile 'com.atlassian.fugue:fugue:2.6.1'

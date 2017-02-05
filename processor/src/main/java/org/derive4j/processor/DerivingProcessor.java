@@ -23,13 +23,14 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.processing.AbstractProcessor;
@@ -45,14 +46,15 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import org.derive4j.processor.api.Derivator;
+import org.derive4j.processor.api.DeriveMessages;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.MessageLocalizations;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DeriveConfig;
-import org.derive4j.processor.api.model.DeriveVisibilities;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
+import static org.derive4j.processor.IO.effect;
 import static org.derive4j.processor.P2s.P2;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getClasses;
 import static org.derive4j.processor.api.DerivedCodeSpecs.getFields;
@@ -64,9 +66,9 @@ import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 @SupportedAnnotationTypes("*")
 public final class DerivingProcessor extends AbstractProcessor {
 
-  private final Set<String> remainingElements = new HashSet<>();
-  private final List<String> errors = new ArrayList<>();
-
+  private static final Set<ElementKind> scannedElementKinds = EnumSet.of(ElementKind.CLASS, ElementKind.INTERFACE,
+      ElementKind.ENUM);
+  private List<P2<String, RuntimeException>> remainingElements = Collections.emptyList();
   private Derivator builtinDerivator;
   private AdtParser adtParser;
   private DeriveConfigBuilder deriveConfigBuilder;
@@ -85,87 +87,64 @@ public final class DerivingProcessor extends AbstractProcessor {
   public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
 
     if (roundEnv.processingOver()) {
-      errors.addAll(remainingElements.stream().map(path -> "Unable to process " + path).collect(toList()));
-      for (final String error : errors) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, error);
-      }
+      remainingElements.forEach(e -> printErrorMessage(e._1(), e._2()));
     } else {
-      final Map<TypeElement, DeriveConfig> elements = concat(
-          remainingElements.stream().map(path -> processingEnv.getElementUtils().getTypeElement(path)),
-          findAllElements(roundEnv.getRootElements().stream()).filter(e -> (e.getKind() == ElementKind.CLASS) ||
-              (e.getKind() == ElementKind.INTERFACE) ||
-              (e.getKind() == ElementKind.ENUM))).flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e))
-          .collect(Collectors.toMap(P2s::get_1, P2s::get_2));
+      final Stream<P2<TypeElement, DeriveConfig>> dataTypeElements = concat(
+          remainingElements.stream().map(e -> processingEnv.getElementUtils().getTypeElement(e._1())),
+          findAllElements(roundEnv.getRootElements().parallelStream())).sequential()
+          .flatMap(e -> deriveConfigBuilder.findDeriveConfig((TypeElement) e));
 
-      remainingElements.clear();
-      processElements(elements);
+      remainingElements = new ArrayList<>();
+      dataTypeElements.map(e -> {
+        String qualifiedName = e._1().getQualifiedName().toString();
+        try {
+          return P2(qualifiedName, derivation(e._1(), e._2()));
+        } catch (RuntimeException err) {
+          return P2(qualifiedName, effect(() -> remainingElements.add(P2(qualifiedName, err))));
+        }
+      }).forEach(io -> {
+        try {
+          io._2().run();
+        } catch (IOException ioe) {
+          printErrorMessage(io._1(), ioe);
+        }
+      });
     }
     return false;
   }
 
-  private void processElements(final Map<TypeElement, DeriveConfig> dataTypes) {
+  private IO<Unit> derivation(TypeElement element, DeriveConfig deriveConfig) {
 
-    dataTypes.entrySet().stream().parallel().<P2<TypeElement, Runnable>>map(entry -> {
-      TypeElement element = entry.getKey();
-      try {
-        DeriveConfig deriveConfig = entry.getValue();
-        DeriveResult<AlgebraicDataType> parseResult = adtParser.parseAlgebraicDataType(element, deriveConfig);
+    DeriveResult<AlgebraicDataType> parseResult = adtParser.parseAlgebraicDataType(element, deriveConfig);
 
-        Runnable effect = parseResult.bind(builtinDerivator::derive)
-            .match(message -> message.<Runnable>match((msg, localizations) -> {
-              Runnable report;
-              if (localizations.isEmpty()) {
-                report = () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element);
-              } else {
-                List<Runnable> reports = localizations.stream()
-                    .map(MessageLocalizations.cases().<Runnable>onElement(
-                        e -> () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e)).onAnnotation(
-                        (e, annotation) -> () -> processingEnv.getMessager()
-                            .printMessage(Diagnostic.Kind.ERROR, msg, e, annotation))
-                        .onAnnotationValue((e, annotation, annotationValue) -> () -> processingEnv.getMessager()
-                            .printMessage(Diagnostic.Kind.ERROR, msg, e, annotation, annotationValue)))
-                    .collect(toList());
-                report = () -> reports.forEach(Runnable::run);
-              }
-              return report;
-            }), codeSpec -> {
-              TypeSpec classSpec = TypeSpec.classBuilder(deriveConfig.targetClass().className())
-                  .addModifiers(Modifier.FINAL, caseOf(deriveConfig.targetClass().visibility())
-                      .Package_(Modifier.FINAL)
-                      .otherwise_(Modifier.PUBLIC))
-                  .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
-                  .addTypes(getClasses(codeSpec))
-                  .addFields(getFields(codeSpec))
-                  .addMethods(getMethods(codeSpec))
-                  .build();
+    return parseResult.bind(builtinDerivator::derive)
+        .match(DeriveMessages.cases()
+            .message((msg, localizations) -> localizations.isEmpty()
+                ? effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element))
+                : IO.traverse(localizations, MessageLocalizations.cases()
+                    .onElement(e -> effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e)))
+                    .onAnnotation((e, annotation) -> effect(
+                        () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation)))
+                    .onAnnotationValue((e, annotation, annotationValue) -> effect(() -> processingEnv.getMessager()
+                        .printMessage(Diagnostic.Kind.ERROR, msg, e, annotation, annotationValue)))).voided()), codeSpec -> {
+          TypeSpec classSpec = TypeSpec.classBuilder(deriveConfig.targetClass().className())
+              .addModifiers(Modifier.FINAL,
+                  caseOf(deriveConfig.targetClass().visibility()).Package_(Modifier.FINAL).otherwise_(Modifier.PUBLIC))
+              .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
+              .addTypes(getClasses(codeSpec))
+              .addFields(getFields(codeSpec))
+              .addMethods(getMethods(codeSpec))
+              .build();
 
-              JavaFile javaFile = JavaFile.builder(deriveConfig.targetClass().className().packageName(), classSpec).build();
-              return () -> {
-                try {
-                  javaFile.writeTo(processingEnv.getFiler());
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-              };
-            });
-        return P2(element, effect);
-      } catch (final RuntimeException | Error ex) {
-        return P2(element, () -> {
-          reportError(element, ex);
+          JavaFile javaFile = JavaFile.builder(deriveConfig.targetClass().className().packageName(), classSpec).build();
+          return effect(() -> javaFile.writeTo(processingEnv.getFiler()));
         });
-      }
-    }).forEachOrdered(p -> {
-      try {
-        p._2().run();
-      } catch (final RuntimeException | Error ex) {
-        reportError(p._1(), ex);
-      }
-    });
   }
 
-  private void reportError(TypeElement element, Throwable ex) {
-    errors.add(element + ": " + ex.getMessage());
-    ex.printStackTrace(System.err);
+  private void printErrorMessage(String typeElement, Throwable error) {
+    processingEnv.getMessager()
+        .printMessage(Diagnostic.Kind.ERROR,
+            "Derive4J: unable to process " + typeElement + " due to " + error.getMessage() + "\n" + showStackTrace(error));
   }
 
   private static List<Derivator> derivators() { //TODO
@@ -173,6 +152,14 @@ public final class DerivingProcessor extends AbstractProcessor {
   }
 
   private static Stream<Element> findAllElements(Stream<? extends Element> elements) {
-    return elements.parallel().flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
+    return elements.filter(e -> scannedElementKinds.contains(e.getKind()))
+        .flatMap(e -> concat(Stream.of(e), findAllElements(e.getEnclosedElements().stream())));
+  }
+
+  private static String showStackTrace(Throwable t) {
+    StringWriter sw = new StringWriter();
+    PrintWriter pw = new PrintWriter(sw);
+    t.printStackTrace(pw);
+    return sw.toString();
   }
 }
