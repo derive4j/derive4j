@@ -63,7 +63,7 @@ import static org.derive4j.processor.Utils.fold;
 import static org.derive4j.processor.Utils.p;
 import static org.derive4j.processor.Utils.traverseOptional;
 import static org.derive4j.processor.Utils.zip;
-import static org.derive4j.processor.api.DeriveMessage.message;
+import static org.derive4j.processor.api.DeriveMessages.message;
 import static org.derive4j.processor.api.DeriveResult.error;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.MessageLocalization.onAnnotation;

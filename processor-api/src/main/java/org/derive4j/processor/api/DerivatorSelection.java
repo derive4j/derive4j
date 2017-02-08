@@ -18,34 +18,20 @@
  */
 package org.derive4j.processor.api;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 import org.derive4j.Data;
 import org.derive4j.ExportAsPublic;
 
-import static java.util.Collections.singletonList;
-
 @Data
-public abstract class DeriveMessage {
-
-  public interface Case<R> {
-    R message(String text, List<MessageLocalization> localizations);
+public abstract class DerivatorSelection {
+  DerivatorSelection(){}
+  interface Case<X> {
+    X selection(Class<?> forClass, Optional<String> selector, Derivator derivator) ;
   }
-
-  DeriveMessage() {}
-
-  public abstract <R> R match(Case<R> message);
+  public abstract  <X> X match(Case<X> selection);
 
   @ExportAsPublic
-  static DeriveMessage message(String msg, MessageLocalization localization) {
-
-    return DeriveMessages.message(msg, singletonList(localization));
+  static DerivatorSelection selection(Class<?> forClass, Derivator derivator) {
+    return DerivatorSelections.selection(forClass, Optional.empty(), derivator);
   }
-
-  @ExportAsPublic
-  static DeriveMessage message(String msg) {
-
-    return DeriveMessages.message(msg, Collections.emptyList());
-  }
-
 }

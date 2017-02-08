@@ -22,6 +22,6 @@ import org.derive4j.processor.api.model.AlgebraicDataType;
 
 public interface Derivator {
 
-  DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt);
+  DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adtModel);
 
 }

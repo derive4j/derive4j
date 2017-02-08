@@ -18,13 +18,23 @@
  */
 package org.derive4j.processor.api.model;
 
+import com.squareup.javapoet.ClassName;
 import java.util.Optional;
+import org.derive4j.Data;
 
+@Data
 public abstract class DerivedInstanceConfig {
 
   public interface Case<X> {
-    X InstanceConfig(Optional<String> implSelector, DeriveTargetClass targetClass);
+    X InstanceConfig(Optional<String> implSelector, Optional<ClassName> targetClass);
   }
 
   public abstract <X> X match(Case<X> Case);
+
+  @Override
+  public abstract int hashCode();
+  @Override
+  public abstract boolean equals(Object obj);
+  @Override
+  public abstract String toString();
 }

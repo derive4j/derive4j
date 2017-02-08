@@ -41,6 +41,13 @@ abstract class P2<A, B> {
     return P2s.get_2(this);
   }
 
+  @Override
+  public abstract int hashCode();
+  @Override
+  public abstract boolean equals(Object obj);
+  @Override
+  public abstract String toString();
+
   static <A, B> P2<A, B> p2(A a, B b) {
 
     return P2s.P2(a, b);

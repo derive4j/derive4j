@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -167,6 +168,10 @@ final class Utils {
   static <A> Stream<A> optionalAsStream(Optional<A> o) {
 
     return fold(o, Stream.<A>empty(), Stream::of);
+  }
+
+  static <K, V> Optional<V> get(K key, Map<? extends K, ? extends V> map) {
+    return Optional.ofNullable(map.get(key));
   }
 
   static <A, B> Optional<List<B>> traverseOptional(List<A> as, Function<A, Optional<B>> f) {
