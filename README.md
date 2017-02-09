@@ -5,6 +5,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.derive4j/derive4j.svg)][search.maven]
 [![Gitter Chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/derive4j/derive4j)
 
+**tl;dr** [Show me how to write, say, the `Either` sum type with Derive4J!](https://gist.github.com/jbgi/d6035910e55b5b45d1e18553530d9d72).
+
 ## Table of contents
 - [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
     - [Constructors](#constructors)  
