@@ -488,8 +488,7 @@ public abstract class Term<T> {
 For GADT you will need to add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two types, `A` and `B`.
 
 # DRY annotation configuration
-By default the `@Data` annotation triggers the generation of [all of what is available]
-(annotation/src/main/java/org/derive4j/Make.java#L22) in a file which name is the english plural of the annotated class. But you may want to restrict the scope of what is generated or the name of the file, and you usually want all you ADTs to use the same flavour. You may even not like the name of the annotation because it clashes with another framework...
+By default the `@Data` annotation triggers the generation of [all of what is available](/annotation/src/main/java/org/derive4j/Make.java#L22) in a file which name is the english plural of the annotated class. But you may want to restrict the scope of what is generated or the name of the file, and you usually want all you ADTs to use the same flavour. You may even not like the name of the annotation because it clashes with another framework...
 
 For example, let's say that you want to always use the `FJ` flavour (FunctionalJava), make the generated code package private in a class suffixed by `Impl` and only generate the pattern matching syntax and the constructors. Then all you have to do is to create the following annotation:
 ```java
