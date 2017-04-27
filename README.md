@@ -291,7 +291,7 @@ Then you expose a public static factory method that will do the necessary valida
 
 But at the same time you may want to only use the generated class for all static methods of your APIs. In that case, you may annotate your static  methods with `@ExportAsPublic` and a delegating method will be generated with public visibility in the generated class for that method.
 
-See use of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
+See usage of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
 
 # Updating deeply nested immutable data structure
 Let's say you want to model a CRM. Each client is a ```Person``` who can be contacted by email, by telephone or by postal mail. With Derive4J you could write the following:
@@ -488,7 +488,7 @@ public abstract class Term<T> {
 For GADT you will need to add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two types, `A` and `B`.
 
 # DRY annotation configuration
-By default the `@Data` annotation triggers the generation of [everything which is available](/annotation/src/main/java/org/derive4j/Make.java#L22) in a file whose name is the English plural of the annotated class. But you may want to restrict the scope of what is generated, or change the name of the file, and you usually want all you ADTs to use the same flavour. You may even dislike the name of the annotation because it clashes with another framework...
+By default the `@Data` annotation triggers the generation of [everything which is available](/annotation/src/main/java/org/derive4j/Make.java#L22), in a file whose name is the English plural of the annotated class. But you may want to restrict the scope of what is generated, or change the name of the file, and you usually want all you ADTs to use the same flavour. You may even dislike the name of the annotation because it clashes with another framework...
 
 For example, let's say that you want to always use the `FJ` flavour (FunctionalJava), make the generated code package private in a class suffixed by `Impl` and only generate the pattern matching syntax and the constructors. Then all you have to do is to create the following annotation:
 ```java
