@@ -47,12 +47,12 @@ public abstract class Person {
 
     Person joe = Person(Name0("Joe"), Contacts.byMail(Address(10, "Main St")));
 
-    // oups! there was a off my one error in the import process. We must increment all street numbers!!
+    // oops! there was a off by one error in the import process. We must increment all street numbers!!
 
     // Easy with Derive4J
     Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
 
-    // newP is a copy of p with the street number incremented:
+    // correctedJoe is a copy of p with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
 
     Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe)).map(Addresses::getNumber);
