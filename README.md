@@ -40,7 +40,7 @@
 - https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
 - http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
 
-This project has a special dedication to Tony Morris' blog post [Debut with a catamorphism] (http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
+This project has a special dedication to Tony Morris' blog post [Debut with a catamorphism](http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
 I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
 
 So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
@@ -49,7 +49,7 @@ An example being worth a thousand words...
 
 # Example: a 'Visitor' for HTTP Request
 
-Let's say we want to modelize an HTTP request. For the sake of the example let's say that an http request can either be
+Let's say we want to model an HTTP request. For the sake of the example let's say that an HTTP request can either be
 - a GET on a given ```path```
 - a DELETE on a given ```path```
 - a POST of a content ```body``` on a given ```path```
@@ -62,7 +62,7 @@ You could then use the [corrected visitor pattern](http://logji.blogspot.ch/2012
 ```java
 package org.derive4j.example;
 
-/** A data type to modelize an http request. */
+/** A data type to model an http request. */
 @Data
 public abstract class Request {
 
@@ -126,7 +126,7 @@ You can also ask Derive4J to generate null checks with:
   public abstract String toString();
 ```
 The safer solution would be to never use those methods and use 'type classes' instead, eg. [Equal](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Equal.java), [Hash](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Hash.java) and [Show](https://github.com/functionaljava/functionaljava/blob/master/core/src/main/java/fj/Show.java).
-The project [Derive4J for Functional Java](https://github.com/derive4j/derive4j-fj) aims at generating them automatically.
+The project [Derive4J for Functional Java](https://github.com/derive4j/derive4j-fj) aims to generate them automatically.
 
 ## Pattern matching syntaxes
 Now let's say that you want a function that returns the body size of a ```Request```. Without Derive4J you would write something like:
@@ -173,7 +173,7 @@ static int getBodyLength(Request request) {
 ```
 
 ## Accessors (getters)
-Now, patterning matching every time you want to inspect an instance of ```Request``` is a bit tedious. For this reason Derive4J generates 'getter' static methods for all fields. For the ```path``` and ```body``` fields, Derive4J will generate the following methods in the ```Requests``` class:
+Now, pattern matching every time you want to inspect an instance of ```Request``` is a bit tedious. For this reason Derive4J generates 'getter' static methods for all fields. For the ```path``` and ```body``` fields, Derive4J will generate the following methods in the ```Requests``` class:
 ```java
   public static String getPath(Request request){
     return Requests.cases()
@@ -194,7 +194,7 @@ Now, patterning matching every time you want to inspect an instance of ```Reques
 ```
 (Actually the generated code is equivalent but more efficient)
 
-Using the generated ```getBody``` methods we can rewrite our ```getBodySize``` function into:
+Using the generated ```getBody``` methods, we can rewrite our ```getBodySize``` function into:
 ```java
 static final Function<Request, Integer> getBodySize = request ->
       Requests.getBody(request)
@@ -245,7 +245,7 @@ Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/
 In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)), ```Fugue``` ([Fugue](https://bitbucket.org/atlassian/fugue)), ```Javaslang``` ([Javaslang](http://javaslang.com/)), ```HighJ``` ([HighJ](https://github.com/DanielGronau/highj)) and ```Guava``` flavours. When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
 
 ## Optics (functional lenses)
-If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
+If you are not familiar with optics, have a look at [Monocle](https://github.com/julien-truffaut/Monocle) (for Scala, but [Functional Java](https://github.com/functionaljava/functionaljava/) provides similar abstraction).
 
 Using Derive4J generated code, defining optics is a breeze (you need to use the ```FJ``` flavour by specifying ```@Data(flavour = Flavour.FJ)```:
 ```java
@@ -291,10 +291,10 @@ Then you expose a public static factory method that will do the necessary valida
 
 But at the same time you may want to only use the generated class for all static methods of your APIs. In that case, you may annotate your static  methods with `@ExportAsPublic` and a delegating method will be generated with public visibility in the generated class for that method.
 
-See usage of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
+See use of this feature in [PersonName](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/PersonName.java#L49).
 
 # Updating deeply nested immutable data structure
-Let's say you want to modelize a CRM. Each client is a ```Person``` which can be contacted either by email, telephone or postal mail. With Derive4J you could write the following:
+Let's say you want to model a CRM. Each client is a ```Person``` who can be contacted by email, by telephone or by postal mail. With Derive4J you could write the following:
 ```java
 import org.derive4j.*;
 import java.util.function.BiFunction;
@@ -328,7 +328,7 @@ public abstract class Person {
                               BiFunction<String, Contact, R> Person);
 }
 ```
-But now we have a problem: All clients have been imported from a legacy database with an off-by-one error for the street number! We must create a function that increments each person street number (if it exists) by one. And without modifying the original data structure (because it is immutable).
+But now we have a problem: All the clients have been imported from a legacy database with an off-by-one error for the street number! We must create a function that increments each ```Person```'s street number (if it exists) by one. And we have to do this without modifying the original data structure (because it is immutable).
 With Derive4J, writing such a function is trivial:
 ```java
 import java.util.Optional;
@@ -351,7 +351,7 @@ import static org.derive4j.example.Persons.modContact;
     						       modPostalAddress(
     						         modNumber(number -> number + 1)));
     
-    // newP is a copy of p with the street number incremented:
+    // correctedJoe is a copy of joe with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
 
     Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe))
@@ -363,7 +363,7 @@ import static org.derive4j.example.Persons.modContact;
 
 
 # Popular use-case: domain specific languages
-Algebraic data types are particulary well fitted for creating DSLs. Like a calculator for arithmetic expressions:
+Algebraic data types are particulary well fitted for creating DSLs. A calculator for arithmetic expressions could be built like this:
 ```java
 import java.util.function.Function;
 import org.derive4j.Data;
@@ -412,13 +412,13 @@ are generated for recursively defined datatypes. So that you can rewrite the abo
 		     .apply(expression)
 	}
 ```
-But beware that for very deep structure it may blow the stack! (unless you make good use of lazy constructors...)
+But beware that for very deep structures it may blow the stack! (Unless you make good use of lazy constructors...)
 
 # But what exactly is generated?
 This is a very legitimate question. Here is the [```Expressions.java```](https://gist.github.com/jbgi/3904e696fb27a2e33ae1) file that is generated for the above ```@Data Expression``` class.
 
 # Parametric polymorphism
-... works as expected. Eg. you can write the following:
+... works as expected. For example, you can write the following:
 ```java
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -434,11 +434,11 @@ public abstract class Option<A> {
     }
 }
 ```
-=> The generated modifier method ```modSome``` allows polymorphic update and is incidentaly the functor for our ```Option```!
+The generated modifier method ```modSome``` allows polymorphic update and is incidentaly the functor for our ```Option```!
 
 # Generalized Algebraic Data Types
 
-GADTs are also supported out of the box by Derive4J (within the limitations of Java type system). Below is how you can translate the example from [Fun with phantom types](http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf):
+GADTs are also supported out of the box by Derive4J (within the limitations of the Java type system). Here is how you can translate the example from [Fun with phantom types](http://www.cs.ox.ac.uk/ralf.hinze/publications/With.pdf):
 ```java
 import org.derive4j.hkt.TypeEq;
 
@@ -488,7 +488,7 @@ public abstract class Term<T> {
 For GADT you will need to add a dependency on [derive4j/hkt](https://github.com/derive4j/hkt) which provides `TypeEq<A, B>`: a witness of the equality of two types, `A` and `B`.
 
 # DRY annotation configuration
-By default the `@Data` annotation triggers the generation of [all of what is available](/annotation/src/main/java/org/derive4j/Make.java#L22) in a file which name is the english plural of the annotated class. But you may want to restrict the scope of what is generated or the name of the file, and you usually want all you ADTs to use the same flavour. You may even not like the name of the annotation because it clashes with another framework...
+By default the `@Data` annotation triggers the generation of [everything which is available](/annotation/src/main/java/org/derive4j/Make.java#L22) in a file whose name is the English plural of the annotated class. But you may want to restrict the scope of what is generated, or change the name of the file, and you usually want all you ADTs to use the same flavour. You may even dislike the name of the annotation because it clashes with another framework...
 
 For example, let's say that you want to always use the `FJ` flavour (FunctionalJava), make the generated code package private in a class suffixed by `Impl` and only generate the pattern matching syntax and the constructors. Then all you have to do is to create the following annotation:
 ```java
@@ -501,7 +501,7 @@ public @interface myADT {}
 ```
 And you annotate your classes with `@myADT` instead of `@Data`, saving on that configuration every time.
 
-But now for some of your ADT you may want to also generate getters and functional setters. In order to not lose the benefice of your `@myADT`, derive4j allows to do this:
+But now for some of your ADTs you may want to also generate getters and functional setters. In order to not lose the benefits of your `@myADT`, derive4j allows you to do this:
 ```java
 @myADT
 @Derive(make = { Make.getters, Make.modifiers }) // add-up to the @myADT configuration
@@ -535,7 +535,7 @@ apt "org.derive4j:derive4j:0.10.2"
 
 Bug reports and feature requests are welcome, as well as contributions to improve documentation.
 
-Right now the codebase is not ready for external contribution (many blocks of codes are more complicated than should be). So you may better wait for resolution of [#2](https://github.com/derive4j/derive4j/issues/2) before trying to dig into the codebase.
+Right now the codebase is not ready for external contribution (many blocks of code are more complicated than they should be). So you might be better off waiting for the resolution of [#2](https://github.com/derive4j/derive4j/issues/2) before trying to dig into the codebase.
 
 ## Contact
-jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project github issues.
+jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project GitHub issues.
