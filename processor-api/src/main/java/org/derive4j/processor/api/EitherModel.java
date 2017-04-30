@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
