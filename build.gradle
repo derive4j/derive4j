@@ -26,7 +26,7 @@ buildscript {
     }
 
     wrapper {
-        gradleVersion = "3.1"
+        gradleVersion = "3.5"
     }
 }
 
@@ -40,7 +40,7 @@ allprojects {
 
     ext {
         isSnapshot = true
-        d4jBaseVersion = "0.11.0"
+        d4jBaseVersion = "0.12.0"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
@@ -57,7 +57,7 @@ allprojects {
         primaryEmail = "jb@giraudeau.info"
 
         dependencyJavaPoet = "com.squareup:javapoet:1.8.0"
-        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.10.2"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.11.0"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
 
