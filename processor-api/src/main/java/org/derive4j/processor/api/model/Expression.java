@@ -16,23 +16,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with "Derive4J - Processor API".  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.derive4j.processor.api;
+package org.derive4j.processor.api.model;
 
-import com.squareup.javapoet.ClassName;
-import java.util.Optional;
+import com.squareup.javapoet.CodeBlock;
+import java.util.function.UnaryOperator;
 import org.derive4j.Data;
-import org.derive4j.ExportAsPublic;
 
 @Data
-public abstract class DerivatorSelection {
-  DerivatorSelection(){}
-  interface Case<X> {
-    X selection(ClassName forClass, Optional<String> selector, Derivator derivator) ;
+public abstract class Expression {
+  public interface Cases<X> {
+    X baseExpression(CodeBlock codeBlock);
+    X recursiveExpression(UnaryOperator<CodeBlock> fromOuterMethod);
   }
-  public abstract  <X> X match(Case<X> selection);
 
-  @ExportAsPublic
-  static DerivatorSelection selection(ClassName forClass, Derivator derivator) {
-    return DerivatorSelections.selection(forClass, Optional.empty(), derivator);
-  }
+  public abstract <X> X match(Cases<X> cases);
+
 }

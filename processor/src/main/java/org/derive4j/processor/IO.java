@@ -19,6 +19,7 @@
 package org.derive4j.processor;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -27,6 +28,14 @@ import static org.derive4j.processor.Unit.unit;
 
 interface IO<A> {
  A run() throws IOException;
+
+ default A runUnchecked() throws UncheckedIOException {
+   try {
+     return run();
+   } catch (IOException e) {
+     throw new UncheckedIOException(e);
+   }
+ }
 
  default IO<Unit> voided() {
    return () -> {

@@ -18,21 +18,15 @@
  */
 package org.derive4j.processor.api;
 
-import com.squareup.javapoet.ClassName;
-import java.util.Optional;
+import javax.lang.model.type.DeclaredType;
 import org.derive4j.Data;
-import org.derive4j.ExportAsPublic;
 
 @Data
-public abstract class DerivatorSelection {
-  DerivatorSelection(){}
-  interface Case<X> {
-    X selection(ClassName forClass, Optional<String> selector, Derivator derivator) ;
-  }
-  public abstract  <X> X match(Case<X> selection);
+public abstract class FreeVariable {
 
-  @ExportAsPublic
-  static DerivatorSelection selection(ClassName forClass, Derivator derivator) {
-    return DerivatorSelections.selection(forClass, Optional.empty(), derivator);
+  public interface Case<X> {
+    X variable(DeclaredType type, String name);
   }
+
+  public abstract <X> X variable(Case<X> variable);
 }

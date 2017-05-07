@@ -18,21 +18,21 @@
  */
 package org.derive4j.processor.api;
 
-import com.squareup.javapoet.ClassName;
-import java.util.Optional;
-import org.derive4j.Data;
-import org.derive4j.ExportAsPublic;
+import com.squareup.javapoet.CodeBlock;
+import java.util.function.Function;
+import org.derive4j.processor.api.model.DataArgument;
+import org.derive4j.processor.api.model.DataConstructor;
 
-@Data
-public abstract class DerivatorSelection {
-  DerivatorSelection(){}
-  interface Case<X> {
-    X selection(ClassName forClass, Optional<String> selector, Derivator derivator) ;
-  }
-  public abstract  <X> X match(Case<X> selection);
+public interface InstanceUtils {
 
-  @ExportAsPublic
-  static DerivatorSelection selection(ClassName forClass, Derivator derivator) {
-    return DerivatorSelections.selection(forClass, Optional.empty(), derivator);
-  }
+  FieldsTypeClassInstanceBindingMap bindings();
+
+  DerivedCodeSpec generateInstanceFactory(CodeBlock statement, CodeBlock... statements);
+
+  CodeBlock matchImpl(Function<DataConstructor, CodeBlock> lambdaImpl);
+
+  CodeBlock instanceFor(DataArgument da);
+
+  String adtVariableName();
+
 }

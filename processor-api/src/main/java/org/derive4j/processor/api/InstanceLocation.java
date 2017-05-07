@@ -19,20 +19,26 @@
 package org.derive4j.processor.api;
 
 import com.squareup.javapoet.ClassName;
-import java.util.Optional;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 import org.derive4j.Data;
-import org.derive4j.ExportAsPublic;
 
 @Data
-public abstract class DerivatorSelection {
-  DerivatorSelection(){}
-  interface Case<X> {
-    X selection(ClassName forClass, Optional<String> selector, Derivator derivator) ;
-  }
-  public abstract  <X> X match(Case<X> selection);
+public abstract class InstanceLocation {
+  interface Cases<X> {
+    X value(VariableElement variableElement);
 
-  @ExportAsPublic
-  static DerivatorSelection selection(ClassName forClass, Derivator derivator) {
-    return DerivatorSelections.selection(forClass, Optional.empty(), derivator);
+    X generatedIn(ClassName className);
+
+    X method(ClassName className, ExecutableElement executableElement);
   }
+
+  public abstract <X> X match(Cases<X> cases);
+
+  @Override
+  public abstract int hashCode();
+  @Override
+  public abstract boolean equals(Object obj);
+  @Override
+  public abstract String toString();
 }

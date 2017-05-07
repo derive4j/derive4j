@@ -73,7 +73,7 @@ import static org.derive4j.processor.api.model.DataArguments.dataArgument;
 import static org.derive4j.processor.api.model.DataConstruction.multipleConstructors;
 import static org.derive4j.processor.api.model.DataConstruction.noConstructor;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;
-import static org.derive4j.processor.api.model.DataConstructor.constructor;
+import static org.derive4j.processor.api.model.DataConstructors.constructor;
 import static org.derive4j.processor.api.model.DataDeconstructor.deconstructor;
 import static org.derive4j.processor.api.model.MatchMethod.matchMethod;
 import static org.derive4j.processor.api.model.MultipleConstructors.visitorDispatch;
@@ -212,7 +212,8 @@ final class AdtParser {
       result = error(message("All abstract methods of " + visitorType + " must have a unique name", onElement(visitorArg)));
     } else {
       result = Utils.traverseResults(abstractMethods, m -> parseDataConstructor(adtDeclaredType, adtTypeVariables,
-          deconstructor(visitorArg, visitorType, m, (ExecutableType) types.asMemberOf(visitorType, m))))
+          deconstructor(visitorArg, visitorType, m, (ExecutableType) types.asMemberOf(visitorType, m)),
+          abstractMethods.indexOf(m)))
           .map(constructors -> constructors.isEmpty()
               ? noConstructor()
               : findOnlyOne(constructors).map(DataConstruction::oneConstructor)
@@ -226,35 +227,37 @@ final class AdtParser {
   private DeriveResult<DataConstruction> parseDataConstructionMultipleAgs(DeclaredType adtDeclaredType,
       List<TypeVariable> adtTypeVariables, List<P2<VariableElement, DeclaredType>> caseHandlers) {
 
-    return Utils.traverseResults(caseHandlers, p2 -> p2.match(
-        (visitorArg, visitorType) -> parseDataConstructionOneArg(adtDeclaredType, adtTypeVariables, visitorArg, visitorType).bind(
-            DataConstructions.cases()
+    List<VariableElement> variableElements = caseHandlers.stream().map(P2s::get_1).collect(Collectors.toList());
 
-                .multipleConstructors(__ -> DeriveResult.<DataConstructor>error(
-                    message("Either use one visitor with multiple dispatch method or " + "multiple functions.",
-                        onElement(visitorArg))))
+    return Utils.traverseResults(caseHandlers, p2 -> p2.match((visitorArg, visitorType) -> {
+      int index = variableElements.indexOf(visitorArg);
+      return parseDataConstructionOneArg(adtDeclaredType, adtTypeVariables, visitorArg, visitorType).bind(
+          DataConstructions.cases()
 
-                .oneConstructor(constructor -> result(
-                    constructor(visitorArg.getSimpleName().toString(), constructor.typeVariables(),
-                        ((constructor.arguments().size() > 1) ||
-                             types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType) ||
-                             fieldNamesAnnotation(visitorArg).isPresent())
-                            ? constructor.arguments()
-                            : constructor.arguments()
-                                .stream()
-                                .map(da -> dataArgument(visitorArg.getSimpleName().toString(), da.type()))
-                                .collect(Collectors.toList()), constructor.typeRestrictions(),
-                        deriveUtils.resolve(adtDeclaredType, deriveUtils.typeRestrictions(constructor.typeRestrictions())),
-                        constructor.deconstructor())))
+              .multipleConstructors(__ -> DeriveResult.<DataConstructor>error(
+                  message("Either use one visitor with multiple dispatch method or " + "multiple functions.",
+                      onElement(visitorArg))))
 
-                .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg)))))))
-        .map(MultipleConstructors::functionsDispatch)
-        .map(DataConstruction::multipleConstructors);
+              .oneConstructor(constructor -> result(
+                  constructor(visitorArg.getSimpleName().toString(), index, constructor.typeVariables(),
+                      ((constructor.arguments().size() > 1) ||
+                           types.isSameType(constructor.deconstructor().visitorType().getEnclosingType(), adtDeclaredType) ||
+                           fieldNamesAnnotation(visitorArg).isPresent())
+                          ? constructor.arguments()
+                          : constructor.arguments()
+                              .stream()
+                              .map(da -> dataArgument(visitorArg.getSimpleName().toString(), da.type()))
+                              .collect(Collectors.toList()), constructor.typeRestrictions(),
+                      deriveUtils.resolve(adtDeclaredType, deriveUtils.typeRestrictions(constructor.typeRestrictions())),
+                      constructor.deconstructor())))
+
+              .noConstructor(() -> error(message("No abstract method found!", onElement(visitorArg)))));
+    })).map(MultipleConstructors::functionsDispatch).map(DataConstruction::multipleConstructors);
 
   }
 
   private DeriveResult<DataConstructor> parseDataConstructor(DeclaredType adtDeclaredType, List<TypeVariable> adtTypeParameters,
-      DataDeconstructor deconstructor) {
+      DataDeconstructor deconstructor, int index) {
 
     ExecutableElement visitorMethod = deconstructor.visitorMethod();
     ExecutableType visitorMethodType = deconstructor.visitorMethodType();
@@ -274,8 +277,8 @@ final class AdtParser {
       typeRestrictions.addAll(gadtConstraint.map(Collections::singleton).orElse(Collections.emptySet()));
       if (!gadtConstraint.isPresent()) {
         if (!typeRestrictions.isEmpty()) {
-          return error(message("Please put type equality constraints exclusively at the end of parameter list", onElement
-              (visitorMethod)));
+          return error(
+              message("Please put type equality constraints exclusively at the end of parameter list", onElement(visitorMethod)));
         }
         constructorArguments.add(dataArgument(paramElement.getSimpleName().toString(), paramType));
       }
@@ -291,14 +294,14 @@ final class AdtParser {
     DeclaredType returnedType = deriveUtils.resolve(adtDeclaredType, deriveUtils.typeRestrictions(typeRestrictions));
 
     return fold(fieldNamesAnnotationMirror, result(
-        constructor(visitorMethod.getSimpleName().toString(), seenVariables, constructorArguments, typeRestrictions, returnedType,
-            deconstructor)), am -> {
+        constructor(visitorMethod.getSimpleName().toString(), index, seenVariables, constructorArguments, typeRestrictions,
+            returnedType, deconstructor)), am -> {
           FieldNames fieldNames = visitorArg.getAnnotation(FieldNames.class);
           int totalNbArgs = constructorArguments.size() + typeRestrictions.size();
           return (fieldNames.value().length != totalNbArgs)
               ? error(message("wrong number of field names specified: " + totalNbArgs + " expected.", onAnnotation(visitorArg,
               am)))
-              : result(constructor(visitorArg.getSimpleName().toString(), seenVariables,
+              : result(constructor(visitorArg.getSimpleName().toString(), index, seenVariables,
                   IntStream.range(0, constructorArguments.size())
                       .mapToObj(i -> dataArgument(fieldNames.value()[i], constructorArguments.get(i).type()))
                       .collect(Collectors.toList()),
