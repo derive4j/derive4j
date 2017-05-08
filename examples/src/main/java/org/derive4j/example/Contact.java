@@ -25,9 +25,15 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Instances;
 
-@Data
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
 public abstract class Contact {
 
   public abstract <R> R match(Cases<R> cases);
