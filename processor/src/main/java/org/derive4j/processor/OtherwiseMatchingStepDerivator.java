@@ -167,13 +167,13 @@ class OtherwiseMatchingStepDerivator {
 
     CodeBlock.Builder codeBlock = CodeBlock.builder();
     TypeElement eitherTypeElement = eitherModel.typeElement();
-
+    NameAllocator rootNameAllocator = new NameAllocator();
+    rootNameAllocator.newName("left", argName);
     for (DataConstructor dc : constructors) {
-      NameAllocator nameAllocator = new NameAllocator();
-      nameAllocator.newName("left", argName);
+      NameAllocator nameAllocator = rootNameAllocator.clone();
       nameAllocator.newName(MapperDerivator.mapperFieldName(dc), "case var");
       Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
-          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName()));
+          .forEach(da -> nameAllocator.newName(da.fieldName(), da.fieldName() + "Field"));
 
       String lambdaArgs = joinStringsAsArguments(
           IntStream.range(9, 9 + dc.arguments().size() + dc.typeRestrictions().size()).mapToObj(i -> "$" + i + 'L'));
@@ -193,8 +193,7 @@ class OtherwiseMatchingStepDerivator {
               eitherModel.leftConstructor().getSimpleName(),
               deriveUtils.allAbstractMethods(f0).get(0).getSimpleName().toString()),
               Stream.concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
-                  .map(DataArgument::fieldName)
-                  .map(nameAllocator::get)).toArray(Object[]::new));
+                  .map(da -> nameAllocator.get(da.fieldName() + "Field"))).toArray(Object[]::new));
     }
 
     String adtLambdaParam = uncapitalize(adt.typeConstructor().declaredType().asElement().getSimpleName());
@@ -209,7 +208,7 @@ class OtherwiseMatchingStepDerivator {
       templateArg = PatternMatchingDerivator.asFieldSpec(adt);
     }
     return codeBlock.addStatement("return " + template + ".$2L($3L)", templateArg, adt.matchMethod().element().getSimpleName(),
-        joinStringsAsArguments(constructors.stream().map(MapperDerivator::mapperFieldName))).build();
+        joinStringsAsArguments(constructors.stream().map(dc -> rootNameAllocator.newName(MapperDerivator.mapperFieldName(dc))))).build();
 
   }
 
