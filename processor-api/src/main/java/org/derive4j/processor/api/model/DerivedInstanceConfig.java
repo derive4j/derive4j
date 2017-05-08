@@ -22,6 +22,8 @@ import com.squareup.javapoet.ClassName;
 import java.util.Optional;
 import org.derive4j.Data;
 
+import static org.derive4j.processor.api.model.DerivedInstanceConfigs.getTargetClass;
+
 @Data
 public abstract class DerivedInstanceConfig {
 
@@ -30,6 +32,10 @@ public abstract class DerivedInstanceConfig {
   }
 
   public abstract <X> X match(Case<X> Case);
+
+  public final Optional<ClassName> targetClass() {
+    return getTargetClass(this);
+  }
 
   @Override
   public abstract int hashCode();

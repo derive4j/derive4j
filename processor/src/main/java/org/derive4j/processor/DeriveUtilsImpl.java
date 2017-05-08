@@ -18,8 +18,10 @@
  */
 package org.derive4j.processor;
 
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
@@ -62,6 +64,7 @@ import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveResults;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
+import org.derive4j.processor.api.DerivedCodeSpecs;
 import org.derive4j.processor.api.EitherModel;
 import org.derive4j.processor.api.EitherModels;
 import org.derive4j.processor.api.FieldsTypeClassInstanceBindingMap;
@@ -440,8 +443,13 @@ final class DeriveUtilsImpl implements DeriveUtils {
                     .orElse(result(expression(emptyList(), baseExpression(CodeBlock.of("")))));
 
                 return args.map(modExpression(Expressions.cases()
-                    .baseExpression(cb -> baseExpression(
-                        CodeBlock.builder().add("$T.$L(", className, method.getSimpleName()).add(cb).add(")").build()))
+                    .baseExpression(cb -> baseExpression(CodeBlock.builder()
+                        .add("$T.", className)
+                        .add(asTypeArguments(typeVariablesIn(type)))
+                        .add("$L(", method.getSimpleName())
+                        .add(cb)
+                        .add(")")
+                        .build()))
                     .recursiveExpression(fromOuterMethod -> recursiveExpression(outterMethod -> CodeBlock.builder()
                         .add("$T.$L(", className, method.getSimpleName())
                         .add(fromOuterMethod.apply(outterMethod))
@@ -489,8 +497,18 @@ final class DeriveUtilsImpl implements DeriveUtils {
           final String methodName = instanceVariableName(elements().getTypeElement(typeClass.reflectionName()),
               adt.typeConstructor().declaredType());
 
-          final CodeBlock methodRecursiveCall = CodeBlock.of("$L($L)", methodName,
-              joinStringsAsArguments(freeVariables.stream().map(FreeVariables::getName)));
+          final Function<DataArgument, CodeBlock> methodRecursiveCall = da ->
+
+              CodeBlock.builder()
+                  .add("$T.", adt.deriveConfig()
+                      .derivedInstances()
+                      .get(typeClass)
+                      .targetClass()
+                      .orElse(adt.deriveConfig().targetClass().className()))
+                  .add(findFirstDeclaredTypeOf(adt.typeConstructor().typeElement(), da.type()).map(
+                      dt -> asTypeArguments(dt.getTypeArguments())).orElse(CodeBlock.of("")))
+                  .add("$L($L)", methodName, joinStringsAsArguments(freeVariables.stream().map(FreeVariables::getName)))
+                  .build();
 
           @Override
           public FieldsTypeClassInstanceBindingMap bindings() {
@@ -500,20 +518,37 @@ final class DeriveUtilsImpl implements DeriveUtils {
           @Override
           public DerivedCodeSpec generateInstanceFactory(CodeBlock statement, CodeBlock... statements) {
 
+            ParameterizedTypeName returnType = ParameterizedTypeName.get(typeClass,
+                TypeName.get(adt.typeConstructor().declaredType()));
             MethodSpec.Builder method = MethodSpec.methodBuilder(methodName)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(toList()))
-                .returns(ParameterizedTypeName.get(typeClass, TypeName.get(adt.typeConstructor().declaredType())))
+                .returns(returnType)
                 .addParameters(freeVariables.stream()
                     .map(fv -> fv.variable((type, name) -> ParameterSpec.builder(TypeName.get(type), name).build()))
                     .collect(toList()));
+
+            List<FieldSpec> fieldSpecs = new ArrayList<>();
+
+            if (freeVariables.isEmpty()) {
+              fieldSpecs.add(FieldSpec.builder(typeClass, methodName,
+                  Modifier.PRIVATE, Modifier.STATIC).addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember
+                  ("value", "$S", "rawtypes").build()).build());
+              method.addAnnotation(
+                  AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "rawtypes", "unchecked").build())
+              .addStatement("$1T _$2L = $2L", returnType, methodName)
+                  .beginControlFlow("if (_$L == null)", methodName);
+            }
 
             List<FreeVariable> seenVariable = new ArrayList<>(freeVariables);
             getBindingsByFieldName(fieldsTypeClassInstanceBindingMap).values()
                 .forEach(binding -> binding.binding((variable, value) -> {
                   if (isNotIn(seenVariable, variable)) {
                     Expressions.getCodeBlock(value).ifPresent(cb -> {
-                      method.addCode("$T $L = ", TypeName.get(getType(variable)), getName(variable)).addCode(cb).addCode(";\n");
+                      String expr = cb.toString();
+                      if (expr.endsWith(")") && !expr.endsWith("()")) {
+                        method.addCode("$T $L = ", TypeName.get(getType(variable)), getName(variable)).addCode(cb).addCode(";\n");
+                      }
                     });
                     seenVariable.add(variable);
                   }
@@ -526,11 +561,19 @@ final class DeriveUtilsImpl implements DeriveUtils {
             allCustomStatements.subList(0, allCustomStatements.size() - 1)
                 .forEach(cb -> method.addCode(cb.toBuilder().add(";").build()));
 
-            return DerivedCodeSpec.methodSpec(method.addCode(CodeBlock.builder()
-                .add("return ")
-                .add(allCustomStatements.get(allCustomStatements.size() - 1))
-                .add(";\n")
-                .build()).build());
+            if (freeVariables.isEmpty()) {
+              method.addCode("$1L = _$1L = ", methodName).addCode(allCustomStatements.get(allCustomStatements.size() - 1))
+                  .addCode(";\n")
+                  .endControlFlow()
+                  .addStatement("return _$L", methodName);
+            } else {
+              method.addCode(CodeBlock.builder()
+                  .add("return ")
+                  .add(allCustomStatements.get(allCustomStatements.size() - 1))
+                  .add(";\n").build());
+            }
+
+            return DerivedCodeSpecs.codeSpec(emptyList(), fieldSpecs, singletonList(method.build()));
           }
 
           @Override
@@ -557,12 +600,15 @@ final class DeriveUtilsImpl implements DeriveUtils {
                 .build();
           }
 
-
           @Override
           public CodeBlock instanceFor(DataArgument da) {
             return getBindingsByFieldName(fieldsTypeClassInstanceBindingMap).get(da.fieldName())
-                .binding((variable, value) -> caseOf(value).baseExpression_(CodeBlock.of(getName(variable)))
-                    .recursiveExpression(fromOuter -> fromOuter.apply(methodRecursiveCall)));
+                .binding((variable, value) -> caseOf(value).baseExpression(cb -> {
+                  String expr = cb.toString();
+                  return expr.endsWith(")") && !expr.endsWith("()")
+                      ? CodeBlock.of(getName(variable))
+                      : cb;
+                }).recursiveExpression(fromOuter -> fromOuter.apply(methodRecursiveCall.apply(da))));
           }
 
           @Override
@@ -591,6 +637,20 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .add(Utils.asLambdaParametersString(constructor.arguments(), constructor.typeRestrictions(), suffix))
         .add(")")
         .build();
+  }
+
+  private CodeBlock asTypeArguments(List<? extends TypeMirror> typeVariables) {
+    return typeVariables.stream()
+        .map(tv -> CodeBlock.of("$T", TypeName.get(tv)))
+        .reduce((tv1, tv2) -> tv1.toBuilder().add(", ").add(tv2).build())
+        .map(tvs -> CodeBlock.builder().add("<").add(tvs).add(">").build())
+        .orElse(CodeBlock.of(""));
+  }
+
+  private Optional<DeclaredType> findFirstDeclaredTypeOf(TypeElement typeElement, TypeMirror inType) {
+    return asDeclaredType(inType).flatMap(dt -> dt.asElement().equals(typeElement)
+        ? Optional.of(dt)
+        : dt.getTypeArguments().stream().flatMap(ta -> optionalAsStream(findFirstDeclaredTypeOf(typeElement, ta))).findFirst());
   }
 
   private String instanceVariableName(TypeElement typeClass, TypeMirror type) {
