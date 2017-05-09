@@ -38,13 +38,12 @@ import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
@@ -416,7 +415,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
                   CodeBlock.of("$T.$L", ClassName.bestGuess(ve.getEnclosingElement().toString()), ve.getSimpleName())))))
               .generatedIn(instanceClass -> declaredType.getTypeArguments().isEmpty()
                   ? result(expression(emptyList(),
-                  baseExpression(CodeBlock.of("$T.$L()", instanceClass, instanceVariableName(typeClassElement, declaredType)))))
+                  baseExpression(CodeBlock.of("$T.$L()", instanceClass, generatedInstanceMethodName(typeClassElement, typeElement)))))
                   : error(message("Please provide static forwarder for generated " + typeClass + " instance for " + typeElement)))
               .method((className, method) -> {
 
@@ -494,8 +493,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
           List<FreeVariable> freeVariables = getFreeVariables(fieldsTypeClassInstanceBindingMap);
 
-          final String methodName = instanceVariableName(elements().getTypeElement(typeClass.reflectionName()),
-              adt.typeConstructor().declaredType());
+          final String methodName = generatedInstanceMethodName(elements().getTypeElement(typeClass.reflectionName()),
+              adt.typeConstructor().typeElement());
 
           final Function<DataArgument, CodeBlock> methodRecursiveCall = da ->
 
@@ -531,12 +530,12 @@ final class DeriveUtilsImpl implements DeriveUtils {
             List<FieldSpec> fieldSpecs = new ArrayList<>();
 
             if (freeVariables.isEmpty()) {
-              fieldSpecs.add(FieldSpec.builder(typeClass, methodName,
-                  Modifier.PRIVATE, Modifier.STATIC).addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember
-                  ("value", "$S", "rawtypes").build()).build());
+              fieldSpecs.add(FieldSpec.builder(typeClass, methodName, Modifier.PRIVATE, Modifier.STATIC)
+                  .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build())
+                  .build());
               method.addAnnotation(
                   AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "rawtypes", "unchecked").build())
-              .addStatement("$1T _$2L = $2L", returnType, methodName)
+                  .addStatement("$1T _$2L = $2L", returnType, methodName)
                   .beginControlFlow("if (_$L == null)", methodName);
             }
 
@@ -562,7 +561,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
                 .forEach(cb -> method.addCode(cb.toBuilder().add(";").build()));
 
             if (freeVariables.isEmpty()) {
-              method.addCode("$1L = _$1L = ", methodName).addCode(allCustomStatements.get(allCustomStatements.size() - 1))
+              method.addCode("$1L = _$1L = ", methodName)
+                  .addCode(allCustomStatements.get(allCustomStatements.size() - 1))
                   .addCode(";\n")
                   .endControlFlow()
                   .addStatement("return _$L", methodName);
@@ -570,7 +570,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
               method.addCode(CodeBlock.builder()
                   .add("return ")
                   .add(allCustomStatements.get(allCustomStatements.size() - 1))
-                  .add(";\n").build());
+                  .add(";\n")
+                  .build());
             }
 
             return DerivedCodeSpecs.codeSpec(emptyList(), fieldSpecs, singletonList(method.build()));
@@ -655,8 +656,16 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   private String instanceVariableName(TypeElement typeClass, TypeMirror type) {
     return uncapitalize(
-        Optional.ofNullable(types().asElement(type)).map(Element::getSimpleName).map(Name::toString).orElse(type.toString())) +
-        typeClass.getSimpleName();
+        concat(allTypeArgsAsString(type), Stream.of(typeClass.getSimpleName().toString())).collect(Collectors.joining()));
+  }
+
+  private String generatedInstanceMethodName(TypeElement typeClass, TypeElement typeElement) {
+    return uncapitalize(typeElement.getSimpleName().toString() + typeClass.getSimpleName().toString());
+  }
+
+  private Stream<String> allTypeArgsAsString(TypeMirror tm) {
+    return asDeclaredType(tm).map(dt -> concat(dt.getTypeArguments().stream().flatMap(this::allTypeArgsAsString),
+        Stream.of(dt.asElement().getSimpleName().toString()))).orElseGet(() -> Stream.of(tm.toString()));
   }
 
   private Optional<InstanceLocation> findCompiledInstance(TypeElement typeElementContext, TypeElement typeClass,
