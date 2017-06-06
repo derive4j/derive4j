@@ -61,6 +61,14 @@ public enum Flavour {
     }
   },
 
+  Vavr {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.Vavr();
+    }
+  },
+
   HighJ {
     @Override
     public <R> R match(Cases<R> cases) {
@@ -87,6 +95,8 @@ public enum Flavour {
     R Fugue2();
 
     R Javaslang();
+
+    R Vavr();
 
     R HighJ();
 
