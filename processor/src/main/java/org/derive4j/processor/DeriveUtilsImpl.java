@@ -170,6 +170,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Fugue_(jdkSupplier)
         .Fugue2_(guavaSupplier)
         .Javaslang_(jdkSupplier)
+        .Vavr_(jdkSupplier)
         .HighJ_(jdkSupplier)
         .Guava_(guavaSupplier);
 
@@ -182,6 +183,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Fugue_(jdkFunction)
         .Fugue2_(guavaFunction)
         .Javaslang_(lazySamInterface("javaslang.Function1"))
+        .Vavr_(lazySamInterface("io.vavr.Function1"))
         .HighJ_(lazySamInterface("org.highj.function.F1"))
         .Guava_(guavaFunction);
 
@@ -191,6 +193,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Fugue_(lazyOptionModel("io.atlassian.fugue.Option", "none", "some"))
         .Fugue2_(lazyOptionModel("com.atlassian.fugue.Option", "none", "some"))
         .Javaslang_(lazyOptionModel("javaslang.control.Option", "none", "some"))
+        .Vavr_(lazyOptionModel("io.vavr.control.Option", "none", "some"))
         .HighJ_(lazyOptionModel("org.highj.data.Maybe", "Nothing", "Just"))
         .Guava_(lazyOptionModel("com.google.common.base.Optional", "absent", "of"));
 
@@ -200,6 +203,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Fugue_(eitherModel("io.atlassian.fugue.Either", "left", "right"))
         .Fugue2_(eitherModel("com.atlassian.fugue.Either", "left", "right"))
         .Javaslang_(eitherModel("javaslang.control.Either", "left", "right"))
+        .Vavr_(eitherModel("io.vavr.control.Either", "left", "right"))
         .HighJ_(eitherModel("org.highj.data.Either", "Left", "Right"))
         .Guava_(Optional.empty());
   }
