@@ -18,122 +18,50 @@
  */
 package org.derive4j.processor;
 
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.NameAllocator;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeVariableName;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import com.squareup.javapoet.*;
+import org.derive4j.ExportAsPublic;
+import org.derive4j.Flavour;
+import org.derive4j.Flavours;
+import org.derive4j.processor.api.*;
+import org.derive4j.processor.api.model.*;
+
+import javax.lang.model.element.*;
+import javax.lang.model.type.*;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-import org.derive4j.ExportAsPublic;
-import org.derive4j.Flavour;
-import org.derive4j.Flavours;
-import org.derive4j.processor.api.Binding;
-import org.derive4j.processor.api.BoundExpression;
-import org.derive4j.processor.api.DeriveResult;
-import org.derive4j.processor.api.DeriveResults;
-import org.derive4j.processor.api.DeriveUtils;
-import org.derive4j.processor.api.DerivedCodeSpec;
-import org.derive4j.processor.api.DerivedCodeSpecs;
-import org.derive4j.processor.api.EitherModel;
-import org.derive4j.processor.api.EitherModels;
-import org.derive4j.processor.api.FieldsTypeClassInstanceBindingMap;
-import org.derive4j.processor.api.FreeVariable;
-import org.derive4j.processor.api.FreeVariables;
-import org.derive4j.processor.api.InstanceLocation;
-import org.derive4j.processor.api.InstanceLocations;
-import org.derive4j.processor.api.InstanceUtils;
-import org.derive4j.processor.api.ObjectModel;
-import org.derive4j.processor.api.OptionModel;
-import org.derive4j.processor.api.OptionModels;
-import org.derive4j.processor.api.SamInterface;
-import org.derive4j.processor.api.SamInterfaces;
-import org.derive4j.processor.api.model.AlgebraicDataType;
-import org.derive4j.processor.api.model.DataArgument;
-import org.derive4j.processor.api.model.DataArguments;
-import org.derive4j.processor.api.model.DataConstructor;
-import org.derive4j.processor.api.model.DeriveConfig;
-import org.derive4j.processor.api.model.DeriveConfigs;
-import org.derive4j.processor.api.model.DeriveTargetClass;
-import org.derive4j.processor.api.model.DerivedInstanceConfigs;
-import org.derive4j.processor.api.model.Expression;
-import org.derive4j.processor.api.model.Expressions;
-import org.derive4j.processor.api.model.TypeRestriction;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
+import static java.util.Collections.*;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static org.derive4j.processor.P2.p2;
 import static org.derive4j.processor.Unit.unit;
-import static org.derive4j.processor.Utils.asBoxedType;
-import static org.derive4j.processor.Utils.asDeclaredType;
-import static org.derive4j.processor.Utils.asExecutableElement;
-import static org.derive4j.processor.Utils.asTypeElement;
-import static org.derive4j.processor.Utils.asTypeVariable;
-import static org.derive4j.processor.Utils.findOnlyOne;
-import static org.derive4j.processor.Utils.fold;
-import static org.derive4j.processor.Utils.get;
-import static org.derive4j.processor.Utils.getFields;
-import static org.derive4j.processor.Utils.getMethods;
-import static org.derive4j.processor.Utils.joinStringsAsArguments;
-import static org.derive4j.processor.Utils.optionalAsStream;
+import static org.derive4j.processor.Utils.*;
 import static org.derive4j.processor.api.Bindings.binding;
-import static org.derive4j.processor.api.BoundExpressions.expression;
-import static org.derive4j.processor.api.BoundExpressions.getExpression;
+import static org.derive4j.processor.api.BoundExpressions.*;
 import static org.derive4j.processor.api.BoundExpressions.getFreeVariables;
-import static org.derive4j.processor.api.BoundExpressions.modExpression;
 import static org.derive4j.processor.api.DeriveMessages.message;
 import static org.derive4j.processor.api.DeriveResult.error;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.EitherModels.EitherModel;
-import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.bindingMap;
-import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.getBindingsByFieldName;
+import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.*;
 import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.getFreeVariables;
-import static org.derive4j.processor.api.FreeVariables.getName;
-import static org.derive4j.processor.api.FreeVariables.getType;
-import static org.derive4j.processor.api.FreeVariables.variable;
+import static org.derive4j.processor.api.FreeVariables.*;
 import static org.derive4j.processor.api.InstanceLocations.caseOf;
-import static org.derive4j.processor.api.InstanceLocations.method;
-import static org.derive4j.processor.api.InstanceLocations.value;
+import static org.derive4j.processor.api.InstanceLocations.*;
 import static org.derive4j.processor.api.ObjectModels.ObjectModel;
 import static org.derive4j.processor.api.SamInterfaces.SamInterface;
-import static org.derive4j.processor.api.model.Expressions.baseExpression;
+import static org.derive4j.processor.api.model.Expressions.*;
 import static org.derive4j.processor.api.model.Expressions.caseOf;
-import static org.derive4j.processor.api.model.Expressions.recursiveExpression;
 
 final class DeriveUtilsImpl implements DeriveUtils {
 
@@ -508,8 +436,9 @@ final class DeriveUtilsImpl implements DeriveUtils {
                       .get(typeClass)
                       .targetClass()
                       .orElse(adt.deriveConfig().targetClass().className()))
-                  .add(findFirstDeclaredTypeOf(adt.typeConstructor().typeElement(), da.type()).map(
-                      dt -> asTypeArguments(dt.getTypeArguments())).orElse(CodeBlock.of("")))
+                  .add(findFirstDeclaredTypeOf(adt.typeConstructor().typeElement(), da.type())
+                    .map(dt -> asTypeArguments(dt.getTypeArguments()))
+                    .orElse(CodeBlock.of("")))
                   .add("$L($L)", methodName, joinStringsAsArguments(freeVariables.stream().map(FreeVariables::getName)))
                   .build();
 
@@ -646,6 +575,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   private CodeBlock asTypeArguments(List<? extends TypeMirror> typeVariables) {
     return typeVariables.stream()
+        .filter(tv -> tv.getKind() != TypeKind.WILDCARD)
         .map(tv -> CodeBlock.of("$T", TypeName.get(tv)))
         .reduce((tv1, tv2) -> tv1.toBuilder().add(", ").add(tv2).build())
         .map(tvs -> CodeBlock.builder().add("<").add(tvs).add(">").build())
