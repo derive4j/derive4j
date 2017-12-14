@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -18,42 +18,34 @@
  */
 package org.derive4j.processor.api;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.derive4j.Data;
-import org.derive4j.Derive;
+import org.derive4j.ExportAsPublic;
 
 import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableList;
-import static org.derive4j.Visibility.Smart;
 
-@Data(@Derive(withVisibility = Smart))
+@Data
 public abstract class DeriveMessage {
 
   public interface Case<R> {
     R message(String text, List<MessageLocalization> localizations);
   }
 
-  public static DeriveMessage message(String msg, List<MessageLocalization> localizations) {
-
-    return DeriveMessages.message0(msg, unmodifiableList(new ArrayList<>(localizations)));
-  }
-
-  public static DeriveMessage message(String msg, MessageLocalization localization) {
-
-    return message(msg, singletonList(localization));
-  }
-
-  public static DeriveMessage message(String msg) {
-
-    return message(msg, Collections.emptyList());
-  }
-
-  DeriveMessage() {
-
-  }
+  DeriveMessage() {}
 
   public abstract <R> R match(Case<R> message);
+
+  @ExportAsPublic
+  static DeriveMessage message(String msg, MessageLocalization localization) {
+
+    return DeriveMessages.message(msg, singletonList(localization));
+  }
+
+  @ExportAsPublic
+  static DeriveMessage message(String msg) {
+
+    return DeriveMessages.message(msg, Collections.emptyList());
+  }
 
 }

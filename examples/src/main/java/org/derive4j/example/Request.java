@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,12 +28,15 @@ package org.derive4j.example;
 import fj.F0;
 import fj.P;
 import fj.P2;
+import fj.Show;
 import fj.data.Option;
 import fj.data.optic.Lens;
 import fj.data.optic.Optional;
 import fj.data.optic.Prism;
 import org.derive4j.Data;
+import org.derive4j.Derive;
 import org.derive4j.Flavour;
+import org.derive4j.Instances;
 
 import static fj.data.optic.Lens.lens;
 import static fj.data.optic.Optional.optional;
@@ -46,7 +49,7 @@ import static org.derive4j.ArgOption.checkedNotNull;
  * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
  * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
  */
-@Data(flavour = Flavour.FJ, arguments = checkedNotNull)
+@Data(flavour = Flavour.FJ, arguments = checkedNotNull, value = @Derive(@Instances(Show.class)))
 public abstract class Request {
 
   /**

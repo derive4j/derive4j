@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -56,37 +57,33 @@ import javax.lang.model.util.Types;
 import org.derive4j.processor.api.DeriveMessage;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.model.DataArgument;
+import org.derive4j.processor.api.model.DataArguments;
 import org.derive4j.processor.api.model.TypeRestriction;
+import org.derive4j.processor.api.model.TypeRestrictions;
 
 import static java.util.stream.Collectors.toList;
 import static org.derive4j.processor.P2.p2;
+import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 
 final class Utils {
-  private Utils(){}
-
-  static final TypeVisitor<Optional<DeclaredType>, Unit>
-      asDeclaredType
-      = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(Optional.empty()) {
+  static final TypeVisitor<Optional<DeclaredType>, Unit> asDeclaredType = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(
+      Optional.empty()) {
     @Override
     public Optional<DeclaredType> visitDeclared(final DeclaredType t, final Unit p) {
 
       return Optional.of(t);
     }
   };
-
-  static final TypeVisitor<Optional<TypeVariable>, Unit>
-      asTypeVariable
-      = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(Optional.empty()) {
+  static final TypeVisitor<Optional<TypeVariable>, Unit> asTypeVariable = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(
+      Optional.empty()) {
     @Override
     public Optional<TypeVariable> visitTypeVariable(final TypeVariable t, final Unit p) {
 
       return Optional.of(t);
     }
   };
-
-  static final ElementVisitor<Optional<TypeElement>, Unit>
-      asTypeElement
-      = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(Optional.empty()) {
+  static final ElementVisitor<Optional<TypeElement>, Unit> asTypeElement = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(
+      Optional.empty()) {
 
     @Override
     public Optional<TypeElement> visitType(final TypeElement e, final Unit p) {
@@ -95,7 +92,6 @@ final class Utils {
     }
 
   };
-
   static final SimpleElementVisitor6<PackageElement, Void> getPackage = new SimpleElementVisitor6<PackageElement, Void>() {
 
     @Override
@@ -111,7 +107,6 @@ final class Utils {
     }
 
   };
-
   static final SimpleElementVisitor6<Optional<ExecutableElement>, Void>
       asExecutableElement
       = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
@@ -130,6 +125,21 @@ final class Utils {
 
   };
 
+  static final SimpleElementVisitor6<Optional<VariableElement>, Void>
+      asVairableElement
+      = new SimpleElementVisitor6<Optional<VariableElement>, Void>() {
+
+    @Override
+    public Optional<VariableElement> visitVariable(final VariableElement e, final Void p) {
+      return Optional.of(e);
+    }
+
+    @Override
+    protected Optional<VariableElement> defaultAction(final Element e, final Void p) {
+      return Optional.empty();
+    }
+  };
+
   static final TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
 
     @Override
@@ -145,11 +155,13 @@ final class Utils {
     }
   };
 
-  static String capitalize(final String s) {
+  private Utils() {}
+
+  static String capitalize(final CharSequence s) {
 
     return ((s.length() >= 2) && Character.isHighSurrogate(s.charAt(0)) && Character.isLowSurrogate(s.charAt(1)))
-        ? (s.substring(0, 2).toUpperCase(Locale.US) + s.substring(2))
-        : (s.substring(0, 1).toUpperCase(Locale.US) + s.substring(1));
+        ? (s.toString().substring(0, 2).toUpperCase(Locale.US) + s.toString().substring(2))
+        : (s.toString().substring(0, 1).toUpperCase(Locale.US) + s.toString().substring(1));
   }
 
   static <A, R> R fold(Optional<A> oa, R none, Function<A, R> some) {
@@ -167,6 +179,10 @@ final class Utils {
   static <A> Stream<A> optionalAsStream(Optional<A> o) {
 
     return fold(o, Stream.<A>empty(), Stream::of);
+  }
+
+  static <K, V> Optional<V> get(K key, Map<? extends K, ? extends V> map) {
+    return Optional.ofNullable(map.get(key));
   }
 
   static <A, B> Optional<List<B>> traverseOptional(List<A> as, Function<A, Optional<B>> f) {
@@ -203,15 +219,19 @@ final class Utils {
   }
 
   static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
+    return asLambdaParametersString(arguments, restrictions, "");
+  }
 
-    return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
-        restrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)));
+  static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions, String suffix) {
+    return joinStringsAsArguments(Stream.concat(arguments.stream(), restrictions.stream().map(TypeRestriction::typeEq))
+        .map(da -> getFieldName(da) + suffix));
   }
 
   static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
       NameAllocator nameAllocator) {
-    return joinStringsAsArguments(Stream.concat(arguments.stream().map(DataArgument::fieldName),
-        typeRestrictions.stream().map(TypeRestriction::typeEq).map(DataArgument::fieldName)).map(nameAllocator::newName));
+
+    return joinStringsAsArguments(Stream.concat(arguments.stream(),
+        typeRestrictions.stream().map(TypeRestrictions::getTypeEq)).map(DataArguments::getFieldName).map(nameAllocator::newName));
   }
 
   static String asArgumentsString(List<DataArgument> arguments) {
@@ -241,6 +261,11 @@ final class Utils {
   static Stream<ExecutableElement> getMethods(final List<? extends Element> amongElements) {
 
     return amongElements.stream().map(asExecutableElement::visit).flatMap(Utils::optionalAsStream);
+  }
+
+  static Stream<VariableElement> getFields(final List<? extends Element> amongElements) {
+
+    return amongElements.stream().map(asVairableElement::visit).flatMap(Utils::optionalAsStream);
   }
 
   static <T> Predicate<T> p(Predicate<T> p) {
@@ -294,6 +319,10 @@ final class Utils {
   static <A, B> List<P2<A, B>> zip(List<? extends A> as, List<? extends B> bs) {
 
     return IntStream.range(0, Math.min(as.size(), bs.size())).<P2<A, B>>mapToObj(i -> p2(as.get(i), bs.get(i))).collect(toList());
+  }
+
+  static <A> List<P2<A, Integer>> zipWithIndex(List<? extends A> as) {
+    return zip(as, IntStream.range(0, as.size()).boxed().collect(toList()));
   }
 
 }

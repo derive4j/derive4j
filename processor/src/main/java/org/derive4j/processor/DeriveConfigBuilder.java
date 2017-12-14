@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -21,6 +21,7 @@ package org.derive4j.processor;
 import com.squareup.javapoet.ClassName;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,27 +40,31 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.AbstractAnnotationValueVisitor8;
+import javax.lang.model.util.Elements;
 import org.derive4j.ArgOption;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Flavour;
+import org.derive4j.Instances;
 import org.derive4j.Make;
 import org.derive4j.Makes;
 import org.derive4j.Visibilities;
 import org.derive4j.Visibility;
-import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.model.DeriveConfig;
+import org.derive4j.processor.api.model.DeriveConfigs;
 import org.derive4j.processor.api.model.DeriveVisibilities;
 import org.derive4j.processor.api.model.DeriveVisibility;
+import org.derive4j.processor.api.model.DerivedInstanceConfig;
 
-import static java.util.Optional.ofNullable;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.of;
 import static org.derive4j.Make.constructors;
 import static org.derive4j.Make.lambdaVisitor;
+import static org.derive4j.processor.Utils.get;
 import static org.derive4j.processor.Utils.getPackage;
-import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.model.DeriveConfigs.Config;
 import static org.derive4j.processor.api.model.DeriveConfigs.modArgOptions;
 import static org.derive4j.processor.api.model.DeriveConfigs.modMakes;
@@ -69,6 +74,7 @@ import static org.derive4j.processor.api.model.DeriveConfigs.setMakes;
 import static org.derive4j.processor.api.model.DeriveTargetClasses.TargetClass;
 import static org.derive4j.processor.api.model.DeriveTargetClasses.setClassName;
 import static org.derive4j.processor.api.model.DeriveTargetClasses.setVisibility;
+import static org.derive4j.processor.api.model.DerivedInstanceConfigs.InstanceConfig;
 
 final class DeriveConfigBuilder {
 
@@ -160,22 +166,42 @@ final class DeriveConfigBuilder {
   private final ExecutableElement inClass;
   private final ExecutableElement withVisibility;
   private final ExecutableElement make;
+  private final ExecutableElement instances;
+  private final ExecutableElement instancesClasses;
+  private final ExecutableElement instancesInClass;
+  private final ExecutableElement instancesSelector;
 
-  DeriveConfigBuilder(DeriveUtils deriveUtils) {
-    dataAnnotation = deriveUtils.elements().getTypeElement(Data.class.getName());
+  DeriveConfigBuilder(Elements elements) {
+    dataAnnotation = elements.getTypeElement(Data.class.getName());
     flavour = unsafeGetExecutableElement(dataAnnotation, "flavour");
     arguments = unsafeGetExecutableElement(dataAnnotation, "arguments");
     deriveValue = unsafeGetExecutableElement(dataAnnotation, "value");
 
-    deriveAnnotation = deriveUtils.elements().getTypeElement(Derive.class.getName());
+    deriveAnnotation = elements.getTypeElement(Derive.class.getName());
     inClass = unsafeGetExecutableElement(deriveAnnotation, "inClass");
     withVisibility = unsafeGetExecutableElement(deriveAnnotation, "withVisibility");
     make = unsafeGetExecutableElement(deriveAnnotation, "make");
+    instances = unsafeGetExecutableElement(deriveAnnotation, "value");
+    TypeElement instanceAnnotation = elements.getTypeElement(Instances.class.getName());
+    instancesClasses = unsafeGetExecutableElement(instanceAnnotation, "value");
+    instancesInClass = unsafeGetExecutableElement(instanceAnnotation, "inClass");
+    instancesSelector = unsafeGetExecutableElement(instanceAnnotation, "selector");
   }
 
-  Stream<P2<TypeElement, DeriveConfig>> findDeriveConfig(TypeElement typeElement) {
-    return optionalAsStream(deriveConfigs(typeElement, typeElement, new HashSet<>()).reduce(Function::andThen)
-        .map(customConfig -> P2s.P2(typeElement, customConfig.apply(defaultConfig(typeElement)))));
+  Optional<P2<TypeElement, DeriveConfig>> findDeriveConfig(TypeElement typeElement) {
+    return deriveConfigs(typeElement, typeElement, new HashSet<>()).reduce(Function::andThen)
+        .map(customConfig -> P2s.P2(typeElement, customConfig.apply(defaultConfig(typeElement))));
+  }
+
+  ClassName deduceDerivedClassName(String inClassAnnotationValue, TypeElement typeElement) {
+
+    String packageName = getPackage.visit(typeElement).getQualifiedName().toString();
+
+    String simpleClassName = ":auto".equals(inClassAnnotationValue)
+        ? autoGeneratedClassName(typeElement.getSimpleName().toString())
+        : inClassAnnotationValue.replace("{ClassName}", typeElement.getSimpleName());
+
+    return ClassName.get(packageName, simpleClassName);
   }
 
   private Stream<Function<DeriveConfig, DeriveConfig>> annotationConfig(TypeElement typeElement,
@@ -205,14 +231,16 @@ final class DeriveConfigBuilder {
     Optional<Function<DeriveConfig, DeriveConfig>> setVisibility = visibility(typeElement, elementValues);
 
     @SuppressWarnings("unchecked")
-    Optional<Function<DeriveConfig, DeriveConfig>> setMake = ofNullable(elementValues.get(make)).map(
+    Optional<Function<DeriveConfig, DeriveConfig>> setMake = get(make, elementValues).map(
         makeValue -> (List<String>) getValue.visit(makeValue))
         .map(newMakes -> setMakes(makeWithDependencies(newMakes.stream().map(Make::valueOf))));
 
-    return of(setInClass, setVisibility, setMake)
-        .flatMap(Utils::optionalAsStream)
+    Optional<Function<DeriveConfig, DeriveConfig>> modInstances = instances(typeElement, elementValues).map(
+        DeriveConfigs::modDerivedInstances);
+
+    return of(setInClass, setVisibility, setMake, modInstances).flatMap(Utils::optionalAsStream)
         .reduce(Function::andThen)
-        .orElse(Function.identity());
+        .orElse(identity());
   }
 
   private Function<DeriveConfig, DeriveConfig> addToDeriveConfig(TypeElement typeElement,
@@ -222,51 +250,93 @@ final class DeriveConfigBuilder {
 
     Optional<Function<DeriveConfig, DeriveConfig>> setVisibility = visibility(typeElement, elementValues);
 
+    Optional<Function<DeriveConfig, DeriveConfig>> modInstances = instances(typeElement, elementValues).map(
+        DeriveConfigs::modDerivedInstances);
+
     @SuppressWarnings("unchecked")
-    Optional<Function<DeriveConfig, DeriveConfig>> modMake = ofNullable(elementValues.get(make)).map(
+    Optional<Function<DeriveConfig, DeriveConfig>> modMake = get(make, elementValues).map(
         makeValue -> (List<String>) getValue.visit(makeValue))
         .map(newMakes -> modMakes(makes -> makeWithDependencies(concat(makes.stream(), newMakes.stream().map(Make::valueOf)))));
 
-    return of(setInClass, setVisibility, modMake)
-        .flatMap(Utils::optionalAsStream)
+    return of(setInClass, setVisibility, modMake, modInstances).flatMap(Utils::optionalAsStream)
         .reduce(Function::andThen)
-        .orElse(Function.identity());
+        .orElse(identity());
   }
 
   private Optional<Function<DeriveConfig, DeriveConfig>> visibility(TypeElement typeElement,
       Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
-    return ofNullable(elementValues.get(withVisibility)).map(withVisibilityValue -> modTargetClass(
+    return get(withVisibility, elementValues).map(withVisibilityValue -> modTargetClass(
         setVisibility(deduceDeriveVisibility(typeElement, Visibility.valueOf(getValue.visit(withVisibilityValue).toString())))));
   }
 
   private Optional<Function<DeriveConfig, DeriveConfig>> inClass(TypeElement typeElement,
       Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
-    return ofNullable(elementValues.get(inClass)).map(inClassValue -> modTargetClass(setClassName(
-        ClassName.get(getPackage.visit(typeElement).getQualifiedName().toString(),
-            deduceDerivedClassName(getValue.visit(inClassValue).toString(), typeElement)))));
+    return get(inClass, elementValues).map(inClassValue -> modTargetClass(
+        setClassName(deduceDerivedClassName(getValue.visit(inClassValue).toString(), typeElement))));
+  }
+
+  private Optional<Function<Map<ClassName, DerivedInstanceConfig>, Map<ClassName, DerivedInstanceConfig>>> instances(
+      TypeElement typeElement, Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
+    return get(instances, elementValues).map(instances -> {
+      @SuppressWarnings("unchecked")
+      List<Map<? extends ExecutableElement, ? extends AnnotationValue>>
+          instanceAnnotations
+          = (List<Map<? extends ExecutableElement, ? extends AnnotationValue>>) getValue.visit(instances);
+
+      return instanceAnnotations.isEmpty()
+          ? __ -> Collections.emptyMap()
+          : currentConfig -> {
+            Map<ClassName, DerivedInstanceConfig> newConfig = new HashMap<>(currentConfig);
+            instanceAnnotations.forEach(
+                instanceAnnotation -> newConfig.putAll(parseInstanceConfig(typeElement, instanceAnnotation)));
+            return Collections.unmodifiableMap(newConfig);
+          };
+
+    });
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<ClassName, DerivedInstanceConfig> parseInstanceConfig(TypeElement typeElement,
+      Map<? extends ExecutableElement, ? extends AnnotationValue> instanceAnnotation) {
+
+    return get(instancesClasses, instanceAnnotation).map(
+        instancesClassesAnnotationValue -> (List<TypeElement>) getValue.visit(instancesClassesAnnotationValue))
+        .filter(l -> !l.isEmpty())
+        .map(instancesClasses -> {
+
+          Optional<ClassName> targetClass = get(instancesInClass, instanceAnnotation).map(a -> (String) getValue.visit(a))
+              .map(inClass -> deduceDerivedClassName(inClass, typeElement));
+
+          Optional<String> selector = get(instancesSelector, instanceAnnotation).map(a -> (String) getValue.visit(a));
+
+          DerivedInstanceConfig instanceConfig = InstanceConfig(selector, targetClass);
+
+          return instancesClasses.stream().collect(toMap(ClassName::get, __ -> instanceConfig));
+
+        })
+        .orElse(Collections.emptyMap());
   }
 
   private Function<DeriveConfig, DeriveConfig> dataConfig(TypeElement typeElement,
       Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues) {
 
-    Optional<Function<DeriveConfig, DeriveConfig>> setFlavour = ofNullable(elementValues.get(flavour)).map(
+    Optional<Function<DeriveConfig, DeriveConfig>> setFlavour = get(flavour, elementValues).map(
         flavourValue -> setFlavour(Flavour.valueOf(getValue.visit(flavourValue).toString())));
 
     @SuppressWarnings("unchecked")
-    Optional<Function<DeriveConfig, DeriveConfig>> modArguments = ofNullable(elementValues.get(arguments)).map(
+    Optional<Function<DeriveConfig, DeriveConfig>> modArguments = get(arguments, elementValues).map(
         argumentsValue -> (List<String>) getValue.visit(argumentsValue))
         .map(newArgOptions -> modArgOptions(argOptions -> newArgOptions.isEmpty()
             ? EnumSet.noneOf(ArgOption.class)
             : EnumSet.copyOf(newArgOptions.stream().map(ArgOption::valueOf).collect(toList()))));
 
     @SuppressWarnings("unchecked")
-    Optional<Function<DeriveConfig, DeriveConfig>> deriveConfig = ofNullable(elementValues.get(deriveValue)).map(
+    Optional<Function<DeriveConfig, DeriveConfig>> deriveConfig = get(deriveValue, elementValues).map(
         value -> deriveConfig(typeElement, (Map<? extends ExecutableElement, ? extends AnnotationValue>) getValue.visit(value)));
 
-    return of(setFlavour, modArguments, deriveConfig)
-        .flatMap(Utils::optionalAsStream)
+    return of(setFlavour, modArguments, deriveConfig).flatMap(Utils::optionalAsStream)
         .reduce(Function::andThen)
-        .orElse(Function.identity());
+        .orElse(identity());
   }
 
   private static DeriveConfig defaultConfig(TypeElement typeElement) {
@@ -293,13 +363,6 @@ final class DeriveConfigBuilder {
         .filter(e -> e.getSimpleName().contentEquals(methodName))
         .findFirst()
         .orElseThrow(() -> new NoSuchElementException(typeElement + "#" + methodName));
-  }
-
-  private static String deduceDerivedClassName(String inClassAnnotationValue, TypeElement typeElement) {
-
-    return ":auto".equals(inClassAnnotationValue)
-        ? autoGeneratedClassName(typeElement.getSimpleName().toString())
-        : inClassAnnotationValue.replace("{ClassName}", typeElement.getSimpleName());
   }
 
   private static String autoGeneratedClassName(String adtClassName) {

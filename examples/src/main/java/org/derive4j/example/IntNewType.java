@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,11 +25,17 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import java.util.function.IntFunction;
 import org.derive4j.Data;
+import org.derive4j.Derive;
 import org.derive4j.FieldNames;
+import org.derive4j.Instances;
 
-@Data
+@Data(@Derive(@Instances(value = { Show.class, Hash.class, Equal.class, Ord.class}, inClass = "{ClassName}Instances")))
 public abstract class IntNewType {
   public abstract <X> X match(@FieldNames("intW") IntFunction<X> intW);
 

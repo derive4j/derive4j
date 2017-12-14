@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotations API".
  *
@@ -25,11 +25,9 @@ import static org.derive4j.Visibility.Same;
 @Target({})
 public @interface Instances {
 
-  String inClass() default ":auto";
-
-  Visibility withVisibility() default Same;
-
   Class<?>[] value();
+
+  String inClass() default ":auto";
 
   String selector() default ":auto";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -18,6 +18,7 @@
  */
 package org.derive4j.processor.api.model;
 
+import com.squareup.javapoet.ClassName;
 import java.util.Map;
 import java.util.Set;
 import org.derive4j.ArgOption;
@@ -36,7 +37,7 @@ public abstract class DeriveConfig {
 
   public interface Case<X> {
     X Config(Flavour flavour, DeriveTargetClass targetClass, Set<Make> makes, Set<ArgOption> argOptions,
-        Map<Class<?>, DerivedInstanceConfig> derivedInstances);
+        Map<ClassName, DerivedInstanceConfig> derivedInstances);
   }
 
   DeriveConfig() {
@@ -60,7 +61,7 @@ public abstract class DeriveConfig {
     return getArgOptions(this);
   }
 
-  public final Map<Class<?>, DerivedInstanceConfig> derivedInstances() {
+  public final Map<ClassName, DerivedInstanceConfig> derivedInstances() {
     return getDerivedInstances(this);
   }
 

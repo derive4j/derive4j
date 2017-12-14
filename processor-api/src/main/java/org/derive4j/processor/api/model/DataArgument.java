@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -19,24 +19,21 @@
 package org.derive4j.processor.api.model;
 
 import java.util.function.BiFunction;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.ExportAsPublic;
 import org.derive4j.FieldNames;
+import org.derive4j.Visibility;
 
 import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 import static org.derive4j.processor.api.model.DataArguments.getType;
 
-@Data
+@Data(value = @Derive(withVisibility = Visibility.Smart))
 public abstract class DataArgument {
 
-  public static DataArgument dataArgument(String fieldName, TypeMirror type) {
-
-    return DataArguments.dataArgument(fieldName, type);
-  }
-
-  DataArgument() {
-
-  }
+  DataArgument() {}
 
   public abstract <R> R match(@FieldNames({ "fieldName", "type" }) BiFunction<String, TypeMirror, R> dataArgument);
 
@@ -48,5 +45,13 @@ public abstract class DataArgument {
   public TypeMirror type() {
 
     return getType(this);
+  }
+
+  @ExportAsPublic
+  static DataArgument dataArgument(String fieldName, TypeMirror type) {
+    if (type instanceof ErrorType) {
+      throw new IllegalArgumentException("Type of " + fieldName + " is not valid: " + type);
+    }
+    return DataArguments.dataArgument0(fieldName, type);
   }
 }

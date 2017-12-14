@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,11 +25,17 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.derive4j.Data;
+import org.derive4j.Derive;
 import org.derive4j.FieldNames;
+import org.derive4j.Instances;
 
 import static org.derive4j.example.Addresses.Address;
 import static org.derive4j.example.Addresses.modNumber;
@@ -40,19 +46,19 @@ import static org.derive4j.example.Persons.Person;
 import static org.derive4j.example.Persons.getContact;
 import static org.derive4j.example.Persons.modContact;
 
-@Data
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
 public abstract class Person {
 
   public static void main(String[] args) {
 
     Person joe = Person(Name0("Joe"), Contacts.byMail(Address(10, "Main St")));
 
-    // oups! there was a off my one error in the import process. We must increment all street numbers!!
+    // oops! there was a off by one error in the import process. We must increment all street numbers!!
 
     // Easy with Derive4J
     Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
 
-    // newP is a copy of p with the street number incremented:
+    // correctedJoe is a copy of p with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
 
     Optional<Integer> newStreetNumber = getPostalAddress(getContact(correctedJoe)).map(Addresses::getNumber);

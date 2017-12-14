@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,15 +25,20 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import org.derive4j.ArgOption;
 import org.derive4j.Data;
 import org.derive4j.Derive;
+import org.derive4j.Instances;
 import org.derive4j.Make;
 import org.derive4j.Visibility;
 
 @data
 @Data(arguments = ArgOption.checkedNotNull)
-@Derive(withVisibility = Visibility.Smart, make = {Make.getters, Make.caseOfMatching})
+@Derive(withVisibility = Visibility.Smart, make = {Make.getters, Make.caseOfMatching}, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class}))
 public abstract class Event<T> {
 
   public abstract <X> X match(Cases<T, X> cases);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotations API".
  *
@@ -61,6 +61,14 @@ public enum Flavour {
     }
   },
 
+  Vavr {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.Vavr();
+    }
+  },
+
   HighJ {
     @Override
     public <R> R match(Cases<R> cases) {
@@ -87,6 +95,8 @@ public enum Flavour {
     R Fugue2();
 
     R Javaslang();
+
+    R Vavr();
 
     R HighJ();
 

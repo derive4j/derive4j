@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,14 +25,22 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import java.util.function.Function;
 import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Instances;
 
 import static org.derive4j.example.Expressions.Add;
 import static org.derive4j.example.Expressions.Const;
 import static org.derive4j.example.Expressions.Mult;
+import static org.derive4j.example.Expressions.expressionHash;
+import static org.derive4j.example.Expressions.expressionShow;
 
-@Data
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
 public abstract class Expression {
 
   public static Integer eval(Expression expression) {
@@ -41,8 +49,9 @@ public abstract class Expression {
   }
 
   public static void main(String[] args) {
-
     Expression expr = Add(Const(1), Mult(Const(2), Mult(Const(3), Const(3))));
+    expressionShow().println(expr);
+    expressionHash().hash(expr);
     System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
   }
 

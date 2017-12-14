@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -30,24 +30,17 @@ import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataConstructors.getArguments;
 import static org.derive4j.processor.api.model.DataConstructors.getDeconstructor;
 import static org.derive4j.processor.api.model.DataConstructors.getName;
+import static org.derive4j.processor.api.model.DataConstructors.getIndex;
 import static org.derive4j.processor.api.model.DataConstructors.getReturnedType;
 import static org.derive4j.processor.api.model.DataConstructors.getTypeRestrictions;
 import static org.derive4j.processor.api.model.DataConstructors.getTypeVariables;
 
-@Data(@Derive(withVisibility = Smart))
+@Data
 public abstract class DataConstructor {
 
   public interface Case<R> {
-    R constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
+    R constructor(String name, int index, List<TypeVariable> typeVariables, List<DataArgument> arguments,
         List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor);
-  }
-
-  public static DataConstructor constructor(String name, List<TypeVariable> typeVariables, List<DataArgument> arguments,
-      List<TypeRestriction> typeRestrictions, DeclaredType returnedType, DataDeconstructor deconstructor) {
-
-    return DataConstructors.constructor0(name, unmodifiableList(new ArrayList<>(typeVariables)),
-        unmodifiableList(new ArrayList<>(arguments)), unmodifiableList(new ArrayList<>(typeRestrictions)), returnedType,
-        deconstructor);
   }
 
   DataConstructor() {
@@ -59,6 +52,11 @@ public abstract class DataConstructor {
   public String name() {
 
     return getName(this);
+  }
+
+
+  public int index() {
+    return getIndex(this);
   }
 
   public List<TypeVariable> typeVariables() {

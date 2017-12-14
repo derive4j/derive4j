@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,10 +25,11 @@
  */
 package org.derive4j.example;
 
-import java.util.function.Function;
-import org.derive4j.Data;
+import fj.*;
+import org.derive4j.*;
 
-@Data
+@Data(flavour = Flavour.FJ)
+@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class}))
 public abstract class Either<A, B> {
 
   Either() {
@@ -42,6 +43,28 @@ public abstract class Either<A, B> {
    * @param right The function to call if this is right.
    * @return The reduced value.
    */
-  public abstract <X> X either(Function<A, X> left, Function<B, X> right);
+  public abstract <X> X either(F<A, X> left, F<B, X> right);
 
+
+  // In case you need to interact with unsafe code that
+  // expects hashCode/equal/toString to be implemented:
+
+  @Deprecated
+  @Override
+  public final boolean equals(Object obj) {
+    return Equal.equals0(Either.class, this, obj,
+        Eithers.eitherEqual(Equal.anyEqual(), Equal.anyEqual()));
+  }
+
+  @Deprecated
+  @Override
+  public final int hashCode() {
+    return Eithers.<A, B>eitherHash(Hash.anyHash(), Hash.anyHash()).hash(this);
+  }
+
+  @Deprecated
+  @Override
+  public final String toString() {
+    return Eithers.<A, B>eitherShow(Show.anyShow(), Show.anyShow()).showS(this);
+  }
 }

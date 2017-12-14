@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -18,19 +18,25 @@
  */
 package org.derive4j.processor.api;
 
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import org.derive4j.Flavour;
+import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.DataConstructor;
 import org.derive4j.processor.api.model.TypeRestriction;
 
 public interface DeriveUtils {
@@ -55,6 +61,14 @@ public interface DeriveUtils {
 
   List<ExecutableElement> allAbstractMethods(TypeElement typeElement);
 
+  Stream<ExecutableElement> allStaticMethods(TypeElement typeElement);
+
+  Stream<VariableElement> allStaticFields(TypeElement typeElement);
+
+  Optional<DeclaredType> asDeclaredType(TypeMirror typeMirror);
+
+  Optional<TypeElement> asTypeElement(TypeMirror typeMirror);
+
   ObjectModel object();
 
   Optional<SamInterface> samInterface(String qualifiedClassName);
@@ -66,4 +80,30 @@ public interface DeriveUtils {
   OptionModel optionModel(Flavour flavour);
 
   Optional<EitherModel> eitherModel(Flavour flavour);
+
+  String uncapitalize(CharSequence string);
+
+  String capitalize(CharSequence string);
+
+  Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
+      TypeElement typeElement,
+      List<TypeElement> lowPriorityProviders);
+
+  DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext,ClassName typeClassContext, ClassName
+      typeClass, TypeMirror type,
+      List<TypeElement> lowPriorityProviders);
+
+  DeriveResult<FieldsTypeClassInstanceBindingMap> resolveFieldInstances(AlgebraicDataType adt, ClassName typeClass,
+      List<TypeElement> lowPriorityProviders);
+
+  CodeBlock lambdaImpl(DataConstructor constructor, CodeBlock impl);
+
+  CodeBlock lambdaImpl(DataConstructor constructor, String suffix,  CodeBlock impl);
+
+  DeriveResult<DerivedCodeSpec> generateInstance(AlgebraicDataType adt, ClassName typeClass,
+      List<TypeElement> lowPriorityProviders, Function<InstanceUtils, DerivedCodeSpec> generateInstance);
+
+  CodeBlock parameterList(DataConstructor constructor);
+
+  CodeBlock parameterList(DataConstructor constructor, String suffix);
 }

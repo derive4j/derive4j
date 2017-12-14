@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -50,7 +50,8 @@ public class DeriveUtilsImplTest {
           @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
             if (!roundEnv.processingOver()) {
-              DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils());
+              DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
+                  new DeriveConfigBuilder(processingEnv.getElementUtils()));
               for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getRootElements())) {
                 List<ExecutableElement> abstractMethods = deriveUtils.allAbstractMethods((DeclaredType) typeElement.asType());
                 Truth.assertThat(abstractMethods).hasSize(1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,7 +25,11 @@
  */
 package org.derive4j.example;
 
+import fj.Hash;
+import fj.Show;
 import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Instances;
 import org.derive4j.hkt.TypeEq;
 
 import static java.lang.System.out;
@@ -42,7 +46,7 @@ import static org.derive4j.example.Terms.Zero;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data
+@Data(@Derive(@Instances({ Show.class, Hash.class})))
 public abstract class Term<T> {
 
   public static <T> T eval(final Term<T> term) {

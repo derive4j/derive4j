@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -40,6 +40,13 @@ abstract class P2<A, B> {
 
     return P2s.get_2(this);
   }
+
+  @Override
+  public abstract int hashCode();
+  @Override
+  public abstract boolean equals(Object obj);
+  @Override
+  public abstract String toString();
 
   static <A, B> P2<A, B> p2(A a, B b) {
 

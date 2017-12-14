@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,11 +25,17 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import org.derive4j.Data;
+import org.derive4j.Derive;
+import org.derive4j.Instances;
 
 import static org.derive4j.Flavour.Guava;
 
-@Data(flavour = Guava)
+@Data(flavour = Guava, value = @Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
 public abstract class GuavaRequest {
 
   public abstract <R> R match(Cases<R> cases);

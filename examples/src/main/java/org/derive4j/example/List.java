@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,6 +25,10 @@
  */
 package org.derive4j.example;
 
+import fj.Equal;
+import fj.Hash;
+import fj.Ord;
+import fj.Show;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,13 +36,15 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import org.derive4j.Data;
+import org.derive4j.Derive;
 import org.derive4j.FieldNames;
+import org.derive4j.Instances;
 
 import static org.derive4j.example.Lists.cons;
 import static org.derive4j.example.Lists.lazy;
 import static org.derive4j.example.Lists.nil;
 
-@Data
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
 public abstract class List<A> {
 
   public static List<Integer> naturals() {
@@ -142,6 +148,14 @@ public abstract class List<A> {
   public final <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
 
     return Lists.cata(() -> zero, f).apply(this);
+  }
+
+  public static void main(String[] args) {
+    List<Integer> naturals = naturals().take(100);
+    List<Integer> naturals2 = naturals().take(100).map(i-> i-1);
+    Lists.listShow(Show.intShow).println(naturals);
+    System.out.println(Lists.listEqual(Equal.intEqual).eq(naturals, naturals));
+    System.out.println(Lists.listOrd(Ord.intOrd).compare(naturals, naturals2));
   }
 
 }
