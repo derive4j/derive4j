@@ -69,6 +69,8 @@ public interface DeriveUtils {
 
   Optional<TypeElement> asTypeElement(TypeMirror typeMirror);
 
+  boolean isWildcarded(TypeMirror typeMirror);
+
   ObjectModel object();
 
   Optional<SamInterface> samInterface(String qualifiedClassName);

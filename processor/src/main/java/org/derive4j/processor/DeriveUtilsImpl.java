@@ -265,6 +265,16 @@ final class DeriveUtilsImpl implements DeriveUtils {
   }
 
   @Override
+  public boolean isWildcarded(TypeMirror typeMirror) {
+    final List<? extends TypeMirror> targs = asDeclaredType(typeMirror)
+      .map(DeclaredType::getTypeArguments)
+      .orElse(Collections.emptyList());
+
+    return targs.stream().anyMatch(tm ->
+      tm.getKind() == TypeKind.WILDCARD || isWildcarded(tm));
+  }
+
+  @Override
   public ObjectModel object() {
     return objectModel;
   }
@@ -310,98 +320,132 @@ final class DeriveUtilsImpl implements DeriveUtils {
   public Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
       TypeElement typeElement, List<TypeElement> lowPriorityProviders) {
 
-    if (typeElementContext.equals(typeElement) && typeClassContext.equals(typeClass)) {
+    if (typeElementContext.equals(typeElement) && typeClassContext.equals(typeClass))
       return Optional.empty();
-    }
 
-    Optional<DeriveConfig> maybeDeriveConfig = deriveConfigBuilder.findDeriveConfig(typeElement).map(P2s::get_2);
+    final Optional<DeriveConfig> maybeDeriveConfig =
+        deriveConfigBuilder.findDeriveConfig(typeElement).map(P2s::get_2);
 
-    Optional<InstanceLocation> manualInstance = findCompiledInstance(typeElementContext,
-        elements().getTypeElement(typeClass.reflectionName()), typeElement, lowPriorityProviders,
-        maybeDeriveConfig.map(DeriveConfigs::getTargetClass).map(DeriveTargetClass::className));
+    final Optional<InstanceLocation> manualInstance = findCompiledInstance(typeElementContext
+        , elements().getTypeElement(typeClass.reflectionName())
+        , typeElement
+        , lowPriorityProviders
+        , maybeDeriveConfig
+            .map(DeriveConfigs::getTargetClass)
+            .map(DeriveTargetClass::className));
 
-    return fold(manualInstance, maybeDeriveConfig.flatMap(deriveConfig -> get(typeClass, deriveConfig.derivedInstances()).map(
-        derivedInstanceConfig -> InstanceLocations.generatedIn(
-            DerivedInstanceConfigs.getTargetClass(derivedInstanceConfig).orElse(deriveConfig.targetClass().className())))),
-        Optional::of);
+    return fold(manualInstance
+
+        , maybeDeriveConfig
+            .flatMap(deriveConfig -> get(typeClass, deriveConfig.derivedInstances())
+                .map(derivedInstanceConfig -> InstanceLocations.generatedIn(DerivedInstanceConfigs
+                    .getTargetClass(derivedInstanceConfig)
+                    .orElse(deriveConfig.targetClass().className()))))
+
+        , Optional::of);
   }
 
   @Override
   public DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext, ClassName typeClassContext,
       ClassName typeClass, TypeMirror type, List<TypeElement> lowPriorityProviders) {
-    Optional<DeclaredType> maybeDeclaredType = asDeclaredType(asBoxedType.visit(type, types()));
-    TypeElement typeClassElement = elements().getTypeElement(typeClass.reflectionName());
+    final Optional<DeclaredType> maybeDeclaredType =
+        asDeclaredType(asBoxedType.visit(type, types()));
 
-    return fold(maybeDeclaredType, DeriveResults.lazy(() -> result(expression(
-        singletonList(variable(types().getDeclaredType(typeClassElement, type), instanceVariableName(typeClassElement, type))),
-        baseExpression(CodeBlock.of(instanceVariableName(typeClassElement, type)))))), declaredType -> {
+    final TypeElement typeClassElement =
+        elements().getTypeElement(typeClass.reflectionName());
 
-      TypeElement typeElement = asTypeElement(declaredType).orElseThrow(RuntimeException::new);
+    return fold(maybeDeclaredType
 
-      return fold(findInstance(typeElementContext, typeClassContext, typeClass, typeElement, lowPriorityProviders),
-          typeElement.equals(typeElementContext) && typeClassContext.equals(typeClass)
-              ? result(expression(emptyList(), recursiveExpression(identity())))
-              : DeriveResult.<BoundExpression>error(message("Could not find instance of " + typeClass + " for " + typeElement)),
-          instanceLocation -> caseOf(instanceLocation).
-              value(ve -> result(expression(emptyList(), baseExpression(
-                  CodeBlock.of("$T.$L", ClassName.bestGuess(ve.getEnclosingElement().toString()), ve.getSimpleName())))))
-              .generatedIn(instanceClass -> declaredType.getTypeArguments().isEmpty()
-                  ? result(expression(emptyList(),
-                  baseExpression(CodeBlock.of("$T.$L()", instanceClass, generatedInstanceMethodName(typeClassElement, typeElement)))))
-                  : error(message("Please provide static forwarder for generated " + typeClass + " instance for " + typeElement)))
-              .method((className, method) -> {
+        , DeriveResults.lazy(() -> result(expression(
+            singletonList(variable(types().getDeclaredType(typeClassElement, type), instanceVariableName(typeClassElement, type))),
+            baseExpression(CodeBlock.of(instanceVariableName(typeClassElement, type))))))
 
-                List<P2<TypeMirror, Integer>> indexedTypeArguments = Utils.zipWithIndex(
-                    asDeclaredType(asDeclaredType(method.getReturnType()).get().getTypeArguments().get(0)).get()
-                        .getTypeArguments());
+        , declaredType -> {
+          final TypeElement typeElement = asTypeElement(declaredType).orElseThrow(RuntimeException::new);
 
-                DeriveResult<BoundExpression> args = Utils.zipWithIndex(method.getParameters())
-                    .stream()
-                    .map(param -> param.match((ve, i) -> {
-                      List<TypeVariable> paramTypeVariables = typeVariablesIn(ve.asType());
-                      return fold(asTypeElement(ve.asType()).flatMap(paramTypeElement -> indexedTypeArguments.stream()
-                              .filter(ta -> paramTypeVariables.stream().anyMatch(tv -> Types.isSameType(tv, P2s.get_1(ta))))
-                              .findFirst()
-                              .map(P2s::get_2)
-                              .map(declaredType.getTypeArguments()::get)
-                              .flatMap(tm -> DeriveResults.getResult(
-                                  instanceInitializer(typeElementContext, typeClassContext, ClassName.get(paramTypeElement), tm,
-                                      lowPriorityProviders)))),
-                          DeriveResult.<BoundExpression>error(message("Cannot find type class " + ve.asType())),
-                          DeriveResult::result);
-                    }))
-                    .reduce((dr1, dr2) -> dr1.bind(be1 -> dr2.map(be2 -> join(DeriveUtilsImpl::joinAsArgs, be1, be2))))
-                    .orElse(result(expression(emptyList(), baseExpression(CodeBlock.of("")))));
+          return fold(findInstance(typeElementContext, typeClassContext, typeClass, typeElement, lowPriorityProviders)
 
-                return args.map(modExpression(Expressions.cases()
-                    .baseExpression(cb -> baseExpression(CodeBlock.builder()
-                        .add("$T.", className)
-                        .add(asTypeArguments(typeVariablesIn(type)))
-                        .add("$L(", method.getSimpleName())
-                        .add(cb)
-                        .add(")")
-                        .build()))
-                    .recursiveExpression(fromOuterMethod -> recursiveExpression(outterMethod -> CodeBlock.builder()
-                        .add("$T.$L(", className, method.getSimpleName())
-                        .add(fromOuterMethod.apply(outterMethod))
-                        .add(")")
-                        .build()))));
-              }));
-    });
+              , typeElement.equals(typeElementContext) && typeClassContext.equals(typeClass)
+                  ? result(expression(emptyList(), recursiveExpression(identity())))
+                  : DeriveResult.<BoundExpression>error(message("Could not find instance of " + typeClass + " for " + typeElement))
+
+              , instanceLocation -> caseOf(instanceLocation)
+                  .value(ve -> result(expression(emptyList(), baseExpression(CodeBlock.of("$T.$L"
+                      , ClassName.bestGuess(ve.getEnclosingElement().toString())
+                      , ve.getSimpleName())))))
+
+                  .generatedIn(instanceClass -> declaredType.getTypeArguments().isEmpty()
+                      ? result(expression(emptyList(), baseExpression(CodeBlock.of("$T.$L()"
+                          , instanceClass
+                          , generatedInstanceMethodName(typeClassElement, typeElement)))))
+                      : error(message("Please provide static forwarder for generated " + typeClass + " instance for " + typeElement)))
+
+                  .method((className, method) -> {
+                    final List<P2<TypeMirror, Integer>> indexedTypeArguments = Utils
+                        .zipWithIndex(asDeclaredType(asDeclaredType(method.getReturnType())
+                            .get().getTypeArguments().get(0))
+                            .get().getTypeArguments());
+
+                    final DeriveResult<BoundExpression> args = Utils.zipWithIndex(method.getParameters())
+                        .stream()
+                        .map(param -> param.match((ve, i) -> {
+                          final List<TypeVariable> paramTypeVariables = typeVariablesIn(ve.asType());
+
+                          return fold(asTypeElement(ve.asType()).flatMap(paramTypeElement -> indexedTypeArguments.stream()
+                                  .filter(ta -> paramTypeVariables.stream().anyMatch(tv -> Types.isSameType(tv, P2s.get_1(ta))))
+                                  .findFirst()
+                                  .map(P2s::get_2)
+                                  .map(declaredType.getTypeArguments()::get)
+                                  .flatMap(tm -> DeriveResults.getResult(
+                                      instanceInitializer(typeElementContext, typeClassContext, ClassName.get(paramTypeElement), tm,
+                                          lowPriorityProviders))))
+                              , DeriveResult.<BoundExpression>error(message("Cannot find type class " + ve.asType()))
+                              , DeriveResult::result);
+                        }))
+                        .reduce((dr1, dr2) -> dr1.bind(be1 -> dr2.map(be2 -> join(DeriveUtilsImpl::joinAsArgs, be1, be2))))
+                        .orElse(result(expression(emptyList(), baseExpression(CodeBlock.of("")))));
+
+                    return args.map(modExpression(Expressions.cases()
+
+                        .baseExpression(cb -> baseExpression(CodeBlock.builder()
+                            .add("$T.", className)
+                            .add(asTypeArguments(typeVariablesIn(type)))
+                            .add("$L(", method.getSimpleName())
+                            .add(cb)
+                            .add(")")
+                            .build()))
+
+                        .recursiveExpression(fromOuterMethod -> recursiveExpression(outterMethod -> CodeBlock.builder()
+                            .add("$T.$L(", className, method.getSimpleName())
+                            .add(fromOuterMethod.apply(outterMethod))
+                            .add(")")
+                            .build()))));
+                  }));
+        });
   }
 
   @Override
   public DeriveResult<FieldsTypeClassInstanceBindingMap> resolveFieldInstances(AlgebraicDataType adt, ClassName typeClass,
       List<TypeElement> lowPriorityProviders) {
+    TypeElement typeClassElement =
+        elements().getTypeElement(typeClass.reflectionName());
 
-    TypeElement typeClassElement = elements().getTypeElement(typeClass.reflectionName());
-    return adt.fields()
-        .stream()
-        .map(da -> instanceInitializer(adt.typeConstructor().typeElement(), typeClass, typeClass, da.type(), lowPriorityProviders)
-            .map(e -> bindingMap(getFreeVariables(e), singletonMap(da.fieldName(), binding(
-                variable(types().getDeclaredType(typeClassElement, asBoxedType.visit(da.type(), types())),
-                    instanceVariableName(typeClassElement, da.type())), getExpression(e))))))
+    return adt.fields().stream()
+
+        .map(da -> instanceInitializer(adt.typeConstructor().typeElement()
+            , typeClass
+            , typeClass
+            , da.type()
+            , lowPriorityProviders)
+            .map(e -> bindingMap(getFreeVariables(e)
+                , singletonMap(da.fieldName()
+                    , binding(variable(types()
+                            .getDeclaredType(typeClassElement, asBoxedType.visit(da.type(), types()))
+                            , instanceVariableName(typeClassElement, da.type()))
+                        , getExpression(e))))))
+
         .reduce((db1, db2) -> db1.bind(b1 -> db2.map(b2 -> join(b1, b2))))
+
         .orElse(result(bindingMap(emptyList(), emptyMap())));
   }
 
@@ -429,7 +473,6 @@ final class DeriveUtilsImpl implements DeriveUtils {
               adt.typeConstructor().typeElement());
 
           final Function<DataArgument, CodeBlock> methodRecursiveCall = da ->
-
               CodeBlock.builder()
                   .add("$T.", adt.deriveConfig()
                       .derivedInstances()
@@ -479,7 +522,19 @@ final class DeriveUtilsImpl implements DeriveUtils {
                     Expressions.getCodeBlock(value).ifPresent(cb -> {
                       String expr = cb.toString();
                       if (expr.endsWith(")") && !expr.endsWith("()")) {
-                        method.addCode("$T $L = ", TypeName.get(getType(variable)), getName(variable)).addCode(cb).addCode(";\n");
+                        final DeclaredType type = getType(variable);
+
+                        if (isWildcarded(type))
+                          method.addCode("$T $L = ($T) "
+                              , TypeName.get(type)
+                              , getName(variable)
+                              , types().erasure(type));
+                        else
+                          method.addCode("$T $L = "
+                              , TypeName.get(type)
+                              , getName(variable));
+
+                        method.addCode(cb).addCode(";\n");
                       }
                     });
                     seenVariable.add(variable);
@@ -490,22 +545,22 @@ final class DeriveUtilsImpl implements DeriveUtils {
             List<CodeBlock> allCustomStatements = new ArrayList<>();
             allCustomStatements.add(statement);
             allCustomStatements.addAll(Arrays.asList(statements));
-            allCustomStatements.subList(0, allCustomStatements.size() - 1)
+            allCustomStatements
+                .subList(0, allCustomStatements.size() - 1)
                 .forEach(cb -> method.addCode(cb.toBuilder().add(";").build()));
 
-            if (freeVariables.isEmpty()) {
+            if (freeVariables.isEmpty())
               method.addCode("$1L = _$1L = ", methodName)
                   .addCode(allCustomStatements.get(allCustomStatements.size() - 1))
                   .addCode(";\n")
                   .endControlFlow()
                   .addStatement("return _$L", methodName);
-            } else {
+            else
               method.addCode(CodeBlock.builder()
                   .add("return ")
                   .add(allCustomStatements.get(allCustomStatements.size() - 1))
                   .add(";\n")
                   .build());
-            }
 
             return DerivedCodeSpecs.codeSpec(emptyList(), fieldSpecs, singletonList(method.build()));
           }
@@ -536,13 +591,19 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
           @Override
           public CodeBlock instanceFor(DataArgument da) {
-            return getBindingsByFieldName(fieldsTypeClassInstanceBindingMap).get(da.fieldName())
-                .binding((variable, value) -> caseOf(value).baseExpression(cb -> {
-                  String expr = cb.toString();
-                  return expr.endsWith(")") && !expr.endsWith("()")
-                      ? CodeBlock.of(getName(variable))
-                      : cb;
-                }).recursiveExpression(fromOuter -> fromOuter.apply(methodRecursiveCall.apply(da))));
+            return getBindingsByFieldName(fieldsTypeClassInstanceBindingMap)
+                .get(da.fieldName())
+                .binding((variable, value) -> Expressions.caseOf(value)
+
+                    .baseExpression(cb -> {
+                      String expr = cb.toString();
+                      return expr.endsWith(")") && !expr.endsWith("()")
+                          ? CodeBlock.of(getName(variable))
+                          : cb;
+                    })
+
+                    .recursiveExpression(fromOuter ->
+                        fromOuter.apply(methodRecursiveCall.apply(da))));
           }
 
           @Override
@@ -589,8 +650,10 @@ final class DeriveUtilsImpl implements DeriveUtils {
   }
 
   private String instanceVariableName(TypeElement typeClass, TypeMirror type) {
-    return uncapitalize(
-        concat(allTypeArgsAsString(type), Stream.of(typeClass.getSimpleName().toString())).collect(Collectors.joining()));
+    final Stream<String> nameElts =
+        concat(allTypeArgsAsString(type), Stream.of(typeClass.getSimpleName().toString()));
+
+    return uncapitalize(nameElts.filter(s -> !s.equals("?")).collect(Collectors.joining()));
   }
 
   private String generatedInstanceMethodName(TypeElement typeClass, TypeElement typeElement) {
