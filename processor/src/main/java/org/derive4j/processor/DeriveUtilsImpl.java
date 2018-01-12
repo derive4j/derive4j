@@ -653,7 +653,10 @@ final class DeriveUtilsImpl implements DeriveUtils {
     final Stream<String> nameElts =
         concat(allTypeArgsAsString(type), Stream.of(typeClass.getSimpleName().toString()));
 
-    return uncapitalize(nameElts.filter(s -> !s.equals("?")).collect(Collectors.joining()));
+    return uncapitalize(nameElts
+        .filter(s -> !s.equals("?"))
+        .map(s -> s.replaceAll("\\[]", "s"))
+        .collect(Collectors.joining()));
   }
 
   private String generatedInstanceMethodName(TypeElement typeClass, TypeElement typeElement) {
