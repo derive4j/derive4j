@@ -46,7 +46,7 @@ I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4
 So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
 A good deal of what is commonly available in better languages like Haskell: structural pattern matching, laziness, lenses and prisms.
 
-Algebraic data types come in two flavour, product types and sum types. This readme focus on sum types because it is the more interesting case; product types being the well known common case in java. But Derive4J handles product types in exactly the same fashion (ie. through a visitor interface with a single abstract method).
+Algebraic data types come in two flavours, product types and sum types. This readme focus on sum types because it is the more interesting case; product types being the well known common case in java. But Derive4J handles product types in exactly the same fashion (ie. through a visitor interface with a single abstract method).
 
 # Example: a 'Visitor' for HTTP Request
 
