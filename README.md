@@ -44,6 +44,7 @@ So, what can this project do for us, poor functional programmers stuck with a le
 A good deal of what is commonly available in better languages like Haskell, including:
  - structural pattern matching on Algebraic data types,
  - laziness (a value can be a memoized [thunk](https://wiki.haskell.org/Thunk)),
+ - [automatic type class derivation](https://github.com/derive4j/derive4j-fj)
  - [Generalised algebraic data types](https://wiki.haskell.org/GADT)
  - combinators implementing [lenses](http://julien-truffaut.github.io/Monocle/optics/lens.html), [prisms](http://julien-truffaut.github.io/Monocle/optics/prism.html) and [optionals](http://julien-truffaut.github.io/Monocle/optics/optional.html).
 
