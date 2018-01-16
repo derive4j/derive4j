@@ -30,15 +30,7 @@
 - [Contributing](#contributing)
 - [Contact](#contact)
 
-**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you may want to learn a bit about them:
-- http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
-- https://en.wikipedia.org/wiki/Algebraic_data_type
-- https://en.wikipedia.org/wiki/Tagged_union
-- http://blog.higher-order.com/blog/2009/08/21/structural-pattern-matching-in-java/
-- http://tomasp.net/blog/types-and-math.aspx/
-- http://fsharpforfunandprofit.com/posts/type-size-and-design/
-- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
-- http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
+**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you may want to [learn a bit about them](#further-reading).
 
 So, what can this project do for us, poor functional programmers stuck with a legacy language called Java?
 A good deal of what is commonly available in better languages like Haskell, including:
@@ -542,6 +534,17 @@ Right now the codebase is not ready for external contribution (many blocks of co
 
 ## Contact
 jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project GitHub issues.
+
+## Further reading
+
+- http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
+- https://en.wikipedia.org/wiki/Algebraic_data_type
+- https://en.wikipedia.org/wiki/Tagged_union
+- http://blog.higher-order.com/blog/2009/08/21/structural-pattern-matching-in-java/
+- http://tomasp.net/blog/types-and-math.aspx/
+- http://fsharpforfunandprofit.com/posts/type-size-and-design/
+- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
+- http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
 
 ## Thanks
 
