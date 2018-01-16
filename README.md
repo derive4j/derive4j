@@ -34,7 +34,7 @@
 
 So, what can this project do for us, poor functional programmers stuck with a legacy language called Java?
 A good deal of what is commonly available in better languages like Haskell, including:
- - structural pattern matching on Algebraic data types,
+ - structural pattern matching on Algebraic data types, with compile-time exhaustiveness/redundancy check,
  - laziness (a value can be a memoized [thunk](https://wiki.haskell.org/Thunk)),
  - [automatic type class derivation](https://github.com/derive4j/derive4j-fj)
  - [Generalised algebraic data types](https://wiki.haskell.org/GADT)
