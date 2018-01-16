@@ -30,7 +30,7 @@
 - [Contributing](#contributing)
 - [Contact](#contact)
 
-**Caution**: if you are not familiar with Algebraic Data Types (aka "Sum Types" / "Tagged Unions") or the "visitor pattern" then you should learn a bit about them before further reading of this page:
+**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you should learn a bit about them before further reading of this page:
 - http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
@@ -44,8 +44,9 @@ This project has a special dedication to Tony Morris' blog post [Debut with a ca
 I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
 
 So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
-A good deal of what is available for free in better languages like Haskell: pattern matching, laziness...
-An example being worth a thousand words...
+A good deal of what is commonly available in better languages like Haskell: structural pattern matching, laziness, lenses and prisms.
+
+Algebraic data types come in two flavour, product types and sum types. This readme focus on sum types because it is the more interesting case; product types being the well known common case in java. But Derive4J handles product types in exactly the same fashion (ie. through a visitor interface with a single abstract method).
 
 # Example: a 'Visitor' for HTTP Request
 
