@@ -30,22 +30,17 @@
 - [Contributing](#contributing)
 - [Contact](#contact)
 
-**Caution**: if you are not familiar with Algebraic Data Types (aka "Sum Types" / "Tagged Unions") or the "visitor pattern" then you should learn a bit about them before further reading of this page:
-- http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
-- https://en.wikipedia.org/wiki/Algebraic_data_type
-- https://en.wikipedia.org/wiki/Tagged_union
-- http://blog.higher-order.com/blog/2009/08/21/structural-pattern-matching-in-java/
-- http://tomasp.net/blog/types-and-math.aspx/
-- http://fsharpforfunandprofit.com/posts/type-size-and-design/
-- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
-- http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
+**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you may want to [learn a bit about them](#further-reading).
 
-This project has a special dedication to Tony Morris' blog post [Debut with a catamorphism](http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
-I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
+So, what can this project do for us, poor functional programmers stuck with a legacy language called Java?
+A good deal of what is commonly available in better languages like Haskell, including:
+ - structural pattern matching on Algebraic data types, with compile-time exhaustiveness/redundancy check,
+ - laziness (a value can be a memoized [thunk](https://wiki.haskell.org/Thunk)),
+ - [automatic type class derivation](https://github.com/derive4j/derive4j-fj)
+ - [Generalised algebraic data types](https://wiki.haskell.org/GADT)
+ - combinators implementing [lenses](http://julien-truffaut.github.io/Monocle/optics/lens.html), [prisms](http://julien-truffaut.github.io/Monocle/optics/prism.html) and [optionals](http://julien-truffaut.github.io/Monocle/optics/optional.html).
 
-So. What can this project do for us, poor functional programmers stuck with a legacy language called Java?
-A good deal of what is available for free in better languages like Haskell: pattern matching, laziness...
-An example being worth a thousand words...
+Algebraic data types come in two flavours, product types and sum types. This readme focus on sum types because it is the more interesting case; product types being the well known common case in Java, but Derive4J handles product types in exactly the same fashion (ie. through a visitor interface with a single abstract method).
 
 # Example: a 'Visitor' for HTTP Request
 
@@ -539,3 +534,19 @@ Right now the codebase is not ready for external contribution (many blocks of co
 
 ## Contact
 jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project GitHub issues.
+
+## Further reading
+
+- http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
+- https://en.wikipedia.org/wiki/Algebraic_data_type
+- https://en.wikipedia.org/wiki/Tagged_union
+- http://blog.higher-order.com/blog/2009/08/21/structural-pattern-matching-in-java/
+- http://tomasp.net/blog/types-and-math.aspx/
+- http://fsharpforfunandprofit.com/posts/type-size-and-design/
+- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
+- http://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/
+
+## Thanks
+
+This project has a special dedication to Tony Morris' blog post [Debut with a catamorphism](http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html).
+I'm also very thankful to [@sviperll](https://github.com/sviperll) and his [adt4j](https://github.com/sviperll/adt4j/) project which was the initial inspiration for Derive4J.
