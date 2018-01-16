@@ -30,7 +30,7 @@
 - [Contributing](#contributing)
 - [Contact](#contact)
 
-**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you should learn a bit about them before further reading of this page:
+**Caution**: if you are not familiar with Algebraic Data Types or the "visitor pattern" then you may want to learn a bit about them:
 - http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
