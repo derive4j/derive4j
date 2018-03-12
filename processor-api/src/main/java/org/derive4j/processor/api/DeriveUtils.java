@@ -69,6 +69,8 @@ public interface DeriveUtils {
 
   Optional<TypeElement> asTypeElement(TypeMirror typeMirror);
 
+  boolean isWildcarded(TypeMirror typeMirror);
+
   ObjectModel object();
 
   Optional<SamInterface> samInterface(String qualifiedClassName);
@@ -87,7 +89,7 @@ public interface DeriveUtils {
 
   Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
       TypeElement typeElement,
-      List<TypeElement> lowPriorityProviders);
+      DeclaredType declaredType, List<TypeElement> lowPriorityProviders);
 
   DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext,ClassName typeClassContext, ClassName
       typeClass, TypeMirror type,
