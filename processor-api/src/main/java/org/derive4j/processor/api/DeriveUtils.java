@@ -89,7 +89,7 @@ public interface DeriveUtils {
 
   Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
       TypeElement typeElement,
-      List<TypeElement> lowPriorityProviders);
+      DeclaredType declaredType, List<TypeElement> lowPriorityProviders);
 
   DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext,ClassName typeClassContext, ClassName
       typeClass, TypeMirror type,
