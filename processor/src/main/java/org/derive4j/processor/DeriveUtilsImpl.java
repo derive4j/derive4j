@@ -318,7 +318,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   @Override
   public Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
-      TypeElement typeElement, List<TypeElement> lowPriorityProviders) {
+      TypeElement typeElement, DeclaredType declaredType, List<TypeElement> lowPriorityProviders) {
 
     if (typeElementContext.equals(typeElement) && typeClassContext.equals(typeClass))
       return Optional.empty();
@@ -329,6 +329,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
     final Optional<InstanceLocation> manualInstance = findCompiledInstance(typeElementContext
         , elements().getTypeElement(typeClass.reflectionName())
         , typeElement
+        , declaredType
         , lowPriorityProviders
         , maybeDeriveConfig
             .map(DeriveConfigs::getTargetClass)
@@ -363,7 +364,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         , declaredType -> {
           final TypeElement typeElement = asTypeElement(declaredType).orElseThrow(RuntimeException::new);
 
-          return fold(findInstance(typeElementContext, typeClassContext, typeClass, typeElement, lowPriorityProviders)
+          return fold(findInstance(typeElementContext, typeClassContext, typeClass, typeElement, declaredType, lowPriorityProviders)
 
               , typeElement.equals(typeElementContext) && typeClassContext.equals(typeClass)
                   ? result(expression(emptyList(), recursiveExpression(identity())))
@@ -669,7 +670,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
   }
 
   private Optional<InstanceLocation> findCompiledInstance(TypeElement typeElementContext, TypeElement typeClass,
-      TypeElement typeElement, List<TypeElement> lowPriorityProviders, Optional<ClassName> deriveTarget) {
+      TypeElement typeElement, DeclaredType declaredType, List<TypeElement> lowPriorityProviders, Optional<ClassName> deriveTarget) {
 
     Optional<TypeElement> derivedCompanion = deriveTarget.flatMap(
         cn -> Optional.ofNullable(elements().getTypeElement(cn.reflectionName())));
@@ -688,14 +689,15 @@ final class DeriveUtilsImpl implements DeriveUtils {
         instancesProviders.stream()
             .flatMap(this::allStaticFields)
             .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawShowClass))
-            .flatMap(ve -> optionalAsStream(
-                asDeclaredType(ve.asType()).flatMap(dt -> asTypeElement(dt.getTypeArguments().get(0)).filter(typeElement::equals))
-                    .map(te -> value(ve)))),
+            .flatMap(ve -> optionalAsStream(asDeclaredType(ve.asType())
+                .filter(dt -> Types.isSameType(dt.getTypeArguments().get(0), declaredType))
+                .map(te -> value(ve)))),
 
         instancesProviders.stream()
             .flatMap(this::allStaticMethods)
             .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawShowClass) &&
-                asDeclaredType(m.getReturnType()).map(dt -> dt.getTypeArguments().get(0))
+                asDeclaredType(m.getReturnType())
+                    .map(dt -> dt.getTypeArguments().get(0))
                     .flatMap(this::asTypeElement)
                     .filter(typeElement::equals)
                     .isPresent())
@@ -779,7 +781,6 @@ final class DeriveUtilsImpl implements DeriveUtils {
   }
 
   private Stream<TypeVariable> typeVariablesIn0(TypeMirror typeMirror) {
-
     return asDeclaredType.visit(typeMirror)
         .map(dt -> dt.getTypeArguments().stream().flatMap(this::typeVariablesIn0))
         .orElseGet(() -> asTypeVariable.visit(typeMirror).map(Stream::of).orElse(Stream.empty()));
