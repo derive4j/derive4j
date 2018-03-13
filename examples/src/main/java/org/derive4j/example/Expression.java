@@ -40,7 +40,7 @@ import static org.derive4j.example.Expressions.Mult;
 import static org.derive4j.example.Expressions.expressionHash;
 import static org.derive4j.example.Expressions.expressionShow;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Expression {
 
   public static Integer eval(Expression expression) {

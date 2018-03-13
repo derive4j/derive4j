@@ -35,10 +35,11 @@ import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Option<A> {
 
-  Option() {}
+  Option() {
+  }
 
   public abstract <X> X option(Supplier<X> none, Function<A, X> some);
 

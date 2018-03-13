@@ -12,17 +12,17 @@ import org.derive4j.hkt.__;
 @Data(flavour = Flavour.FJ)
 @Derive(@Instances(Ord.class))
 public abstract class Property<T> implements __<Property.µ, T> {
-    public enum µ {}
-    Property() {}
+  public enum µ {
+  }
 
-    interface Cases<T, R> {
-        R Simple(String name
-            , Option<Integer> value
-            , List<String> params);
+  Property() {
+  }
 
-        R Multi(String name
-            , List<Integer> values
-            , List<String> params);
-    }
-    public abstract <R> R match(Cases<T, R> cases);
+  interface Cases<T, R> {
+    R Simple(String name, Option<Integer> value, List<String> params);
+
+    R Multi(String name, List<Integer> values, List<String> params);
+  }
+
+  public abstract <R> R match(Cases<T, R> cases);
 }

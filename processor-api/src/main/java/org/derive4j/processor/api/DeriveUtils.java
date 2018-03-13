@@ -85,20 +85,18 @@ public interface DeriveUtils {
 
   String capitalize(CharSequence string);
 
-  Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext, ClassName typeClass,
-      TypeElement typeElement,
-      List<TypeElement> lowPriorityProviders);
+  Optional<InstanceLocation> findInstance(TypeElement typeElementContext, ClassName typeClassContext,
+      ClassName typeClass, TypeElement typeElement, List<TypeElement> lowPriorityProviders);
 
-  DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext,ClassName typeClassContext, ClassName
-      typeClass, TypeMirror type,
-      List<TypeElement> lowPriorityProviders);
+  DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext, ClassName typeClassContext,
+      ClassName typeClass, TypeMirror type, List<TypeElement> lowPriorityProviders);
 
   DeriveResult<FieldsTypeClassInstanceBindingMap> resolveFieldInstances(AlgebraicDataType adt, ClassName typeClass,
       List<TypeElement> lowPriorityProviders);
 
   CodeBlock lambdaImpl(DataConstructor constructor, CodeBlock impl);
 
-  CodeBlock lambdaImpl(DataConstructor constructor, String suffix,  CodeBlock impl);
+  CodeBlock lambdaImpl(DataConstructor constructor, String suffix, CodeBlock impl);
 
   DeriveResult<DerivedCodeSpec> generateInstance(AlgebraicDataType adt, ClassName typeClass,
       List<TypeElement> lowPriorityProviders, Function<InstanceUtils, DerivedCodeSpec> generateInstance);

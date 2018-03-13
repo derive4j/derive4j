@@ -52,8 +52,8 @@ public abstract class DataConstruction {
     return DataConstructions.noConstructor();
   }
 
-  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases().multipleConstructors(
-      MultipleConstructorsSupport::getConstructors)
+  private static final Function<DataConstruction, List<DataConstructor>> getConstructors = cases()
+      .multipleConstructors(MultipleConstructorsSupport::getConstructors)
       .oneConstructor(Collections::singletonList)
       .noConstructor(Collections::emptyList);
 

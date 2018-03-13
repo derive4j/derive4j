@@ -76,10 +76,8 @@ final class ExportDerivator implements Derivator {
 
     Name adtClassName = executableElement.getEnclosingElement().getSimpleName();
     String methodName = executableElement.getSimpleName().toString();
-    String parameters = executableElement.getParameters()
-        .stream()
-        .map(ve -> ve.getSimpleName().toString())
-        .collect(Collectors.joining(", "));
+    String parameters = executableElement.getParameters().stream().map(ve -> ve.getSimpleName().toString()).collect(
+        Collectors.joining(", "));
 
     DerivedCodeSpec result;
 
@@ -89,9 +87,11 @@ final class ExportDerivator implements Derivator {
           Modifier.PRIVATE, Modifier.STATIC);
 
       if (!executableElement.getTypeParameters().isEmpty()) {
-        singleton.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
-        methodBuilder.addAnnotation(
-            AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "{$S, $S}", "rawtypes", "unchecked").build());
+        singleton
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
+        methodBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+            .addMember("value", "{$S, $S}", "rawtypes", "unchecked")
+            .build());
       }
 
       result = DerivedCodeSpec.codeSpec(singleton.build(),
@@ -149,13 +149,13 @@ final class ExportDerivator implements Derivator {
   }
 
   private boolean hasExportAsPublicAnnotation(ExecutableElement executableElement) {
-    return executableElement.getAnnotationMirrors()
-        .stream()
-        .anyMatch(am -> exportAsPublicAnnotation.equals(am.getAnnotationType().asElement()));
+    return executableElement.getAnnotationMirrors().stream().anyMatch(
+        am -> exportAsPublicAnnotation.equals(am.getAnnotationType().asElement()));
   }
 
   private static boolean isStaticPackage(Set<Modifier> modifiers) {
-    return modifiers.contains(Modifier.STATIC) && !modifiers.contains(Modifier.PUBLIC) && !modifiers.contains(Modifier.PRIVATE);
+    return modifiers.contains(Modifier.STATIC) && !modifiers.contains(Modifier.PUBLIC)
+        && !modifiers.contains(Modifier.PRIVATE);
   }
 
 }

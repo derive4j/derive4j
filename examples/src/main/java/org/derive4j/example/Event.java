@@ -38,7 +38,8 @@ import org.derive4j.Visibility;
 
 @data
 @Data(arguments = ArgOption.checkedNotNull)
-@Derive(withVisibility = Visibility.Smart, make = {Make.getters, Make.caseOfMatching}, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class}))
+@Derive(withVisibility = Visibility.Smart, make = { Make.getters,
+    Make.caseOfMatching }, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class }))
 public abstract class Event<T> {
 
   public abstract <X> X match(Cases<T, X> cases);

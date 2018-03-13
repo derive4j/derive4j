@@ -32,7 +32,8 @@ public abstract class DeriveMessage {
     R message(String text, List<MessageLocalization> localizations);
   }
 
-  DeriveMessage() {}
+  DeriveMessage() {
+  }
 
   public abstract <R> R match(Case<R> message);
 

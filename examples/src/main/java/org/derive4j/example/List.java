@@ -44,7 +44,7 @@ import static org.derive4j.example.Lists.cons;
 import static org.derive4j.example.Lists.lazy;
 import static org.derive4j.example.Lists.nil;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class List<A> {
 
   public static List<Integer> naturals() {
@@ -59,9 +59,7 @@ public abstract class List<A> {
 
   public static List<Integer> range(final int from, int toExclusive) {
 
-    return (from == toExclusive)
-        ? nil()
-        : cons(from, lazy(() -> range(from + 1, toExclusive)));
+    return (from == toExclusive) ? nil() : cons(from, lazy(() -> range(from + 1, toExclusive)));
   }
 
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
@@ -87,23 +85,20 @@ public abstract class List<A> {
 
   public final List<A> filter(Predicate<A> p) {
 
-    return lazy(() -> list(Lists::nil, (h, tail) -> p.test(h)
-        ? cons(h, tail.filter(p))
-        : tail.filter(p)));
+    return lazy(() -> list(Lists::nil, (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)));
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {
 
     return lazy(() -> list(Lists::nil, (h, t) -> f.apply(h).append(t.bind(f))));
     // alternative implementation using foldRight:
-    //return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)), nil()));
+    // return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)),
+    // nil()));
   }
 
   public final List<A> take(int n) {
 
-    return (n <= 0)
-        ? nil()
-        : lazy(() -> list(Lists::nil, (head, tail) -> cons(head, tail.take(n - 1))));
+    return (n <= 0) ? nil() : lazy(() -> list(Lists::nil, (head, tail) -> cons(head, tail.take(n - 1))));
   }
 
   public final void forEach(Consumer<A> effect) {
@@ -152,7 +147,7 @@ public abstract class List<A> {
 
   public static void main(String[] args) {
     List<Integer> naturals = naturals().take(100);
-    List<Integer> naturals2 = naturals().take(100).map(i-> i-1);
+    List<Integer> naturals2 = naturals().take(100).map(i -> i - 1);
     Lists.listShow(Show.intShow).println(naturals);
     System.out.println(Lists.listEqual(Equal.intEqual).eq(naturals, naturals));
     System.out.println(Lists.listOrd(Ord.intOrd).compare(naturals, naturals2));

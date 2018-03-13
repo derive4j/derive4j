@@ -33,7 +33,8 @@ public abstract class TypeRestriction {
     R typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror refinementType, DataArgument typeEq);
   }
 
-  public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type, DataArgument typeEq) {
+  public static TypeRestriction typeRestriction(TypeVariable restrictedTypeVariable, TypeMirror type,
+      DataArgument typeEq) {
 
     return TypeRestrictions.typeRestriction(restrictedTypeVariable, type, typeEq);
   }

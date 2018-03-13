@@ -22,6 +22,6 @@ import java.util.List;
 
 public interface DerivatorFactory {
 
-   List<DerivatorSelection> derivators(DeriveUtils deriveUtils);
+  List<DerivatorSelection> derivators(DeriveUtils deriveUtils);
 
 }

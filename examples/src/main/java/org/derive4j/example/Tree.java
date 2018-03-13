@@ -27,9 +27,6 @@ package org.derive4j.example;
 
 import fj.Equal;
 import fj.F2;
-import fj.Hash;
-import fj.Ord;
-import fj.Show;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.FieldNames;
@@ -39,10 +36,10 @@ import org.derive4j.Instances;
 @Data(flavour = Flavour.FJ)
 @Derive(@Instances(Equal.class))
 public abstract class Tree<A> {
-  Tree(){}
+  Tree() {
+  }
 
-  public abstract <X> X tree(@FieldNames({"root", "subForest"}) F2<A, List<Tree<A>>, X> tree);
-
+  public abstract <X> X tree(@FieldNames({ "root", "subForest" }) F2<A, List<Tree<A>>, X> tree);
 
   static <A> Equal<List<A>> listEqual(Equal<A> aEqual) {
     return Lists.listEqual(aEqual);
