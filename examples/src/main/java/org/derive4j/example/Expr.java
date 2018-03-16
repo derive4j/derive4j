@@ -41,13 +41,13 @@ import static org.derive4j.example.Exprs.Add;
 import static org.derive4j.example.Exprs.Const;
 import static org.derive4j.example.Exprs.Mult;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Expr {
 
   public static Integer eval(Expr expression) {
 
-    return expression.match(i -> i, (left, right) -> eval(left) + eval(right), (left, right) -> eval(left) * eval(right),
-        (expr) -> -eval(expr));
+    return expression.match(i -> i, (left, right) -> eval(left) + eval(right),
+        (left, right) -> eval(left) * eval(right), (expr) -> -eval(expr));
   }
 
   public static void main(String[] args) {

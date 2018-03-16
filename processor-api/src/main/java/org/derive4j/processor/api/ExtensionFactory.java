@@ -22,6 +22,6 @@ import java.util.List;
 
 public interface ExtensionFactory {
 
-   List<Extension> extensions(DeriveUtils deriveUtils);
+  List<Extension> extensions(DeriveUtils deriveUtils);
 
 }

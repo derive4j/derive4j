@@ -45,7 +45,7 @@ import static org.derive4j.processor.api.DerivedCodeSpec.none;
 
 final class LazyConstructorDerivator implements Derivator {
 
-  private final DeriveUtils deriveUtils;
+  private final DeriveUtils                deriveUtils;
   private final StrictConstructorDerivator strictDerivator;
 
   LazyConstructorDerivator(DeriveUtils deriveUtils) {
@@ -64,7 +64,8 @@ final class LazyConstructorDerivator implements Derivator {
     TypeConstructor typeConstructor = adt.typeConstructor();
     SamInterface f0 = deriveUtils.function0Model(adt.deriveConfig().flavour());
     TypeElement lazyTypeElement = f0.samClass();
-    TypeName lazyArgTypeName = TypeName.get(deriveUtils.types().getDeclaredType(lazyTypeElement, typeConstructor.declaredType()));
+    TypeName lazyArgTypeName = TypeName
+        .get(deriveUtils.types().getDeclaredType(lazyTypeElement, typeConstructor.declaredType()));
     String lazyArgName = Utils.uncapitalize(typeConstructor.typeElement().getSimpleName());
     TypeName typeName = TypeName.get(typeConstructor.declaredType());
 
@@ -97,8 +98,8 @@ final class LazyConstructorDerivator implements Derivator {
                 .build())
             .build())
         .addMethod(Utils.overrideMethodBuilder(adt.matchMethod().element())
-            .addStatement("return (this.expression == null ? this.evaluation : _evaluate()).$L($L)", adt.matchMethod().element()
-                    .getSimpleName(),
+            .addStatement("return (this.expression == null ? this.evaluation : _evaluate()).$L($L)",
+                adt.matchMethod().element().getSimpleName(),
                 Utils.asArgumentsStringOld(adt.matchMethod().element().getParameters()))
             .build());
 
@@ -110,7 +111,8 @@ final class LazyConstructorDerivator implements Derivator {
 
     typeSpecBuilder.addMethods(optionalAsStream(strictDerivator.findAbstractEquals(typeConstructor.typeElement())
         .map(equals -> deriveUtils.overrideMethodBuilder(equals, adt.typeConstructor().declaredType())
-            .addStatement("return (this.expression == null ? this.evaluation : _evaluate()).equals($L)", equals.getParameters().get(0).getSimpleName())
+            .addStatement("return (this.expression == null ? this.evaluation : _evaluate()).equals($L)",
+                equals.getParameters().get(0).getSimpleName())
             .build())).collect(Collectors.toList()));
 
     typeSpecBuilder.addMethods(optionalAsStream(strictDerivator.findAbstractHashCode(typeConstructor.typeElement())
@@ -123,15 +125,15 @@ final class LazyConstructorDerivator implements Derivator {
             .addStatement("return (this.expression == null ? this.evaluation : _evaluate()).toString()")
             .build())).collect(Collectors.toList()));
 
-    return result(codeSpec(typeSpecBuilder.build(), MethodSpec.methodBuilder("lazy")
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .addTypeVariables(typeConstructor.typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
-        .addParameter(lazyArgTypeName, lazyArgName)
-        .returns(typeName)
-        .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty()
-            ? ""
-            : "<>", lazyArgName)
-        .build()));
+    return result(codeSpec(typeSpecBuilder.build(),
+        MethodSpec.methodBuilder("lazy")
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+            .addTypeVariables(
+                typeConstructor.typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
+            .addParameter(lazyArgTypeName, lazyArgName)
+            .returns(typeName)
+            .addStatement("return new $L$L($L)", className, typeVariableNames.isEmpty() ? "" : "<>", lazyArgName)
+            .build()));
 
   }
 

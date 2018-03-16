@@ -41,15 +41,8 @@ public @interface Derive {
 
   Visibility withVisibility() default Same;
 
-  Make[] make() default { lambdaVisitor,
-                          constructors,
-                          getters,
-                          modifiers,
-                          lazyConstructor,
-                          caseOfMatching,
-                          casesMatching,
-                          catamorphism,
-                          hktCoerce };
+  Make[] make() default { lambdaVisitor, constructors, getters, modifiers, lazyConstructor, caseOfMatching,
+      casesMatching, catamorphism, hktCoerce };
 
   Instances[] value() default {};
 

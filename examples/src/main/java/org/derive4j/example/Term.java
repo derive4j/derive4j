@@ -46,19 +46,17 @@ import static org.derive4j.example.Terms.Zero;
 // Highlights:
 // -> no cast and no subtyping.
 // -> all of the eval function logic is static and not scattered all around Term subclasses.
-@Data(@Derive(@Instances({ Show.class, Hash.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class })))
 public abstract class Term<T> {
 
   public static <T> T eval(final Term<T> term) {
 
-    return Terms.caseOf(term).
-        Zero(__ -> __.coerce(0)).
-        Succ((t, __) -> __.coerce(eval(t) + 1)).
-        Pred((t, __) -> __.coerce(eval(t) - 1)).
-        IsZero((t, __) -> __.coerce(eval(t) == 0)).
-        If((cond, then, otherwise) -> eval(cond)
-            ? eval(then)
-            : eval(otherwise));
+    return Terms.caseOf(term)
+        .Zero(__ -> __.coerce(0))
+        .Succ((t, __) -> __.coerce(eval(t) + 1))
+        .Pred((t, __) -> __.coerce(eval(t) - 1))
+        .IsZero((t, __) -> __.coerce(eval(t) == 0))
+        .If((cond, then, otherwise) -> eval(cond) ? eval(then) : eval(otherwise));
   }
 
   public static void main(final String[] args) {
@@ -74,8 +72,8 @@ public abstract class Term<T> {
     Term<Boolean> False = IsZero(one);
     out.println(eval(If(True, True, False))); // "true"
     // out.println(prettyPrint(If(True, True, False), 0)); // "if IsZero(0)
-    //  then IsZero(0)
-    //  else IsZero(Succ(0))"
+    // then IsZero(0)
+    // else IsZero(Succ(0))"
   }
 
   Term() {

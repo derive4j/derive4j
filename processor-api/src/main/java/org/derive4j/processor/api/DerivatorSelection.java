@@ -25,11 +25,14 @@ import org.derive4j.ExportAsPublic;
 
 @Data
 public abstract class DerivatorSelection {
-  DerivatorSelection(){}
-  interface Case<X> {
-    X selection(ClassName forClass, Optional<String> selector, Derivator derivator) ;
+  DerivatorSelection() {
   }
-  public abstract  <X> X match(Case<X> selection);
+
+  interface Case<X> {
+    X selection(ClassName forClass, Optional<String> selector, Derivator derivator);
+  }
+
+  public abstract <X> X match(Case<X> selection);
 
   @ExportAsPublic
   static DerivatorSelection selection(ClassName forClass, Derivator derivator) {

@@ -5,7 +5,7 @@ archivesBaseName = "${project.projectName}-${project.name}"
 
 dependencies {
   testCompile dependencyJunit
-  apt dependencyPreviousDerive4J
+  annotationProcessor dependencyPreviousDerive4J
 }
 
 configureUpload(lgplLicenseName)

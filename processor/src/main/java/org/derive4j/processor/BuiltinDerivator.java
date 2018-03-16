@@ -33,14 +33,15 @@ import static org.derive4j.processor.Utils.traverseResults;
 
 final class BuiltinDerivator {
 
-  private BuiltinDerivator() {}
+  private BuiltinDerivator() {
+  }
 
   static Derivator derivator(DeriveUtils deriveUtils) {
 
     Derivator exportDerivator = new ExportDerivator(deriveUtils);
 
-    Function<Make, Derivator> makeDerivators = Makes.cases().
-        <Derivator>lambdaVisitor_(new MapperDerivator(deriveUtils))
+    Function<Make, Derivator> makeDerivators = Makes.cases()
+        .<Derivator>lambdaVisitor_(new MapperDerivator(deriveUtils))
         .constructors_(new StrictConstructorDerivator(deriveUtils))
         .lazyConstructor_(new LazyConstructorDerivator(deriveUtils))
         .casesMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
@@ -52,8 +53,8 @@ final class BuiltinDerivator {
 
     return adt -> traverseResults(
         concat(of(exportDerivator), adt.deriveConfig().makes().stream().map(makeDerivators)).map(d -> d.derive(adt))
-            .collect(toList())).map(
-        codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
+            .collect(toList()))
+                .map(codeSpecList -> codeSpecList.stream().reduce(DerivedCodeSpec.none(), DerivedCodeSpec::append));
   }
 
 }

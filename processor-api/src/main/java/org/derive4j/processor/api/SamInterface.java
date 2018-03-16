@@ -27,7 +27,8 @@ import static org.derive4j.processor.api.SamInterfaces.getSamClass;
 
 @Data
 public abstract class SamInterface {
-  SamInterface() {}
+  SamInterface() {
+  }
 
   public abstract <X> X match(Case<X> samInterface);
 

@@ -39,7 +39,7 @@ import static org.derive4j.processor.Utils.joinStringsAsArguments;
 
 class PartialMatchingStepDerivator {
 
-  private final MapperDerivator mapperDerivator;
+  private final MapperDerivator                       mapperDerivator;
   private final PatternMatchingDerivator.MatchingKind matchingKind;
 
   PartialMatchingStepDerivator(DeriveUtils deriveUtils, PatternMatchingDerivator.MatchingKind matchingKind) {
@@ -58,45 +58,49 @@ class PartialMatchingStepDerivator {
         .addTypeVariables(PatternMatchingDerivator.matcherVariables(adt).map(TypeVariableName::get).collect(toList()))
         .superclass(nextStepTypeName)
         .addMethod(MethodSpec.constructorBuilder()
-            .addParameters((matchingKind == PatternMatchingDerivator.MatchingKind.CaseOf)
-                ? singleton(adtParamSpec)
-                : emptyList())
+            .addParameters(
+                (matchingKind == PatternMatchingDerivator.MatchingKind.CaseOf) ? singleton(adtParamSpec) : emptyList())
             .addParameters(previousConstructors.stream()
-                .map(dc -> ParameterSpec.builder(mapperDerivator.mapperTypeName(adt, dc), MapperDerivator.mapperFieldName(dc)).build())
+                .map(dc -> ParameterSpec
+                    .builder(mapperDerivator.mapperTypeName(adt, dc), MapperDerivator.mapperFieldName(dc))
+                    .build())
                 .collect(toList()))
-            .addStatement("super($L)", (matchingKind == PatternMatchingDerivator.MatchingKind.CaseOf
-                                            ? adtParamSpec.name + ", "
-                                            : "") +
-                joinStringsAsArguments(
-                    Stream.concat(previousConstructors.stream().map(MapperDerivator::mapperFieldName), Stream.of("null"))))
+            .addStatement("super($L)",
+                (matchingKind == PatternMatchingDerivator.MatchingKind.CaseOf ? adtParamSpec.name + ", " : "")
+                    + joinStringsAsArguments(Stream.concat(
+                        previousConstructors.stream().map(MapperDerivator::mapperFieldName), Stream.of("null"))))
             .build())
-        .addMethods(partialMatchMethodBuilder(adt, previousConstructors, 0, currentConstructor, nextStepTypeName).map(
-            MethodSpec.Builder::build).collect(toList()))
+        .addMethods(partialMatchMethodBuilder(adt, previousConstructors, 0, currentConstructor, nextStepTypeName)
+            .map(MethodSpec.Builder::build)
+            .collect(toList()))
         .build();
   }
 
-  Stream<MethodSpec.Builder> partialMatchMethodBuilder(AlgebraicDataType adt, List<DataConstructor> previousConstructors,
-      int nbSkipConstructors, DataConstructor currentConstructor, ParameterizedTypeName returnType) {
+  Stream<MethodSpec.Builder> partialMatchMethodBuilder(AlgebraicDataType adt,
+      List<DataConstructor> previousConstructors, int nbSkipConstructors, DataConstructor currentConstructor,
+      ParameterizedTypeName returnType) {
 
     ParameterizedTypeName otherwiseMatcherTypeName = OtherwiseMatchingStepDerivator.otherwiseMatcherTypeName(adt);
 
     String args = (matchingKind == PatternMatchingDerivator.MatchingKind.CaseOf
-                       ? (previousConstructors.isEmpty()
-                              ? "this."
-                              : "((" + otherwiseMatcherTypeName.toString() + ") this).") + PatternMatchingDerivator.asFieldSpec(adt).name + ", "
-                       : "") +
-        Stream.concat(Stream.concat(
-            previousConstructors.stream().map(dc -> "((" + otherwiseMatcherTypeName + ") this)." + MapperDerivator.mapperFieldName(dc)),
-            IntStream.range(0, nbSkipConstructors).mapToObj(__ -> "null")), Stream.of(MapperDerivator.mapperFieldName(currentConstructor)))
-            .reduce((s1, s2) -> s1 + ", " + s2)
-            .orElse("");
+        ? (previousConstructors.isEmpty() ? "this." : "((" + otherwiseMatcherTypeName.toString() + ") this).")
+            + PatternMatchingDerivator.asFieldSpec(adt).name + ", "
+        : "")
+        + Stream.concat(
+            Stream.concat(
+                previousConstructors.stream()
+                    .map(dc -> "((" + otherwiseMatcherTypeName + ") this)." + MapperDerivator.mapperFieldName(dc)),
+                IntStream.range(0, nbSkipConstructors).mapToObj(__ -> "null")),
+            Stream.of(MapperDerivator.mapperFieldName(currentConstructor))).reduce((s1, s2) -> s1 + ", " + s2).orElse(
+                "");
 
     return Stream.of(
 
         MethodSpec.methodBuilder(currentConstructor.name())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .returns(returnType)
-            .addParameter(mapperDerivator.mapperTypeName(adt, currentConstructor), MapperDerivator.mapperFieldName(currentConstructor))
+            .addParameter(mapperDerivator.mapperTypeName(adt, currentConstructor),
+                MapperDerivator.mapperFieldName(currentConstructor))
             .addStatement("return new $L<>($L)", returnType.rawType.simpleName(), args),
 
         PatternMatchingDerivator.constantMatchMethodBuilder(adt, currentConstructor).returns(returnType));
@@ -104,11 +108,9 @@ class PartialMatchingStepDerivator {
 
   static ParameterizedTypeName superClass(AlgebraicDataType adt, PatternMatchingDerivator.MatchingKind matchingKind,
       List<DataConstructor> nextConstructors) {
-    return ParameterizedTypeName.get(adt.deriveConfig()
-            .targetClass()
-            .className()
-            .nestedClass(matchingKind.wrapperClassName())
-            .nestedClass(nextConstructors.isEmpty()
+    return ParameterizedTypeName.get(
+        adt.deriveConfig().targetClass().className().nestedClass(matchingKind.wrapperClassName()).nestedClass(
+            nextConstructors.isEmpty()
                 ? OtherwiseMatchingStepDerivator.otherwiseBuilderClassName()
                 : partialMatchBuilderClassName(nextConstructors.get(0))),
         PatternMatchingDerivator.matcherVariables(adt).map(TypeVariableName::get).toArray(TypeName[]::new));

@@ -46,14 +46,15 @@ import static org.derive4j.example.Persons.Person;
 import static org.derive4j.example.Persons.getContact;
 import static org.derive4j.example.Persons.modContact;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Person {
 
   public static void main(String[] args) {
 
     Person joe = Person(Name0("Joe"), Contacts.byMail(Address(10, "Main St")));
 
-    // oops! there was a off by one error in the import process. We must increment all street numbers!!
+    // oops! there was a off by one error in the import process. We must increment
+    // all street numbers!!
 
     // Easy with Derive4J
     Function<Person, Person> incrementStreetNumber = modContact(modPostalAddress(modNumber(number -> number + 1)));
