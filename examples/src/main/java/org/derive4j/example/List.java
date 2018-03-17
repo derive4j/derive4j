@@ -84,8 +84,10 @@ public abstract class List<A> {
   }
 
   public final List<A> filter(Predicate<A> p) {
-
-    return lazy(() -> list(Lists::nil, (h, tail) -> p.test(h) ? cons(h, tail.filter(p)) : tail.filter(p)));
+    Function<List<A>, List<A>> filter = Lists.cata(
+        Lists::nil,
+        (a, tail) -> p.test(a) ? cons(a, lazy(tail)) : lazy(tail));
+    return lazy(() -> filter.apply(this));
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {
@@ -136,7 +138,6 @@ public abstract class List<A> {
   }
 
   public final int length() {
-
     return foldLeft((i, a) -> i + 1, 0);
   }
 
@@ -146,7 +147,8 @@ public abstract class List<A> {
   }
 
   public static void main(String[] args) {
-    List<Integer> naturals = naturals().take(100);
+    List<Integer> naturals = naturals().take(20000).filter(i -> i > 10000).take(100);
+    System.out.println(naturals.length());
     List<Integer> naturals2 = naturals().take(100).map(i -> i - 1);
     Lists.listShow(Show.intShow).println(naturals);
     System.out.println(Lists.listEqual(Equal.intEqual).eq(naturals, naturals));

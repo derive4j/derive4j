@@ -18,10 +18,12 @@
  */
 package org.derive4j.processor;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
@@ -75,7 +77,10 @@ final class LazyConstructorDerivator implements Derivator {
         .map(TypeVariableName::get)
         .collect(Collectors.toList());
 
-    String className = "Lazy";
+    ClassName className = ClassName.bestGuess("Lazy");
+    TypeName lazyTypeName = typeVariableNames.isEmpty()
+        ? className
+        : ParameterizedTypeName.get(className, typeVariableNames.toArray(new TypeName[0]));
     TypeSpec.Builder typeSpecBuilder = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
         .addTypeVariables(typeVariableNames)
@@ -89,11 +94,25 @@ final class LazyConstructorDerivator implements Derivator {
             .addModifiers(Modifier.PRIVATE, Modifier.SYNCHRONIZED)
             .returns(typeName)
             .addCode(CodeBlock.builder()
-                .addStatement("$T e = expression", lazyArgTypeName)
-                .beginControlFlow("if (e != null)")
-                .addStatement("evaluation = e.$L", f0.sam())
-                .addStatement("expression = null")
+                .addStatement("$T lazy = this", lazyTypeName)
+                .beginControlFlow("while (true)")
+                .addStatement("$T expr = lazy.expression", lazyArgTypeName)
+                .beginControlFlow("if (expr == null)")
+                .addStatement("evaluation = lazy.evaluation", f0.sam())
+                .addStatement("break")
                 .endControlFlow()
+                .beginControlFlow("else")
+                .addStatement("$T eval = expr.$L", typeName, f0.sam())
+                .beginControlFlow("if (eval instanceof $T)", className)
+                .addStatement("lazy = ($T) eval", lazyTypeName)
+                .endControlFlow()
+                .beginControlFlow("else")
+                .addStatement("evaluation = eval")
+                .addStatement("break")
+                .endControlFlow()
+                .endControlFlow()
+                .endControlFlow()
+                .addStatement("expression = null")
                 .addStatement("return evaluation")
                 .build())
             .build())

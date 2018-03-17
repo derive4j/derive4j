@@ -33,18 +33,20 @@ public class Bench {
 
   public static void main(String[] args) {
 
-    // Average time after 200 iterations: 17.869925 ms
-    timed(() -> List.range(0, COUNT).length());
+    // Average time after 200 iterations: 44.041202 ms
+    timed(() -> List.range(0, COUNT).filter(i -> i >= 100000).length());
 
-    // Average time after 200 iterations: 26.725065 ms
-    timed(() -> io.vavr.collection.Stream.range(0, COUNT).length());
+    // Average time after 200 iterations: 55.995317 ms
+    timed(() -> io.vavr.collection.Stream.range(0, COUNT).filter(i -> i >= 100000).length());
 
-    // Average time after 200 iterations: 24.768288 ms
-    timed(() -> fj.data.Stream.range(0, COUNT).length());
+    // Average time after 200 iterations: 49.114037 ms
+    timed(() -> fj.data.Stream.range(0, COUNT).filter(i -> i >= 100000).length());
 
-    // Average time after 200 iterations: 4.771267 ms
-    timed(() -> java.util.stream.Stream.iterate(0, i -> i + 1).limit(COUNT).reduce(0, (i1, i2) -> i1 + 1));
+    // Average time after 200 iterations: 6.264414 ms
+    timed(() -> java.util.stream.Stream.iterate(0, i -> i + 1).limit(COUNT).filter(i -> i >= 100000).reduce(0,
+        (i1, i2) -> i1 + 1));
 
+    // Average time after 200 iterations: 6.911543 ms
     timed(() -> Stream.range(0, COUNT).length());
   }
 
