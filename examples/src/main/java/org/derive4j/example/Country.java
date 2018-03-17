@@ -33,7 +33,7 @@ import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public enum Country {
 
   Fr {
@@ -42,7 +42,8 @@ public enum Country {
 
       return cases.Fr();
     }
-  }, Ch {
+  },
+  Ch {
     @Override
     public <R> R match(Cases<R> cases) {
 

@@ -20,8 +20,6 @@ package org.derive4j;
 
 import java.lang.annotation.Target;
 
-import static org.derive4j.Visibility.Same;
-
 @Target({})
 public @interface Instances {
 

@@ -18,15 +18,11 @@
  */
 package org.derive4j.processor.api.model;
 
-import java.util.ArrayList;
 import java.util.List;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
-import org.derive4j.Derive;
 
-import static java.util.Collections.unmodifiableList;
-import static org.derive4j.Visibility.Smart;
 import static org.derive4j.processor.api.model.DataConstructors.getArguments;
 import static org.derive4j.processor.api.model.DataConstructors.getDeconstructor;
 import static org.derive4j.processor.api.model.DataConstructors.getName;
@@ -53,7 +49,6 @@ public abstract class DataConstructor {
 
     return getName(this);
   }
-
 
   public int index() {
     return getIndex(this);

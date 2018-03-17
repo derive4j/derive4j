@@ -26,7 +26,6 @@ import com.squareup.javapoet.TypeSpec;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -86,13 +85,13 @@ import static org.derive4j.processor.api.model.DerivedInstanceConfigs.getTargetC
 @SupportedAnnotationTypes("*")
 public final class DerivingProcessor extends AbstractProcessor {
 
-  private static final Set<ElementKind> scannedElementKinds = EnumSet.of(ElementKind.CLASS, ElementKind.INTERFACE,
-      ElementKind.ENUM);
-  private final ArrayList<P2<String, RuntimeException>> remainingElements = new ArrayList<>();
-  private Derivator builtinDerivator;
-  private AdtParser adtParser;
-  private DeriveConfigBuilder deriveConfigBuilder;
-  private List<Extension> extensions;
+  private static final Set<ElementKind>                   scannedElementKinds = EnumSet.of(ElementKind.CLASS,
+      ElementKind.INTERFACE, ElementKind.ENUM);
+  private final ArrayList<P2<String, RuntimeException>>   remainingElements   = new ArrayList<>();
+  private Derivator                                       builtinDerivator;
+  private AdtParser                                       adtParser;
+  private DeriveConfigBuilder                             deriveConfigBuilder;
+  private List<Extension>                                 extensions;
   private Map<P2<ClassName, Optional<String>>, Derivator> derivators;
 
   @Override
@@ -100,7 +99,8 @@ public final class DerivingProcessor extends AbstractProcessor {
     super.init(processingEnv);
 
     deriveConfigBuilder = new DeriveConfigBuilder(processingEnv.getElementUtils());
-    DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(), deriveConfigBuilder);
+    DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
+        deriveConfigBuilder);
     builtinDerivator = BuiltinDerivator.derivator(deriveUtils);
     adtParser = new AdtParser(deriveUtils);
     extensions = loadEextensions(deriveUtils);
@@ -115,8 +115,8 @@ public final class DerivingProcessor extends AbstractProcessor {
     } else {
       List<P2<TypeElement, DeriveConfig>> parsedRemainingElements = new ArrayList<>();
       remainingElements.forEach(e -> {
-        Optional<P2<TypeElement, DeriveConfig>> deriveConfig = deriveConfigBuilder.findDeriveConfig(
-            processingEnv.getElementUtils().getTypeElement(e._1()));
+        Optional<P2<TypeElement, DeriveConfig>> deriveConfig = deriveConfigBuilder
+            .findDeriveConfig(processingEnv.getElementUtils().getTypeElement(e._1()));
         if (!deriveConfig.isPresent()) {
           printErrorMessage(e._1(), e._2());
         }
@@ -125,8 +125,7 @@ public final class DerivingProcessor extends AbstractProcessor {
 
       final Stream<P2<TypeElement, DeriveConfig>> dataTypeElements = concat(parsedRemainingElements.stream(),
           findAllElements(roundEnv.getRootElements().parallelStream()).sequential()
-              .flatMap(e -> optionalAsStream(deriveConfigBuilder.findDeriveConfig((TypeElement) e)))
-          );
+              .flatMap(e -> optionalAsStream(deriveConfigBuilder.findDeriveConfig((TypeElement) e))));
 
       remainingElements.clear();
       dataTypeElements.map(e -> {
@@ -160,7 +159,8 @@ public final class DerivingProcessor extends AbstractProcessor {
 
           IO<Unit> derivedInstances = effect(() -> {
           });
-          for (Map.Entry<ClassName, P2<Stream<DeriveMessage>, DerivedCodeSpec>> derivedClass : derivedInstances(adt).entrySet()) {
+          for (Map.Entry<ClassName, P2<Stream<DeriveMessage>, DerivedCodeSpec>> derivedClass : derivedInstances(adt)
+              .entrySet()) {
             ClassName className = derivedClass.getKey();
             if (className.equals(targetClassName)) {
               codeSpec = codeSpec.append(derivedClass.getValue()._2());
@@ -190,15 +190,20 @@ public final class DerivingProcessor extends AbstractProcessor {
 
   private Function<DeriveMessage, IO<Unit>> mesagePrint(TypeElement element) {
     return DeriveMessages.cases()
-        .message((msg, localizations) -> localizations.isEmpty()
-            ? effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element))
-            : IO.traverse(localizations, MessageLocalizations.cases()
-                .onElement(e -> effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e)))
-                .onAnnotation((e, annotation) -> effect(
-                    () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation)))
-                .onAnnotationValue((e, annotation, annotationValue) -> effect(
-                    () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation, annotationValue))))
-                .voided());
+        .message(
+            (msg,
+                localizations) -> localizations.isEmpty()
+                    ? effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, element))
+                    : IO.traverse(localizations, MessageLocalizations.cases()
+                        .onElement(
+                            e -> effect(() -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e)))
+                        .onAnnotation((e, annotation) -> effect(
+                            () -> processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg, e, annotation)))
+                        .onAnnotationValue(
+                            (e, annotation,
+                                annotationValue) -> effect(() -> processingEnv.getMessager()
+                                    .printMessage(Diagnostic.Kind.ERROR, msg, e, annotation, annotationValue))))
+                        .voided());
   }
 
   private TypeSpec toTypeSpec(DeriveConfig deriveConfig, ClassName targetClassName, DerivedCodeSpec codeSpec) {
@@ -214,39 +219,36 @@ public final class DerivingProcessor extends AbstractProcessor {
 
   private Map<ClassName, P2<Stream<DeriveMessage>, DerivedCodeSpec>> derivedInstances(AlgebraicDataType adt) {
     ClassName targetClassName = adt.deriveConfig().targetClass().className();
-    return adt.deriveConfig()
-        .derivedInstances()
-        .entrySet()
-        .stream()
-        .map(deriveSelection -> {
-          DerivedInstanceConfig derivedInstanceConfig = deriveSelection.getValue();
-          ClassName instanceTargetClassName = getTargetClass(derivedInstanceConfig).orElse(targetClassName);
-          return get(P2(deriveSelection.getKey(), getImplSelector(derivedInstanceConfig)), derivators).map(
-              derivator -> P2(instanceTargetClassName, derivator.derive(adt)))
-              .orElse(P2(instanceTargetClassName, error(message(
-                  "Could not find instance derivator for " + deriveSelection.getKey() + " and " + derivedInstanceConfig))));
-        })
-        .collect(
-            toMap(P2s::get_1, p2 -> P2(optionalAsStream(getError(p2._2())), getResult(p2._2()).orElse(DerivedCodeSpec.none())),
-                (res1, res2) -> P2(concat(res1._1(), res2._1()), res1._2().append(res2._2()))));
+    return adt.deriveConfig().derivedInstances().entrySet().stream().map(deriveSelection -> {
+      DerivedInstanceConfig derivedInstanceConfig = deriveSelection.getValue();
+      ClassName instanceTargetClassName = getTargetClass(derivedInstanceConfig).orElse(targetClassName);
+      return get(P2(deriveSelection.getKey(), getImplSelector(derivedInstanceConfig)), derivators)
+          .map(derivator -> P2(instanceTargetClassName, derivator.derive(adt)))
+          .orElse(P2(instanceTargetClassName, error(message(
+              "Could not find instance derivator for " + deriveSelection.getKey() + " and " + derivedInstanceConfig))));
+    })
+        .collect(toMap(P2s::get_1,
+            p2 -> P2(optionalAsStream(getError(p2._2())), getResult(p2._2()).orElse(DerivedCodeSpec.none())),
+            (res1, res2) -> P2(concat(res1._1(), res2._1()), res1._2().append(res2._2()))));
   }
 
   private void printErrorMessage(String typeElement, Throwable error) {
-    processingEnv.getMessager()
-        .printMessage(Diagnostic.Kind.ERROR,
-            "Derive4J: unable to process " + typeElement + " due to " + error.getMessage() + "\n" + showStackTrace(error));
+    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+        "Derive4J: unable to process " + typeElement + " due to " + error.getMessage() + "\n" + showStackTrace(error));
   }
 
   private static List<Extension> loadEextensions(DeriveUtils deriveUtils) {
-    return StreamSupport.stream(
-        ServiceLoader.load(ExtensionFactory.class, DerivingProcessor.class.getClassLoader()).spliterator(), false)
+    return StreamSupport
+        .stream(ServiceLoader.load(ExtensionFactory.class, DerivingProcessor.class.getClassLoader()).spliterator(),
+            false)
         .flatMap(f -> f.extensions(deriveUtils).stream())
         .collect(toList());
   }
 
   private static Map<P2<ClassName, Optional<String>>, Derivator> loadDerivators(DeriveUtils deriveUtils) {
-    return StreamSupport.stream(
-        ServiceLoader.load(DerivatorFactory.class, DerivingProcessor.class.getClassLoader()).spliterator(), false)
+    return StreamSupport
+        .stream(ServiceLoader.load(DerivatorFactory.class, DerivingProcessor.class.getClassLoader()).spliterator(),
+            false)
         .flatMap(f -> f.derivators(deriveUtils).stream())
         .collect(toMap(ds -> P2(DerivatorSelections.getForClass(ds), DerivatorSelections.getSelector(ds)),
             DerivatorSelections::getDerivator));

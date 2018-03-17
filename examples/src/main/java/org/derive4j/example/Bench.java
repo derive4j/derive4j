@@ -27,9 +27,9 @@ package org.derive4j.example;
 
 public class Bench {
 
-  static final int COUNT = 500000;
+  static final int COUNT      = 500000;
   static final int ITERATIONS = 200;
-  static final int WARMUP = 100;
+  static final int WARMUP     = 100;
 
   public static void main(String[] args) {
 
@@ -37,7 +37,7 @@ public class Bench {
     timed(() -> List.range(0, COUNT).length());
 
     // Average time after 200 iterations: 26.725065 ms
-    timed(() -> javaslang.collection.Stream.range(0, COUNT).length());
+    timed(() -> io.vavr.collection.Stream.range(0, COUNT).length());
 
     // Average time after 200 iterations: 24.768288 ms
     timed(() -> fj.data.Stream.range(0, COUNT).length());

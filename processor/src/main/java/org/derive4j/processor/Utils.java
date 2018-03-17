@@ -66,68 +66,81 @@ import static org.derive4j.processor.P2.p2;
 import static org.derive4j.processor.api.model.DataArguments.getFieldName;
 
 final class Utils {
-  static final TypeVisitor<Optional<DeclaredType>, Unit> asDeclaredType = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(
+  static final TypeVisitor<Optional<DeclaredType>, Unit>                asDeclaredType      = new SimpleTypeVisitor8<Optional<DeclaredType>, Unit>(
       Optional.empty()) {
-    @Override
-    public Optional<DeclaredType> visitDeclared(final DeclaredType t, final Unit p) {
+                                                                                              @Override
+                                                                                              public Optional<DeclaredType> visitDeclared(
+                                                                                                  final DeclaredType t,
+                                                                                                  final Unit p) {
 
-      return Optional.of(t);
-    }
-  };
-  static final TypeVisitor<Optional<TypeVariable>, Unit> asTypeVariable = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(
+                                                                                                return Optional.of(t);
+                                                                                              }
+                                                                                            };
+  static final TypeVisitor<Optional<TypeVariable>, Unit>                asTypeVariable      = new SimpleTypeVisitor8<Optional<TypeVariable>, Unit>(
       Optional.empty()) {
-    @Override
-    public Optional<TypeVariable> visitTypeVariable(final TypeVariable t, final Unit p) {
+                                                                                              @Override
+                                                                                              public Optional<TypeVariable> visitTypeVariable(
+                                                                                                  final TypeVariable t,
+                                                                                                  final Unit p) {
 
-      return Optional.of(t);
-    }
-  };
-  static final ElementVisitor<Optional<TypeElement>, Unit> asTypeElement = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(
+                                                                                                return Optional.of(t);
+                                                                                              }
+                                                                                            };
+  static final ElementVisitor<Optional<TypeElement>, Unit>              asTypeElement       = new SimpleElementVisitor8<Optional<TypeElement>, Unit>(
       Optional.empty()) {
 
-    @Override
-    public Optional<TypeElement> visitType(final TypeElement e, final Unit p) {
+                                                                                              @Override
+                                                                                              public Optional<TypeElement> visitType(
+                                                                                                  final TypeElement e,
+                                                                                                  final Unit p) {
 
-      return Optional.of(e);
-    }
+                                                                                                return Optional.of(e);
+                                                                                              }
 
-  };
-  static final SimpleElementVisitor6<PackageElement, Void> getPackage = new SimpleElementVisitor6<PackageElement, Void>() {
+                                                                                            };
+  static final SimpleElementVisitor6<PackageElement, Void>              getPackage          = new SimpleElementVisitor6<PackageElement, Void>() {
 
-    @Override
-    public PackageElement visitPackage(final PackageElement e, final Void p) {
+                                                                                              @Override
+                                                                                              public PackageElement visitPackage(
+                                                                                                  final PackageElement e,
+                                                                                                  final Void p) {
 
-      return e;
-    }
+                                                                                                return e;
+                                                                                              }
 
-    @Override
-    protected PackageElement defaultAction(final Element e, final Void p) {
+                                                                                              @Override
+                                                                                              protected PackageElement defaultAction(
+                                                                                                  final Element e,
+                                                                                                  final Void p) {
 
-      return e.getEnclosingElement().accept(getPackage, null);
-    }
+                                                                                                return e
+                                                                                                    .getEnclosingElement()
+                                                                                                    .accept(getPackage,
+                                                                                                        null);
+                                                                                              }
 
-  };
-  static final SimpleElementVisitor6<Optional<ExecutableElement>, Void>
-      asExecutableElement
-      = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
+                                                                                            };
+  static final SimpleElementVisitor6<Optional<ExecutableElement>, Void> asExecutableElement = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
 
-    @Override
-    public Optional<ExecutableElement> visitExecutable(final ExecutableElement e, final Void p) {
+                                                                                              @Override
+                                                                                              public Optional<ExecutableElement> visitExecutable(
+                                                                                                  final ExecutableElement e,
+                                                                                                  final Void p) {
 
-      return Optional.of(e);
-    }
+                                                                                                return Optional.of(e);
+                                                                                              }
 
-    @Override
-    protected Optional<ExecutableElement> defaultAction(final Element e, final Void p) {
+                                                                                              @Override
+                                                                                              protected Optional<ExecutableElement> defaultAction(
+                                                                                                  final Element e,
+                                                                                                  final Void p) {
 
-      return Optional.empty();
-    }
+                                                                                                return Optional.empty();
+                                                                                              }
 
-  };
+                                                                                            };
 
-  static final SimpleElementVisitor6<Optional<VariableElement>, Void>
-      asVairableElement
-      = new SimpleElementVisitor6<Optional<VariableElement>, Void>() {
+  static final SimpleElementVisitor6<Optional<VariableElement>, Void> asVairableElement = new SimpleElementVisitor6<Optional<VariableElement>, Void>() {
 
     @Override
     public Optional<VariableElement> visitVariable(final VariableElement e, final Void p) {
@@ -155,7 +168,8 @@ final class Utils {
     }
   };
 
-  private Utils() {}
+  private Utils() {
+  }
 
   static String capitalize(final CharSequence s) {
 
@@ -171,9 +185,7 @@ final class Utils {
 
   static <A> Optional<A> findOnlyOne(List<A> as) {
 
-    return (as.size() == 1)
-        ? Optional.of(as.get(0))
-        : Optional.empty();
+    return (as.size() == 1) ? Optional.of(as.get(0)) : Optional.empty();
   }
 
   static <A> Stream<A> optionalAsStream(Optional<A> o) {
@@ -213,7 +225,8 @@ final class Utils {
 
   static String asArgumentsString(List<DataArgument> arguments, List<TypeRestriction> restrictions) {
 
-    return Stream.concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream().map(tr -> "TypeEq.refl()"))
+    return Stream
+        .concat(arguments.stream().map(a -> "this." + a.fieldName()), restrictions.stream().map(tr -> "TypeEq.refl()"))
         .reduce((s1, s2) -> s1 + ", " + s2)
         .orElse("");
   }
@@ -222,7 +235,8 @@ final class Utils {
     return asLambdaParametersString(arguments, restrictions, "");
   }
 
-  static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions, String suffix) {
+  static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> restrictions,
+      String suffix) {
     return joinStringsAsArguments(Stream.concat(arguments.stream(), restrictions.stream().map(TypeRestriction::typeEq))
         .map(da -> getFieldName(da) + suffix));
   }
@@ -230,8 +244,10 @@ final class Utils {
   static String asLambdaParametersString(List<DataArgument> arguments, List<TypeRestriction> typeRestrictions,
       NameAllocator nameAllocator) {
 
-    return joinStringsAsArguments(Stream.concat(arguments.stream(),
-        typeRestrictions.stream().map(TypeRestrictions::getTypeEq)).map(DataArguments::getFieldName).map(nameAllocator::newName));
+    return joinStringsAsArguments(
+        Stream.concat(arguments.stream(), typeRestrictions.stream().map(TypeRestrictions::getTypeEq))
+            .map(DataArguments::getFieldName)
+            .map(nameAllocator::newName));
   }
 
   static String asArgumentsString(List<DataArgument> arguments) {
@@ -253,9 +269,7 @@ final class Utils {
 
     TypeName[] typeArgs = typeArguments.toArray(TypeName[]::new);
 
-    return (typeArgs.length == 0)
-        ? className
-        : ParameterizedTypeName.get(className, typeArgs);
+    return (typeArgs.length == 0) ? className : ParameterizedTypeName.get(className, typeArgs);
   }
 
   static Stream<ExecutableElement> getMethods(final List<? extends Element> amongElements) {
@@ -318,7 +332,8 @@ final class Utils {
 
   static <A, B> List<P2<A, B>> zip(List<? extends A> as, List<? extends B> bs) {
 
-    return IntStream.range(0, Math.min(as.size(), bs.size())).<P2<A, B>>mapToObj(i -> p2(as.get(i), bs.get(i))).collect(toList());
+    return IntStream.range(0, Math.min(as.size(), bs.size())).<P2<A, B>>mapToObj(i -> p2(as.get(i), bs.get(i))).collect(
+        toList());
   }
 
   static <A> List<P2<A, Integer>> zipWithIndex(List<? extends A> as) {

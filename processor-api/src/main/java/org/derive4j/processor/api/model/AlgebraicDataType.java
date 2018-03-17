@@ -31,8 +31,8 @@ import static org.derive4j.processor.api.model.AlgebraicDataTypes.getTypeConstru
 public abstract class AlgebraicDataType {
 
   public interface Case<R> {
-    R adt(DeriveConfig deriveConfig, TypeConstructor typeConstructor, MatchMethod matchMethod, DataConstruction dataConstruction,
-        List<DataArgument> fields);
+    R adt(DeriveConfig deriveConfig, TypeConstructor typeConstructor, MatchMethod matchMethod,
+        DataConstruction dataConstruction, List<DataArgument> fields);
   }
 
   AlgebraicDataType() {

@@ -29,7 +29,7 @@ import fj.*;
 import org.derive4j.*;
 
 @Data(flavour = Flavour.FJ)
-@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class}))
+@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class }))
 public abstract class Either<A, B> {
 
   Either() {
@@ -37,14 +37,16 @@ public abstract class Either<A, B> {
   }
 
   /**
-   * The catamorphism for either. Folds over this either breaking into left or right.
+   * The catamorphism for either. Folds over this either breaking into left or
+   * right.
    *
-   * @param left The function to call if this is left.
-   * @param right The function to call if this is right.
+   * @param left
+   *          The function to call if this is left.
+   * @param right
+   *          The function to call if this is right.
    * @return The reduced value.
    */
   public abstract <X> X either(F<A, X> left, F<B, X> right);
-
 
   // In case you need to interact with unsafe code that
   // expects hashCode/equal/toString to be implemented:
@@ -52,8 +54,7 @@ public abstract class Either<A, B> {
   @Deprecated
   @Override
   public final boolean equals(Object obj) {
-    return Equal.equals0(Either.class, this, obj,
-        Eithers.eitherEqual(Equal.anyEqual(), Equal.anyEqual()));
+    return Equal.equals0(Either.class, this, obj, Eithers.eitherEqual(Equal.anyEqual(), Equal.anyEqual()));
   }
 
   @Deprecated

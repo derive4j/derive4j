@@ -35,7 +35,7 @@ import org.derive4j.Instances;
 
 import static org.derive4j.Flavour.Guava;
 
-@Data(flavour = Guava, value = @Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(flavour = Guava, value = @Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class GuavaRequest {
 
   public abstract <R> R match(Cases<R> cases);

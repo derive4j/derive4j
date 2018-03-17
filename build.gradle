@@ -5,9 +5,6 @@ ext {
 }
 
 buildscript {
-    ext {
-        uptodateVersion = "1.6.2"
-    }
 
     repositories {
         mavenLocal()
@@ -19,20 +16,21 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.ofg:uptodate-gradle-plugin:$uptodateVersion"
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
-        classpath "nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.0"
+        classpath "com.ofg:uptodate-gradle-plugin:1.6.3"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.15"
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2"
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
     }
 
     wrapper {
-        gradleVersion = "3.5"
+        gradleVersion = "4.6"
     }
 }
 
 allprojects {
 
-    apply plugin: 'com.jfrog.artifactory-upload'
+    apply plugin: 'com.jfrog.artifactory'
     apply plugin: "idea"
     apply plugin: 'jacoco'
 
@@ -56,10 +54,10 @@ allprojects {
 
         primaryEmail = "jb@giraudeau.info"
 
-        dependencyJavaPoet = "com.squareup:javapoet:1.8.0"
-        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.12.1"
+        dependencyJavaPoet = "com.squareup:javapoet:1.10.0"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.12.3"
         dependencyJunit = "junit:junit:4.12"
-        dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc2"
+        dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc4"
 
         gplLicenseName = "The GNU General Public License"
         lgplLicenseName = "The GNU Lesser General Public License"
@@ -92,6 +90,17 @@ subprojects {
     apply plugin: "com.ofg.uptodate"
     apply plugin: "license"
     apply plugin: "com.jfrog.artifactory"
+    apply plugin: "com.diffplug.gradle.spotless"
+
+   spotless {
+     java {
+         eclipse("4.7.2").configFile "$rootDir/etc/eclipse-format.xml"
+         indentWithSpaces(2)
+         trimTrailingWhitespace()
+         removeUnusedImports()
+         endWithNewline()
+     }
+   }
 
     repositories {
         mavenLocal()
@@ -101,7 +110,7 @@ subprojects {
 
     if (displayCompilerWarnings) {
         tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Xlint:all"
+            options.compilerArgs += ["-Xlint:all"]
         }
     }
 
@@ -161,7 +170,7 @@ configure(subprojects) {
     }
 
     // Output MANIFEST.MF statically so eclipse can see it for plugin development
-    task eclipsePluginManifest(dependsOn: jar) << {
+    task eclipsePluginManifest(dependsOn: jar) doLast {
         file("META-INF").mkdirs()
         jar.manifest.writeTo(file("META-INF/MANIFEST.MF"))
     }
@@ -182,7 +191,7 @@ task codeCoverageReport(type: JacocoReport) {
 
     reports {
         xml.enabled true
-        xml.destination "${buildDir}/reports/jacoco/report.xml"
+        xml.destination new File("${buildDir}/reports/jacoco/report.xml")
         html.enabled false
         csv.enabled false
     }
@@ -217,6 +226,6 @@ artifactory {
     }
 }
 
-task env << {
+task env doLast {
     println System.getenv()
 }

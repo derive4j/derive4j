@@ -33,7 +33,8 @@ import static org.derive4j.processor.api.model.DataArguments.getType;
 @Data(value = @Derive(withVisibility = Visibility.Smart))
 public abstract class DataArgument {
 
-  DataArgument() {}
+  DataArgument() {
+  }
 
   public abstract <R> R match(@FieldNames({ "fieldName", "type" }) BiFunction<String, TypeMirror, R> dataArgument);
 
