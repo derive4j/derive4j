@@ -36,7 +36,7 @@ import org.derive4j.Derive;
 import org.derive4j.FieldNames;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Amount {
   public abstract <R> R match(@FieldNames("value") F<BigDecimal, R> amout);
 }

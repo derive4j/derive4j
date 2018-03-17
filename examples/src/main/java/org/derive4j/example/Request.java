@@ -44,22 +44,29 @@ import static fj.data.optic.Prism.prism;
 import static org.derive4j.ArgOption.checkedNotNull;
 
 /**
- * A data type to modelize an http request. Abstract because concrete implementation will be generated,
- * by Derive4J (annotation processor for the @Data annotation).
- * Default @Data flavour is JDK, here we specify FJ (Functional Java), also available is Fugue and Fugue2.
- * The flavour is used to determine which implementation of 'Option' or 'Function' will be used by generated code.
+ * A data type to modelize an http request. Abstract because concrete
+ * implementation will be generated, by Derive4J (annotation processor for
+ * the @Data annotation). Default @Data flavour is JDK, here we specify FJ
+ * (Functional Java), also available is Fugue and Fugue2. The flavour is used to
+ * determine which implementation of 'Option' or 'Function' will be used by
+ * generated code.
  */
 @Data(flavour = Flavour.FJ, arguments = checkedNotNull, value = @Derive(@Instances(Show.class)))
 public abstract class Request {
 
   /**
-   * Lenses: optics focused on a field present for all datatype contructors (getter cannot 'failed'):
+   * Lenses: optics focused on a field present for all datatype contructors
+   * (getter cannot 'failed'):
    */
   public static final Lens<Request, String> _path = lens(Requests::getPath, Requests::setPath);
   // which is Equivalent to:
   public static final Lens<Request, String> _pathPatternMatch = lens(
       // getter function:
-      Requests.cases().GET(path -> path).DELETE(path -> path).PUT((path, body) -> path).POST((path, body) -> path),
+      Requests.cases()
+          .GET(path -> path)
+          .DELETE(path -> path)
+          .PUT((path, body) -> path)
+          .POST((path, body) -> path),
       // setter function:
       newPath -> Requests.cases()
           .GET(path -> Requests.GET(newPath))
@@ -68,18 +75,20 @@ public abstract class Request {
           .POST((path, body) -> Requests.POST(newPath, body)));
 
   /**
-   * Alternatively, if you prefer a more FP style, you can define a catamorphism instead
-   * (equivalent to the visitor above, most useful for standard data type like Option, Either, List...):
+   * Alternatively, if you prefer a more FP style, you can define a catamorphism
+   * instead (equivalent to the visitor above, most useful for standard data type
+   * like Option, Either, List...):
    */
-  //  public abstract <X> X match(@FieldNames("path") F<String, X> GET,
-  //                              @FieldNames("path") F<String, X> DELETE,
-  //                              @FieldNames({"path", "body"}) F2<String, String, X> PUT,
-  //                              @FieldNames({"path", "body"}) F2<String, String, X> POST);
+  // public abstract <X> X match(@FieldNames("path") F<String, X> GET,
+  // @FieldNames("path") F<String, X> DELETE,
+  // @FieldNames({"path", "body"}) F2<String, String, X> PUT,
+  // @FieldNames({"path", "body"}) F2<String, String, X> POST);
 
   /**
-   * Now run compilation and a 'Requests' classe will be generated, by default with the same visibility as 'Request'.
-   * If You want you can specify the visibility Package in the @Data annotation and expose only public methods here,
-   * and delegate to the generated Requests class. eg. for constructors:
+   * Now run compilation and a 'Requests' classe will be generated, by default
+   * with the same visibility as 'Request'. If You want you can specify the
+   * visibility Package in the @Data annotation and expose only public methods
+   * here, and delegate to the generated Requests class. eg. for constructors:
    */
   public static Request GET(String path) {
 
@@ -101,36 +110,45 @@ public abstract class Request {
   }
 
   /**
-   * Optional: optics focused on a field that may not be present for all contructors (getter return an 'Option'):
+   * Optional: optics focused on a field that may not be present for all
+   * contructors (getter return an 'Option'):
    */
   private static final Optional<Request, String> _body = optional(Requests::getBody, Requests::setBody);
   // Equivalent to:
   private static final Optional<Request, String> _bodyPatternMatch = optional(
       // getter function:
-      Requests.cases().PUT((path, body) -> body).POST((path, body) -> body).otherwiseNone(),
+      Requests.cases()
+          .PUT((path, body) -> body)
+          .POST((path, body) -> body)
+          .otherwiseNone(),
       // setter function:
       newBody -> Requests.cases()
           .GET(Requests::GET) // or with method reference:
           .DELETE(Requests::DELETE)
           .PUT((path, body) -> Requests.PUT(path, newBody))
           .POST((path, body) -> Requests.POST(path, newBody)));
+
   /**
    * Prism: optics focused on a specific constructor:
    */
   private static final Prism<Request, String> _GET = prism(
       // Getter function
-      Requests.cases().GET(fj.data.Option::some).otherwise(Option::none),
+      Requests.cases()
+          .GET(fj.data.Option::some)
+          .otherwise(Option::none),
       // Reverse Get function (aka constructor)
       Requests::GET);
 
   /**
-   * Then you can enrich your class with whatever methods you like,
-   * using generated static methods to trivialize your implementation:
+   * Then you can enrich your class with whatever methods you like, using
+   * generated static methods to trivialize your implementation:
    */
   // If there more than one field, we use a tuple as the prism target:
   private static final Prism<Request, P2<String, String>> _POST = prism(
       // Getter:
-      Requests.cases().POST(P::p).otherwiseNone(),
+      Requests.cases()
+          .POST(P::p)
+          .otherwiseNone(),
       // reverse get (construct a POST request given a P2<String, String>):
       p2 -> Requests.POST(p2._1(), p2._2()));
 
@@ -138,8 +156,9 @@ public abstract class Request {
   public abstract <X> X match(Cases<X> cases);
 
   /**
-   * Derive4J philosophy is to be as safe and consistent as possible. That is why Object.{equals, hashCode, toString}
-   * are not implemented by generated classes by default. Nonetheless, as a concession to legacy, it is possible to force
+   * Derive4J philosophy is to be as safe and consistent as possible. That is why
+   * Object.{equals, hashCode, toString} are not implemented by generated classes
+   * by default. Nonetheless, as a concession to legacy, it is possible to force
    * Derive4J to implement them, by declaring them abstract:
    */
   @Override
@@ -179,7 +198,8 @@ public abstract class Request {
   }
 
   public final Request withBody(String newBody) {
-    // if there is no body field (eg. GET, DELETE) then the original request is returned (no modification):
+    // if there is no body field (eg. GET, DELETE) then the original request is
+    // returned (no modification):
     return Requests.setBody(newBody).f(this);
   }
 

@@ -57,7 +57,8 @@ class PatternMatchingDerivator implements Derivator {
       String factoryMethodName() {
         return "cases";
       }
-    }, CaseOf {
+    },
+    CaseOf {
       @Override
       String wrapperClassName() {
         return "CaseOfMatchers";
@@ -81,10 +82,10 @@ class PatternMatchingDerivator implements Derivator {
     otherwiseMatching = new OtherwiseMatchingStepDerivator(deriveUtils, matchingKind);
   }
 
-  private final MatchingKind matchingKind;
-  private final TotalMatchingStepDerivator totalMatching;
+  private final MatchingKind                   matchingKind;
+  private final TotalMatchingStepDerivator     totalMatching;
   private final OtherwiseMatchingStepDerivator otherwiseMatching;
-  private final PartialMatchingStepDerivator partialMatching;
+  private final PartialMatchingStepDerivator   partialMatching;
 
   @Override
   public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
@@ -95,9 +96,10 @@ class PatternMatchingDerivator implements Derivator {
         ? DeriveResult.result(DerivedCodeSpec.none())
         : fold(constructors.stream().findFirst(), DeriveResult.result(DerivedCodeSpec.none()), firstConstructor -> {
 
-          ClassName wrapperClass = adt.deriveConfig().targetClass().className().nestedClass(matchingKind.wrapperClassName());
-          ClassName totalMatchBuilderClassName = wrapperClass.nestedClass(
-              TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor));
+          ClassName wrapperClass = adt.deriveConfig().targetClass().className().nestedClass(
+              matchingKind.wrapperClassName());
+          ClassName totalMatchBuilderClassName = wrapperClass
+              .nestedClass(TotalMatchingStepDerivator.totalMatchBuilderClassName(firstConstructor));
 
           TypeName firstMatchBuilderTypeName = Utils.typeName(totalMatchBuilderClassName,
               adt.typeConstructor().typeVariables().stream().map(TypeName::get));
@@ -109,8 +111,8 @@ class PatternMatchingDerivator implements Derivator {
 
           MethodSpec.Builder matchFactory = MethodSpec.methodBuilder(matchingKind.factoryMethodName())
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-              .addTypeVariables(
-                  adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
+              .addTypeVariables(adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(
+                  Collectors.toList()))
               .returns(firstMatchBuilderTypeName);
 
           TypeSpec.Builder wrapperClassSpec = TypeSpec.classBuilder(wrapperClass)
@@ -118,8 +120,9 @@ class PatternMatchingDerivator implements Derivator {
               .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build());
 
           if (matchingKind == MatchingKind.Cases) {
-            FieldSpec.Builder initialCasesStepField = FieldSpec.builder(firstMatchBuilderWildcardTypeName,
-                initialCasesStepFieldName).addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
+            FieldSpec.Builder initialCasesStepField = FieldSpec
+                .builder(firstMatchBuilderWildcardTypeName, initialCasesStepFieldName)
+                .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL);
 
             if (adt.typeConstructor().typeVariables().isEmpty()) {
               initialCasesStepField.initializer("new $L()", totalMatchBuilderClassName.simpleName());
@@ -128,17 +131,21 @@ class PatternMatchingDerivator implements Derivator {
             } else {
               initialCasesStepField.initializer("new $L<>()", totalMatchBuilderClassName.simpleName());
 
-              matchFactory.addAnnotation(
-                  AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
-                  .addStatement("return ($T) $T.$L", firstMatchBuilderTypeName, wrapperClass, initialCasesStepFieldName);
+              matchFactory
+                  .addAnnotation(
+                      AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
+                  .addStatement("return ($T) $T.$L", firstMatchBuilderTypeName, wrapperClass,
+                      initialCasesStepFieldName);
 
             }
             wrapperClassSpec.addField(initialCasesStepField.build());
           } else {
-            ParameterSpec adtParameterSpec = ParameterSpec.builder(TypeName.get(adt.typeConstructor().declaredType()),
-                uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString())).build();
-            matchFactory.addParameter(adtParameterSpec)
-                .addStatement("return new $T($N)", firstMatchBuilderTypeName, adtParameterSpec);
+            ParameterSpec adtParameterSpec = ParameterSpec
+                .builder(TypeName.get(adt.typeConstructor().declaredType()),
+                    uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString()))
+                .build();
+            matchFactory.addParameter(adtParameterSpec).addStatement("return new $T($N)", firstMatchBuilderTypeName,
+                adtParameterSpec);
           }
 
           return DeriveResult.result(DerivedCodeSpec.codeSpec(wrapperClassSpec.addTypes(Stream.concat(
@@ -150,13 +157,13 @@ class PatternMatchingDerivator implements Derivator {
               // Partial matching path:
               (constructors.size() > 1)
                   ? IntStream.rangeClosed(2, constructors.size())
-                  .mapToObj(i -> (i < constructors.size())
-                      ? partialMatching.partialMatchingStepTypeSpec(adt, constructors.subList(0, i), constructors.get(i),
-                      constructors.subList(i + 1, constructors.size()))
-                      : otherwiseMatching.stepTypeSpec(adt))
+                      .mapToObj(i -> (i < constructors.size())
+                          ? partialMatching.partialMatchingStepTypeSpec(adt, constructors.subList(0, i),
+                              constructors.get(i), constructors.subList(i + 1, constructors.size()))
+                          : otherwiseMatching.stepTypeSpec(adt))
                   : Stream.empty()
 
-          ).collect(Collectors.toList())).build(), matchFactory.build()));
+        ).collect(Collectors.toList())).build(), matchFactory.build()));
 
         });
   }
@@ -168,24 +175,27 @@ class PatternMatchingDerivator implements Derivator {
     return MethodSpec.methodBuilder(currentConstructor.name() + '_')
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addParameter(TypeName.get(adt.matchMethod().returnTypeVariable()), nameAllocator.newName(argName))
-        .addStatement("return this.$L(($L) -> $L)", currentConstructor.name(),
-            Utils.asLambdaParametersString(currentConstructor.arguments(), currentConstructor.typeRestrictions(), nameAllocator),
-            argName);
+        .addStatement("return this.$L(($L) -> $L)", currentConstructor.name(), Utils.asLambdaParametersString(
+            currentConstructor.arguments(), currentConstructor.typeRestrictions(), nameAllocator), argName);
   }
 
   static Stream<TypeVariable> matcherVariables(AlgebraicDataType adt) {
 
-    return Stream.concat(adt.typeConstructor().typeVariables().stream(), Stream.of(adt.matchMethod().returnTypeVariable()));
+    return Stream.concat(adt.typeConstructor().typeVariables().stream(),
+        Stream.of(adt.matchMethod().returnTypeVariable()));
   }
 
   static ParameterSpec asParameterSpec(AlgebraicDataType adt) {
-    return ParameterSpec.builder(TypeName.get(adt.typeConstructor().declaredType()),
-        '_' + uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString())).build();
+    return ParameterSpec
+        .builder(TypeName.get(adt.typeConstructor().declaredType()),
+            '_' + uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString()))
+        .build();
   }
 
   static FieldSpec asFieldSpec(AlgebraicDataType adt) {
-    return FieldSpec.builder(TypeName.get(adt.typeConstructor().declaredType()),
-        '_' + uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString()))
+    return FieldSpec
+        .builder(TypeName.get(adt.typeConstructor().declaredType()),
+            '_' + uncapitalize(adt.typeConstructor().typeElement().getSimpleName().toString()))
         .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
         .build();
   }

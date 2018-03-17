@@ -26,6 +26,7 @@ import org.derive4j.Data;
 public abstract class Expression {
   public interface Cases<X> {
     X baseExpression(CodeBlock codeBlock);
+
     X recursiveExpression(UnaryOperator<CodeBlock> fromOuterMethod);
   }
 

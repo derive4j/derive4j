@@ -40,7 +40,7 @@ import static org.derive4j.example.Expressions.Mult;
 import static org.derive4j.example.Expressions.expressionHash;
 import static org.derive4j.example.Expressions.expressionShow;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class Expression {
 
   public static Integer eval(Expression expression) {
@@ -55,8 +55,11 @@ public abstract class Expression {
     System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
   }
 
-  private static final Function<Expression, Integer> eval = Expressions.cata(value -> value,
-      (left, right) -> left.get() + right.get(), (left, right) -> left.get() * right.get(), expr -> -expr.get());
+  private static final Function<Expression, Integer> eval = Expressions.cata(
+      value -> value,
+      (left, right) -> left.get() + right.get(),
+      (left, right) -> left.get() * right.get(),
+      expr -> -expr.get());
 
   public abstract <R> R match(Cases<R> cases);
 

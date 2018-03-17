@@ -24,7 +24,8 @@ import org.derive4j.Data;
 
 @Data
 public abstract class ObjectModel {
-  ObjectModel() {}
+  ObjectModel() {
+  }
 
   public abstract <X> X match(Case<X> Case);
 
@@ -45,6 +46,7 @@ public abstract class ObjectModel {
   }
 
   interface Case<X> {
-    X ObjectModel(TypeElement classModel, ExecutableElement equals, ExecutableElement hashCode, ExecutableElement toString);
+    X ObjectModel(TypeElement classModel, ExecutableElement equals, ExecutableElement hashCode,
+        ExecutableElement toString);
   }
 }

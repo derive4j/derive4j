@@ -33,7 +33,7 @@ import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class ExtendedEvent<U> {
 
   public abstract <X> X match(Cases<U, X> cases);

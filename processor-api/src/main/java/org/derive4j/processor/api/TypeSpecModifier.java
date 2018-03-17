@@ -51,19 +51,20 @@ public final class TypeSpecModifier {
     typeSpecs = typeSpec.typeSpecs;
     originatingElements = typeSpec.originatingElements;
   }
-  private final Kind kind;
-  private final String name;
-  private CodeBlock javadoc;
-  private List<AnnotationSpec> annotations;
-  private Set<Modifier> modifiers;
+
+  private final Kind             kind;
+  private final String           name;
+  private CodeBlock              javadoc;
+  private List<AnnotationSpec>   annotations;
+  private Set<Modifier>          modifiers;
   private List<TypeVariableName> typeVariables;
-  private TypeName superclass;
-  private List<TypeName> superinterfaces = new ArrayList<>();
-  private Map<String, TypeSpec> enumConstants = new LinkedHashMap<>();
-  private List<FieldSpec> fieldSpecs = new ArrayList<>();
-  private List<MethodSpec> methodSpecs = new ArrayList<>();
-  private List<TypeSpec> typeSpecs = new ArrayList<>();
-  private final List<Element> originatingElements;
+  private TypeName               superclass;
+  private List<TypeName>         superinterfaces = new ArrayList<>();
+  private Map<String, TypeSpec>  enumConstants   = new LinkedHashMap<>();
+  private List<FieldSpec>        fieldSpecs      = new ArrayList<>();
+  private List<MethodSpec>       methodSpecs     = new ArrayList<>();
+  private List<TypeSpec>         typeSpecs       = new ArrayList<>();
+  private final List<Element>    originatingElements;
 
   public TypeSpec build() {
 

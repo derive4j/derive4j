@@ -35,7 +35,7 @@ import org.derive4j.Derive;
 import org.derive4j.FieldNames;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances(value = { Show.class, Hash.class, Equal.class, Ord.class}, inClass = "{ClassName}Instances")))
+@Data(@Derive(@Instances(value = { Show.class, Hash.class, Equal.class, Ord.class }, inClass = "{ClassName}Instances")))
 public abstract class IntNewType {
   public abstract <X> X match(@FieldNames("intW") IntFunction<X> intW);
 

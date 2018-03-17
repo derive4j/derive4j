@@ -25,12 +25,15 @@ import org.derive4j.FieldNames;
 
 @Data
 public abstract class TypeClassInstance {
-  public abstract <X> X instance(@FieldNames({ "typeClass", "typeConstructor" }) BiFunction<ClassName, ClassName, X> instance);
+  public abstract <X> X instance(
+      @FieldNames({ "typeClass", "typeConstructor" }) BiFunction<ClassName, ClassName, X> instance);
 
   @Override
   public abstract int hashCode();
+
   @Override
   public abstract boolean equals(Object obj);
+
   @Override
   public abstract String toString();
 }

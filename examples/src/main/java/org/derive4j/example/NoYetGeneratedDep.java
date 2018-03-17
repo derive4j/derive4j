@@ -27,8 +27,6 @@ package org.derive4j.example;
 
 import com.google.auto.value.AutoValue;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import org.derive4j.Data;
 import org.derive4j.example.Amounts.CasesMatchers.TotalMatcher_Amout;
 
 //@Data FIXME
@@ -40,6 +38,5 @@ public abstract class NoYetGeneratedDep {
   abstract static class AutoValueClass {
     abstract String test();
   }
-
 
 }

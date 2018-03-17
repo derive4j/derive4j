@@ -35,25 +35,29 @@ import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
 public class DeriveUtilsImplTest {
 
-  @Test public void allAbstractMethods_should_return_abstract_override() {
+  @Test
+  public void allAbstractMethods_should_return_abstract_override() {
 
     Truth.assert_()
         .about(javaSource())
         .that(JavaFileObjects.forSourceString("org.derive4j.processor.TestF",
             "public abstract class TestF<A,B> implements com.google.common.base.Function<A,B>, java.util.function.Function<A,B> {}"))
         .processedWith(new AbstractProcessor() {
-          @Override public Set<String> getSupportedAnnotationTypes() {
+          @Override
+          public Set<String> getSupportedAnnotationTypes() {
 
             return Sets.newHashSet("*");
           }
 
-          @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+          @Override
+          public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
             if (!roundEnv.processingOver()) {
-              DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
-                  new DeriveConfigBuilder(processingEnv.getElementUtils()));
+              DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(),
+                  processingEnv.getTypeUtils(), new DeriveConfigBuilder(processingEnv.getElementUtils()));
               for (TypeElement typeElement : ElementFilter.typesIn(roundEnv.getRootElements())) {
-                List<ExecutableElement> abstractMethods = deriveUtils.allAbstractMethods((DeclaredType) typeElement.asType());
+                List<ExecutableElement> abstractMethods = deriveUtils
+                    .allAbstractMethods((DeclaredType) typeElement.asType());
                 Truth.assertThat(abstractMethods).hasSize(1);
               }
 

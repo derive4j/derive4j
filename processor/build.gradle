@@ -7,10 +7,10 @@ dependencies {
   compile project(":processor-api")
   compile dependencyJavaPoet
   compileOnly dependencyAutoService
-  apt dependencyAutoService
-  apt dependencyPreviousDerive4J
+  annotationProcessor dependencyAutoService
+  annotationProcessor dependencyPreviousDerive4J
   testCompile dependencyJunit
-  testCompile 'com.google.testing.compile:compile-testing:0.9'
+  testCompile 'com.google.testing.compile:compile-testing:0.15'
 }
 
 configureUpload(gplLicenseName)

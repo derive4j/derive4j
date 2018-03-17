@@ -36,9 +36,7 @@ public abstract class Stream<A> {
 
   public static Stream<Integer> range(final int from, int toExclusive) {
 
-    return nu(from, s -> (s == toExclusive)
-        ? Steps.done()
-        : Steps.yield(s, s + 1));
+    return nu(from, s -> (s == toExclusive) ? Steps.done() : Steps.yield(s, s + 1));
   }
 
   public static <A> Stream<A> mu(Mu<A> mu) {
@@ -94,7 +92,7 @@ public abstract class Stream<A> {
       public <S> X unfold(S init, F<S, Step<A, S>> stepper) {
 
         class Acc implements F2<A, S, Boolean> {
-          S s = init;
+          S s   = init;
           X acc = x;
 
           @Override

@@ -27,39 +27,39 @@ import java.util.function.Function;
 import static org.derive4j.processor.Unit.unit;
 
 interface IO<A> {
- A run() throws IOException;
+  A run() throws IOException;
 
- default A runUnchecked() throws UncheckedIOException {
-   try {
-     return run();
-   } catch (IOException e) {
-     throw new UncheckedIOException(e);
-   }
- }
+  default A runUnchecked() throws UncheckedIOException {
+    try {
+      return run();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 
- default IO<Unit> voided() {
-   return () -> {
-     run();
-     return unit;
-   };
- }
+  default IO<Unit> voided() {
+    return () -> {
+      run();
+      return unit;
+    };
+  }
 
- default <B> IO<B> then(IO<B> ioB) {
-   return () -> {
-     run();
-     return ioB.run();
-   };
- }
+  default <B> IO<B> then(IO<B> ioB) {
+    return () -> {
+      run();
+      return ioB.run();
+    };
+  }
 
- interface Effect {
-   void run() throws IOException;
+  interface Effect {
+    void run() throws IOException;
   }
 
   static IO<Unit> effect(Effect e) {
-   return () -> {
-     e.run();
-     return unit;
-   };
+    return () -> {
+      e.run();
+      return unit;
+    };
   }
 
   static <A, B> IO<List<B>> traverse(List<A> as, Function<A, IO<B>> f) {

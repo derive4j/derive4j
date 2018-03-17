@@ -38,7 +38,8 @@ import org.derive4j.FieldNames;
 import org.derive4j.Instances;
 import org.derive4j.Visibility;
 
-@Data(@Derive(withVisibility = Visibility.Smart, value = @Instances({Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(withVisibility = Visibility.Smart, value = @Instances({ Show.class, Hash.class, Equal.class,
+    Ord.class })))
 public abstract class PersonName {
 
   PersonName() {
@@ -48,9 +49,11 @@ public abstract class PersonName {
   public abstract <R> R match(@FieldNames("value") Function<String, R> Name);
 
   /**
-   * This method is reexported with public modifier as {@link PersonNames#parseName(String)}. Also the javadoc is copied over.
+   * This method is reexported with public modifier as
+   * {@link PersonNames#parseName(String)}. Also the javadoc is copied over.
    *
-   * @param value unparse string
+   * @param value
+   *          unparse string
    * @return a valid {@link PersonName}, maybe.
    */
   @ExportAsPublic

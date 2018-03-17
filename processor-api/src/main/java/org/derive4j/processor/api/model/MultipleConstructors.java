@@ -61,7 +61,9 @@ public abstract class MultipleConstructors {
 
   public boolean isVisitorDispatch() {
 
-    return cases().visitorDispatch((visitorParam, visitorType, constructors) -> true).functionsDispatch(__ -> false).apply(this);
+    return cases().visitorDispatch((visitorParam, visitorType, constructors) -> true)
+        .functionsDispatch(__ -> false)
+        .apply(this);
   }
 
   public List<DataConstructor> constructors() {

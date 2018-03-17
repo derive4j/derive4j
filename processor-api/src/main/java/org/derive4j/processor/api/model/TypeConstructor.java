@@ -42,7 +42,8 @@ public abstract class TypeConstructor {
   public static TypeConstructor typeConstructor(TypeElement typeElement, DeclaredType declaredType,
       List<TypeVariable> typeVariables) {
 
-    return TypeConstructors.typeConstructor0(typeElement, declaredType, unmodifiableList(new ArrayList<>(typeVariables)));
+    return TypeConstructors.typeConstructor0(typeElement, declaredType,
+        unmodifiableList(new ArrayList<>(typeVariables)));
   }
 
   TypeConstructor() {

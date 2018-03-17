@@ -33,7 +33,7 @@ import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class})))
+@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public enum Day {
 
   Sunday {
@@ -42,37 +42,43 @@ public enum Day {
 
       return cases.Sunday();
     }
-  }, Monday {
+  },
+  Monday {
     @Override
     public <R> R match(Cases<R> cases) {
 
       return cases.Monday();
     }
-  }, Tuesday {
+  },
+  Tuesday {
     @Override
     public <R> R match(Cases<R> cases) {
 
       return cases.Tuesday();
     }
-  }, Wednesday {
+  },
+  Wednesday {
     @Override
     public <R> R match(Cases<R> cases) {
 
       return cases.Wednesday();
     }
-  }, Thursday {
+  },
+  Thursday {
     @Override
     public <R> R match(Cases<R> cases) {
 
       return cases.Thursday();
     }
-  }, Friday {
+  },
+  Friday {
     @Override
     public <R> R match(Cases<R> cases) {
 
       return cases.Friday();
     }
-  }, Saturday {
+  },
+  Saturday {
     @Override
     public <R> R match(Cases<R> cases) {
 
