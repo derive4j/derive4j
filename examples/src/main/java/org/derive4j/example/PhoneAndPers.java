@@ -1,6 +1,7 @@
 package org.derive4j.example;
 
 import fj.Equal;
+import fj.Show;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
 import org.derive4j.example.PhoneAndPers.Phone.Landline;
@@ -12,7 +13,7 @@ public final class PhoneAndPers {
   }
 
   @data
-  @Derive(@Instances(Equal.class))
+  @Derive(@Instances({ Equal.class, Show.class }))
   interface Phone<T> {
     interface Cases<R, T> {
       R Landline(Integer number, TypeEq<Landline, T> eq);
@@ -30,7 +31,7 @@ public final class PhoneAndPers {
   }
 
   @data
-  @Derive(@Instances(Equal.class))
+  @Derive(@Instances({ Equal.class, Show.class }))
   interface Pers {
     interface Cases<R> {
       R OnePhonePers(Phone<Landline> landlinePhone);
@@ -40,8 +41,10 @@ public final class PhoneAndPers {
 
     <R> R match(Cases<R> cases);
 
-    static Equal<Phone<Landline>> landPhoneEqual = PhoneImpl.phoneEqual();
+    Equal<Phone<Landline>> landPhoneEqual = PhoneImpl.phoneEqual();
+    Show<Phone<Landline>>  landPhoneShow  = PhoneImpl.phoneShow();
 
-    static Equal<Phone<Mobile>> mobPhoneEqual = PhoneImpl.phoneEqual();
+    Equal<Phone<Mobile>> mobPhoneEqual = PhoneImpl.phoneEqual();
+    Show<Phone<Mobile>>  mobPhoneShow  = PhoneImpl.phoneShow();
   }
 }

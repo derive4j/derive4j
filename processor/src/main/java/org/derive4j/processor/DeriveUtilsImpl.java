@@ -637,7 +637,10 @@ final class DeriveUtilsImpl implements DeriveUtils {
     Stream<String> nameElts = concat(allTypeArgsAsString(type), Stream.of(typeClass.getSimpleName().toString()));
 
     return uncapitalize(
-        nameElts.filter(s -> !s.equals("?")).map(s -> s.replaceAll("\\[]", "s")).collect(Collectors.joining()));
+        nameElts.filter(s -> !s.equals("?"))
+            .map(s -> s.contains(".") ? s.substring(s.lastIndexOf('.') + 1) : s)
+            .map(s -> s.replaceFirst("\\[.*", "s"))
+            .collect(Collectors.joining()));
   }
 
   private String generatedInstanceMethodName(TypeElement typeClass, TypeElement typeElement) {
@@ -666,19 +669,19 @@ final class DeriveUtilsImpl implements DeriveUtils {
             concat(optionalAsStream(derivedCompanion), optionalAsStream(companionClass))),
         lowPriorityProviders.stream()).collect(toList());
 
-    TypeMirror rawShowClass = Types.erasure(typeClass.asType());
+    TypeMirror rawTypeClass = Types.erasure(typeClass.asType());
     return concat(
 
         instancesProviders.stream()
             .flatMap(this::allStaticFields)
-            .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawShowClass))
+            .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawTypeClass))
             .flatMap(ve -> optionalAsStream(
                 asDeclaredType(ve.asType()).filter(dt -> Types.isSameType(dt.getTypeArguments().get(0), declaredType))
                     .map(te -> value(ve)))),
 
         instancesProviders.stream()
             .flatMap(this::allStaticMethods)
-            .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawShowClass)
+            .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawTypeClass)
                 && asDeclaredType(m.getReturnType()).map(dt -> dt.getTypeArguments().get(0))
                     .flatMap(this::asTypeElement)
                     .filter(typeElement::equals)
