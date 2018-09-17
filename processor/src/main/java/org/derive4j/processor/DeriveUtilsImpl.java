@@ -18,50 +18,128 @@
  */
 package org.derive4j.processor;
 
-import com.squareup.javapoet.*;
-import org.derive4j.ExportAsPublic;
-import org.derive4j.Flavour;
-import org.derive4j.Flavours;
-import org.derive4j.processor.api.*;
-import org.derive4j.processor.api.model.*;
-
-import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
-import java.util.*;
+import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.NameAllocator;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeVariableName;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import org.derive4j.ExportAsPublic;
+import org.derive4j.Flavour;
+import org.derive4j.Flavours;
+import org.derive4j.processor.api.Binding;
+import org.derive4j.processor.api.BoundExpression;
+import org.derive4j.processor.api.DeriveResult;
+import org.derive4j.processor.api.DeriveResults;
+import org.derive4j.processor.api.DeriveUtils;
+import org.derive4j.processor.api.DerivedCodeSpec;
+import org.derive4j.processor.api.DerivedCodeSpecs;
+import org.derive4j.processor.api.EitherModel;
+import org.derive4j.processor.api.EitherModels;
+import org.derive4j.processor.api.FieldsTypeClassInstanceBindingMap;
+import org.derive4j.processor.api.FreeVariable;
+import org.derive4j.processor.api.FreeVariables;
+import org.derive4j.processor.api.InstanceLocation;
+import org.derive4j.processor.api.InstanceLocations;
+import org.derive4j.processor.api.InstanceUtils;
+import org.derive4j.processor.api.ObjectModel;
+import org.derive4j.processor.api.OptionModel;
+import org.derive4j.processor.api.OptionModels;
+import org.derive4j.processor.api.SamInterface;
+import org.derive4j.processor.api.SamInterfaces;
+import org.derive4j.processor.api.model.AlgebraicDataType;
+import org.derive4j.processor.api.model.DataArgument;
+import org.derive4j.processor.api.model.DataArguments;
+import org.derive4j.processor.api.model.DataConstructor;
+import org.derive4j.processor.api.model.DeriveConfig;
+import org.derive4j.processor.api.model.DeriveConfigs;
+import org.derive4j.processor.api.model.DeriveTargetClass;
+import org.derive4j.processor.api.model.DerivedInstanceConfigs;
+import org.derive4j.processor.api.model.Expression;
+import org.derive4j.processor.api.model.Expressions;
+import org.derive4j.processor.api.model.TypeRestriction;
 
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static org.derive4j.processor.P2.p2;
 import static org.derive4j.processor.Unit.unit;
-import static org.derive4j.processor.Utils.*;
+import static org.derive4j.processor.Utils.asBoxedType;
+import static org.derive4j.processor.Utils.asDeclaredType;
+import static org.derive4j.processor.Utils.asExecutableElement;
+import static org.derive4j.processor.Utils.asTypeElement;
+import static org.derive4j.processor.Utils.asTypeVariable;
+import static org.derive4j.processor.Utils.findOnlyOne;
+import static org.derive4j.processor.Utils.fold;
+import static org.derive4j.processor.Utils.get;
+import static org.derive4j.processor.Utils.getFields;
+import static org.derive4j.processor.Utils.getMethods;
+import static org.derive4j.processor.Utils.joinStringsAsArguments;
+import static org.derive4j.processor.Utils.optionalAsStream;
+import static org.derive4j.processor.Utils.traverseOptional;
+import static org.derive4j.processor.Utils.zip;
+import static org.derive4j.processor.Utils.zipWithIndex;
 import static org.derive4j.processor.api.Bindings.binding;
-import static org.derive4j.processor.api.BoundExpressions.*;
+import static org.derive4j.processor.api.BoundExpressions.expression;
+import static org.derive4j.processor.api.BoundExpressions.getExpression;
 import static org.derive4j.processor.api.BoundExpressions.getFreeVariables;
+import static org.derive4j.processor.api.BoundExpressions.modExpression;
 import static org.derive4j.processor.api.DeriveMessages.message;
 import static org.derive4j.processor.api.DeriveResult.error;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.EitherModels.EitherModel;
-import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.*;
+import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.bindingMap;
+import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.getBindingsByFieldName;
 import static org.derive4j.processor.api.FieldsTypeClassInstanceBindingMaps.getFreeVariables;
-import static org.derive4j.processor.api.FreeVariables.*;
+import static org.derive4j.processor.api.FreeVariables.getName;
+import static org.derive4j.processor.api.FreeVariables.getType;
+import static org.derive4j.processor.api.FreeVariables.variable;
 import static org.derive4j.processor.api.InstanceLocations.caseOf;
-import static org.derive4j.processor.api.InstanceLocations.*;
+import static org.derive4j.processor.api.InstanceLocations.generatedIn;
+import static org.derive4j.processor.api.InstanceLocations.method;
+import static org.derive4j.processor.api.InstanceLocations.value;
 import static org.derive4j.processor.api.ObjectModels.ObjectModel;
 import static org.derive4j.processor.api.SamInterfaces.SamInterface;
-import static org.derive4j.processor.api.model.Expressions.*;
+import static org.derive4j.processor.api.model.Expressions.baseExpression;
 import static org.derive4j.processor.api.model.Expressions.caseOf;
+import static org.derive4j.processor.api.model.Expressions.getCodeBlock;
+import static org.derive4j.processor.api.model.Expressions.recursiveExpression;
 
 final class DeriveUtilsImpl implements DeriveUtils {
 
@@ -180,6 +258,38 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .orElse(asTypeVariable.visit(typeMirror).flatMap(typeArgs).orElse(typeMirror));
   }
 
+  public Optional<Map<TypeVariable, TypeMirror>> unify(TypeMirror from, TypeMirror to) {
+    return unify0(from, to, new HashMap<>()).map(solution -> {
+      // sanity check just in case there is something wrong:
+      if (!Types.isSameType(resolve(from, tv -> get(tv, solution)), to)) {
+        throw new RuntimeException("Error in unify algo");
+      }
+      return Collections.unmodifiableMap(solution);
+    });
+  }
+
+  private Optional<HashMap<TypeVariable, TypeMirror>> unify0(TypeMirror from, TypeMirror to,
+      HashMap<TypeVariable, TypeMirror> unified) {
+    if (Types.isSameType(from, to)) {
+      return Optional.of(unified);
+    }
+    if (asTypeElement(from).map(fromTE -> !asTypeElement(to).filter(fromTE::equals).isPresent()).orElse(false)) {
+      return Optional.empty();
+    }
+    return asTypeVariable.visit(from)
+        .map(tv -> Optional.ofNullable(unified.get(tv))
+            .map(u -> Types.isSameType(u, to)
+                ? Optional.of(unified)
+                : Optional.<HashMap<TypeVariable, TypeMirror>>empty())
+            .orElseGet(() -> {
+              unified.put(tv, to);
+              return Optional.of(unified);
+            }))
+        .orElseGet(() -> asDeclaredType(from).flatMap(fromDT -> asDeclaredType(to).flatMap(toDT -> traverseOptional(
+            zip(fromDT.getTypeArguments(), toDT.getTypeArguments()),
+            p2 -> p2.match((a1, a2) -> unify0(a1, a2, unified))).map(__ -> unified))));
+  }
+
   @Override
   public DeclaredType resolve(DeclaredType declaredType, Function<TypeVariable, Optional<TypeMirror>> typeArgs) {
 
@@ -245,14 +355,18 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   @Override
   public Stream<ExecutableElement> allStaticMethods(TypeElement typeElement) {
-    return getMethods(Elements.getAllMembers(typeElement))
+    return concat(getSuperTypeElements(typeElement), Stream.of(typeElement))
+        .flatMap(te -> getMethods(Elements.getAllMembers(te)))
         .filter(e -> e.getModifiers().contains(Modifier.STATIC) && !e.getModifiers().contains(Modifier.PRIVATE));
   }
 
   @Override
   public Stream<VariableElement> allStaticFields(TypeElement typeElement) {
-    return getFields(Elements.getAllMembers(typeElement)).filter(e -> e.getModifiers().contains(Modifier.STATIC)
-        && e.getModifiers().contains(Modifier.FINAL) && !e.getModifiers().contains(Modifier.PRIVATE));
+    return concat(Stream.of(typeElement), getSuperTypeElements(typeElement))
+        .flatMap(te -> getFields(Elements.getAllMembers(te)))
+        .filter(e -> ((e.getModifiers().contains(Modifier.STATIC)
+            && e.getModifiers().contains(Modifier.FINAL)) || typeElement.getKind() == ElementKind.INTERFACE)
+            && !e.getModifiers().contains(Modifier.PRIVATE));
   }
 
   @Override
@@ -323,24 +437,27 @@ final class DeriveUtilsImpl implements DeriveUtils {
       return Optional.empty();
     }
 
+    Optional<DeriveConfig> contextDeriveConfig = deriveConfigBuilder.findDeriveConfig(typeElementContext)
+        .map(P2s::get_2);
     Optional<DeriveConfig> maybeDeriveConfig = deriveConfigBuilder.findDeriveConfig(typeElement).map(P2s::get_2);
 
     Optional<InstanceLocation> manualInstance = findCompiledInstance(typeElementContext,
-        elements().getTypeElement(typeClass.reflectionName()), typeElement, declaredType, lowPriorityProviders,
-        maybeDeriveConfig.map(DeriveConfigs::getTargetClass).map(DeriveTargetClass::className));
+        findTypeElement(typeClass).get(), typeElement, declaredType, lowPriorityProviders,
+        maybeDeriveConfig.map(DeriveConfigs::getTargetClass).map(DeriveTargetClass::className),
+        maybeDeriveConfig.map(DeriveConfigs::getTargetClass).flatMap(DeriveTargetClass::extend),
+        contextDeriveConfig.map(DeriveConfigs::getTargetClass).flatMap(DeriveTargetClass::extend));
 
-    return fold(manualInstance,
-        maybeDeriveConfig.flatMap(deriveConfig -> get(typeClass, deriveConfig.derivedInstances())
+    return manualInstance.map(Optional::of)
+        .orElseGet(() -> maybeDeriveConfig.flatMap(deriveConfig -> get(typeClass, deriveConfig.derivedInstances())
             .map(derivedInstanceConfig -> generatedIn(DerivedInstanceConfigs.getTargetClass(derivedInstanceConfig)
-                .orElse(deriveConfig.targetClass().className())))),
-        Optional::of);
+                .orElse(deriveConfig.targetClass().className())))));
   }
 
   @Override
   public DeriveResult<BoundExpression> instanceInitializer(TypeElement typeElementContext, ClassName typeClassContext,
       ClassName typeClass, TypeMirror type, List<TypeElement> lowPriorityProviders) {
     Optional<DeclaredType> maybeDeclaredType = asDeclaredType(asBoxedType.visit(type, types()));
-    TypeElement typeClassElement = elements().getTypeElement(typeClass.reflectionName());
+    TypeElement typeClassElement = findTypeElement(typeClass).get();
 
     return fold(maybeDeclaredType,
         DeriveResults.lazy(() -> result(expression(
@@ -364,8 +481,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
               instanceLocation -> caseOf(instanceLocation)
 
-                  .value(ve -> result(expression(emptyList(),
-                      baseExpression(CodeBlock.of("$T.$L", ClassName.bestGuess(ve.getEnclosingElement().toString()),
+                  .value((className, ve) -> result(expression(emptyList(),
+                      baseExpression(CodeBlock.of("$T.$L", className,
                           ve.getSimpleName())))))
 
                   .generatedIn(instanceClass -> declaredType.getTypeArguments().isEmpty()
@@ -375,32 +492,37 @@ final class DeriveUtilsImpl implements DeriveUtils {
                       : error(message("Please provide static forwarder for generated " + typeClass + " instance for "
                           + typeElement)))
 
-                  .method((className, method) -> {
+                  .method((className, method, typeArgs) -> {
+                    Optional<DeclaredType> typeArg = asDeclaredType(
+                        asDeclaredType(method.getReturnType()).get().getTypeArguments().get(0));
+
+                    if (!typeArg.isPresent()) {
+                      return error(message("Expected type arg is declared typed in " + method.getReturnType() + " of "
+                          + instanceLocation));
+                    }
+
                     List<P2<TypeMirror, Integer>> indexedTypeArguments = zipWithIndex(
-                        asDeclaredType(asDeclaredType(method.getReturnType()).get().getTypeArguments().get(0)).get()
-                            .getTypeArguments());
+                        typeArg.get().getTypeArguments());
 
-                    DeriveResult<BoundExpression> args = zipWithIndex(method.getParameters())
+                    DeriveResult<BoundExpression> args = method.getParameters()
                         .stream()
-                        .map(param -> param.match((ve, i) -> {
-                          List<TypeVariable> paramTypeVariables = typeVariablesIn(ve.asType());
-
+                        .map(ve -> {
                           Optional<BoundExpression> instanceConstraintResolution = asTypeElement(ve.asType()).flatMap(
-                              paramTypeElement -> indexedTypeArguments.stream()
-                                  .filter(ta -> paramTypeVariables.stream()
-                                      .anyMatch(tv -> Types.isSameType(tv, P2s.get_1(ta))))
-                                  .findFirst()
-                                  .map(P2s::get_2)
-                                  .map(declaredType.getTypeArguments()::get)
-                                  .flatMap(tm -> DeriveResults.getResult(
-                                      instanceInitializer(typeElementContext, typeClassContext,
-                                          ClassName.get(paramTypeElement),
-                                          tm, lowPriorityProviders))));
-
+                              argTypeClass -> asDeclaredType(ve.asType()).map(
+                                  typeClassInstance -> resolve(typeClassInstance.getTypeArguments().get(0),
+                                      tv -> Optional.of(typeArgs.get(tv))))
+                                  .flatMap(
+                                      argType -> DeriveResults.getResult(
+                                          instanceInitializer(typeElementContext, typeClassContext,
+                                              ClassName.get(argTypeClass),
+                                              argType, lowPriorityProviders))));
                           return fold(instanceConstraintResolution,
-                              DeriveResult.<BoundExpression>error(message("Cannot find type class " + ve.asType())),
+                              DeriveResult.<BoundExpression>error(message("Cannot find type class "
+                                  + resolve(ve.asType(),
+                                      tv -> Optional.of(typeArgs.get(tv)))
+                                  + " using context " + typeElementContext + ", " + lowPriorityProviders)),
                               DeriveResult::result);
-                        }))
+                        })
                         .reduce(
                             (dr1, dr2) -> dr1.bind(be1 -> dr2.map(be2 -> join(DeriveUtilsImpl::joinAsArgs, be1, be2))))
                         .orElse(result(expression(emptyList(), baseExpression(CodeBlock.of("")))));
@@ -409,7 +531,10 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
                         .baseExpression(cb -> baseExpression(CodeBlock.builder()
                             .add("$T.", className)
-                            .add(asTypeArguments(typeVariablesIn(type)))
+                            .add(asTypeArguments(method.getTypeParameters()
+                                .stream()
+                                .map(tpe -> asTypeVariable.visit(tpe.asType()).get())
+                                .map(typeArgs::get)))
                             .add("$L(", method.getSimpleName())
                             .add(cb)
                             .add(")")
@@ -427,7 +552,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
   @Override
   public DeriveResult<FieldsTypeClassInstanceBindingMap> resolveFieldInstances(AlgebraicDataType adt,
       ClassName typeClass, List<TypeElement> lowPriorityProviders) {
-    TypeElement typeClassElement = elements().getTypeElement(typeClass.reflectionName());
+    TypeElement typeClassElement = findTypeElement(typeClass).get();
 
     return adt.fields()
         .stream()
@@ -463,7 +588,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
           List<FreeVariable> freeVariables = getFreeVariables(fieldsTypeClassInstanceBindingMap);
 
-          final String methodName = generatedInstanceMethodName(elements().getTypeElement(typeClass.reflectionName()),
+          final String methodName = generatedInstanceMethodName(findTypeElement(typeClass).get(),
               adt.typeConstructor().typeElement());
 
           final Function<DataArgument, CodeBlock> methodRecursiveCall = da -> CodeBlock.builder()
@@ -471,7 +596,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
                   adt.deriveConfig().derivedInstances().get(typeClass).targetClass().orElse(
                       adt.deriveConfig().targetClass().className()))
               .add(findFirstDeclaredTypeOf(adt.typeConstructor().typeElement(), da.type())
-                  .map(dt -> asTypeArguments(dt.getTypeArguments()))
+                  .map(dt -> asTypeArguments(dt.getTypeArguments().stream()))
                   .orElse(CodeBlock.of("")))
               .add("$L($L)", methodName, joinStringsAsArguments(freeVariables.stream().map(FreeVariables::getName)))
               .build();
@@ -615,8 +740,13 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .build();
   }
 
-  private CodeBlock asTypeArguments(List<? extends TypeMirror> typeVariables) {
-    return typeVariables.stream()
+  @Override
+  public Optional<TypeElement> findTypeElement(ClassName cn) {
+    return Optional.ofNullable(elements().getTypeElement(cn.reflectionName().replace("$", ".")));
+  }
+
+  private CodeBlock asTypeArguments(Stream<? extends TypeMirror> typeVariables) {
+    return typeVariables
         .filter(tv -> tv.getKind() != TypeKind.WILDCARD)
         .map(tv -> CodeBlock.of("$T", TypeName.get(tv)))
         .reduce((tv1, tv2) -> tv1.toBuilder().add(", ").add(tv2).build())
@@ -654,50 +784,58 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   private Optional<InstanceLocation> findCompiledInstance(TypeElement typeElementContext, TypeElement typeClass,
       TypeElement typeElement, DeclaredType declaredType, List<TypeElement> lowPriorityProviders,
-      Optional<ClassName> deriveTarget) {
+      Optional<ClassName> deriveTarget, Optional<ClassName> deriveTargetExtend, Optional<ClassName> contextExtend) {
 
-    Optional<TypeElement> derivedCompanion = deriveTarget
-        .flatMap(cn -> Optional.ofNullable(elements().getTypeElement(cn.reflectionName())));
+    Optional<TypeElement> derivedCompanion = deriveTarget.flatMap(this::findTypeElement);
+    Optional<TypeElement> derivedCompanionExtend = deriveTargetExtend.flatMap(this::findTypeElement);
+    Optional<TypeElement> derivedContextExtend = contextExtend.flatMap(this::findTypeElement);
 
-    Optional<TypeElement> companionClass = Optional
-        .ofNullable(elements()
-            .getTypeElement(deriveConfigBuilder.deduceDerivedClassName(":auto", typeElement).reflectionName()))
-        .filter(te -> !derivedCompanion.filter(te::equals).isPresent());
+    Optional<TypeElement> companionClass = findTypeElement(
+        deriveConfigBuilder.deduceDerivedClassName(":auto", typeElement))
+            .filter(te -> !derivedCompanion.filter(te::equals).isPresent());
 
-    List<TypeElement> instancesProviders = concat(
+    Stream<TypeElement> instancesProviders = concat(
         concat(Stream.of(typeElementContext, typeClass, typeElement),
-            concat(optionalAsStream(derivedCompanion), optionalAsStream(companionClass))),
-        lowPriorityProviders.stream()).collect(toList());
+            concat(optionalAsStream(derivedContextExtend),
+                concat(optionalAsStream(derivedCompanion), optionalAsStream(companionClass)))),
+        lowPriorityProviders.stream());
 
     TypeMirror rawTypeClass = Types.erasure(typeClass.asType());
-    return concat(
 
-        instancesProviders.stream()
-            .flatMap(this::allStaticFields)
+    Function<TypeElement, Stream<InstanceLocation>> compiledInstanceIn = findCompiledInstanceIn(typeElement,
+        declaredType, deriveTarget, rawTypeClass);
+
+    return concat(optionalAsStream(derivedCompanionExtend).flatMap(compiledInstanceIn)
+        // ensure access through parent class as implementing class could be package
+        // private:
+        .flatMap(il -> optionalAsStream(deriveTarget).map(cn -> InstanceLocations.setClassName(cn).apply(il))),
+        instancesProviders.flatMap(compiledInstanceIn)).findFirst();
+  }
+
+  private Function<TypeElement, Stream<InstanceLocation>> findCompiledInstanceIn(TypeElement typeElement,
+      DeclaredType declaredType,
+      Optional<ClassName> deriveTarget, TypeMirror rawTypeClass) {
+    return instancesProvider -> concat(
+        allStaticMethods(instancesProvider)
+            .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawTypeClass) && m.getParameters()
+                .stream()
+                .allMatch(
+                    ve -> asDeclaredType(ve.asType()).filter(dt -> dt.getTypeArguments().size() == 1).isPresent()))
+            .flatMap(m -> optionalAsStream(asDeclaredType(m.getReturnType())
+                .filter(
+                    dt -> dt.getTypeArguments().get(0).getKind() != TypeKind.TYPEVAR) // TODO: also support type var
+                .flatMap(dt -> unify(dt.getTypeArguments().get(0), declaredType))
+                .map(unificationSolution -> (instancesProvider.equals(typeElement) && m.getAnnotationMirrors()
+                    .stream()
+                    .anyMatch(am -> am.getAnnotationType().asElement().getSimpleName().contentEquals(
+                        ExportAsPublic.class.getSimpleName())))
+                            ? method(deriveTarget.orElse(ClassName.get(typeElement)), m, unificationSolution)
+                            : method(ClassName.get(instancesProvider), m, unificationSolution)))),
+        allStaticFields(instancesProvider)
             .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawTypeClass))
             .flatMap(ve -> optionalAsStream(
                 asDeclaredType(ve.asType()).filter(dt -> Types.isSameType(dt.getTypeArguments().get(0), declaredType))
-                    .map(te -> value(ve)))),
-
-        instancesProviders.stream()
-            .flatMap(this::allStaticMethods)
-            .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawTypeClass)
-                && asDeclaredType(m.getReturnType()).map(dt -> dt.getTypeArguments().get(0))
-                    .flatMap(this::asTypeElement)
-                    .filter(typeElement::equals)
-                    .isPresent())
-            .filter(m -> m.getParameters()
-                .stream()
-                .allMatch(ve -> asDeclaredType(ve.asType()).filter(dt -> (dt.getTypeArguments().size() == 1)
-                    && (dt.getTypeArguments().get(0).getKind() == TypeKind.TYPEVAR)).isPresent()))
-            .map(m -> (m.getEnclosingElement().equals(typeElement) && m.getAnnotationMirrors()
-                .stream()
-                .anyMatch(am -> am.getAnnotationType().asElement().getSimpleName().contentEquals(
-                    ExportAsPublic.class.getSimpleName())))
-                        ? method(deriveTarget.orElse(ClassName.get(typeElement)), m)
-                        : method(ClassName.get(asTypeElement.visit(m.getEnclosingElement()).get()), m)
-
-        )).findFirst();
+                    .map(te -> value(ClassName.get(instancesProvider), ve)))));
   }
 
   private OptionModel lazyOptionModel(String optionClassQualifiedName, String noneConstructor, String someConstructor) {
@@ -815,7 +953,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .map(DeclaredType::asElement)
         .map(asTypeElement::visit)
         .flatMap(Utils::optionalAsStream)
-        .flatMap(te -> concat(getSuperTypeElements(te), Stream.of(te)));
+        .flatMap(te -> concat(Stream.of(te), getSuperTypeElements(te)));
   }
 
 }

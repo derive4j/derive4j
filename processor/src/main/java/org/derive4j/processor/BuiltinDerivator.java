@@ -47,7 +47,7 @@ final class BuiltinDerivator {
         .casesMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
         .caseOfMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
         .getters_(new GettersDerivator(deriveUtils))
-        .modifiers_(new ModiersDerivator(deriveUtils))
+        .modifiers_(new ModifiersDerivator(deriveUtils))
         .catamorphism_(new CataDerivator(deriveUtils))
         .hktCoerce_(__ -> DeriveResult.result(DerivedCodeSpec.none()));
 

@@ -28,16 +28,15 @@ import com.squareup.javapoet.TypeVariableName;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.ElementFilter;
 import org.derive4j.ExportAsPublic;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
@@ -45,6 +44,7 @@ import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 import org.derive4j.processor.api.model.AlgebraicDataType;
 
+import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.methodSpec;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
@@ -62,10 +62,10 @@ final class ExportDerivator implements Derivator {
   @Override
   public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
 
-    return result(ElementFilter.methodsIn(adt.typeConstructor().typeElement().getEnclosedElements())
-        .stream()
-        .filter(executableElement -> isStaticPackage(executableElement.getModifiers()))
-        .filter(executableElement -> hasExportAsPublicAnnotation(executableElement))
+    return result(Stream.concat(utils.allStaticMethods(adt.typeConstructor().typeElement()),
+        optionalAsStream(adt.deriveConfig().targetClass().extend().flatMap(utils::findTypeElement))
+            .flatMap(utils::allStaticMethods))
+        .filter(this::hasExportAsPublicAnnotation)
         .map(this::exportAsPublic)
         .reduce(none(), DerivedCodeSpec::append));
 
@@ -74,7 +74,7 @@ final class ExportDerivator implements Derivator {
   private DerivedCodeSpec exportAsPublic(ExecutableElement executableElement) {
     MethodSpec.Builder methodBuilder = replicate(executableElement).addModifiers(Modifier.PUBLIC);
 
-    Name adtClassName = executableElement.getEnclosingElement().getSimpleName();
+    TypeName className = ClassName.get(executableElement.getEnclosingElement().asType());
     String methodName = executableElement.getSimpleName().toString();
     String parameters = executableElement.getParameters().stream().map(ve -> ve.getSimpleName().toString()).collect(
         Collectors.joining(", "));
@@ -83,27 +83,33 @@ final class ExportDerivator implements Derivator {
 
     if (executableElement.getParameters().isEmpty()) {
 
-      FieldSpec.Builder singleton = FieldSpec.builder(ClassName.get(executableElement.getReturnType()), methodName,
-          Modifier.PRIVATE, Modifier.STATIC);
+      TypeMirror returnType = executableElement.getReturnType();
 
-      if (!executableElement.getTypeParameters().isEmpty()) {
-        singleton
-            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build());
+      final FieldSpec singleton;
+
+      if (executableElement.getTypeParameters().isEmpty()) {
+        singleton = FieldSpec.builder(TypeName.get(returnType), methodName, Modifier.PRIVATE, Modifier.STATIC).build();
+      } else {
+        singleton = FieldSpec.builder(TypeName.get(utils.types().erasure(returnType)), methodName,
+            Modifier.PRIVATE, Modifier.STATIC)
+            .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "rawtypes").build())
+            .build();
+
         methodBuilder.addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
             .addMember("value", "{$S, $S}", "rawtypes", "unchecked")
             .build());
       }
 
-      result = DerivedCodeSpec.codeSpec(singleton.build(),
-          methodBuilder.addStatement("$1T _$2L = $2L", TypeName.get(executableElement.getReturnType()), methodName)
+      result = DerivedCodeSpec.codeSpec(singleton,
+          methodBuilder.addStatement("$1T _$2L = $2L", TypeName.get(returnType), methodName)
               .beginControlFlow("if (_$L == null)", methodName)
-              .addStatement("$1L = _$1L = $2L.$1L($3L)", methodName, adtClassName, parameters)
+              .addStatement("$1L = _$1L = $2T.$1L($3L)", methodName, className, parameters)
               .endControlFlow()
               .addStatement("return _$L", methodName)
               .build());
     } else {
       result = methodSpec(replicate(executableElement).addModifiers(Modifier.PUBLIC)
-          .addStatement("return $L.$L($L)", adtClassName, methodName, parameters)
+          .addStatement("return $L.$L($L)", className, methodName, parameters)
           .build());
     }
 
@@ -151,11 +157,6 @@ final class ExportDerivator implements Derivator {
   private boolean hasExportAsPublicAnnotation(ExecutableElement executableElement) {
     return executableElement.getAnnotationMirrors().stream().anyMatch(
         am -> exportAsPublicAnnotation.equals(am.getAnnotationType().asElement()));
-  }
-
-  private static boolean isStaticPackage(Set<Modifier> modifiers) {
-    return modifiers.contains(Modifier.STATIC) && !modifiers.contains(Modifier.PUBLIC)
-        && !modifiers.contains(Modifier.PRIVATE);
   }
 
 }

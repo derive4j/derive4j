@@ -51,11 +51,11 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
-final class ModiersDerivator implements Derivator {
+final class ModifiersDerivator implements Derivator {
 
   private final DeriveUtils deriveUtils;
 
-  ModiersDerivator(DeriveUtils deriveUtils) {
+  ModifiersDerivator(DeriveUtils deriveUtils) {
     this.deriveUtils = deriveUtils;
   }
 

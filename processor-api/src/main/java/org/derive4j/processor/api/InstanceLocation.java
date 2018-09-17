@@ -19,18 +19,21 @@
 package org.derive4j.processor.api;
 
 import com.squareup.javapoet.ClassName;
+import java.util.Map;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
 
 @Data
 public abstract class InstanceLocation {
   interface Cases<X> {
-    X value(VariableElement variableElement);
+    X value(ClassName className, VariableElement variableElement);
 
     X generatedIn(ClassName className);
 
-    X method(ClassName className, ExecutableElement executableElement);
+    X method(ClassName className, ExecutableElement executableElement, Map<TypeVariable, TypeMirror> typeArgs);
   }
 
   public abstract <X> X match(Cases<X> cases);

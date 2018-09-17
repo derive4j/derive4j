@@ -44,7 +44,7 @@ import static org.derive4j.example.Lists.cons;
 import static org.derive4j.example.Lists.lazy;
 import static org.derive4j.example.Lists.nil;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
+@Data(@Derive(extend = ListMethods.class, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class List<A> {
 
   public static List<Integer> naturals() {
@@ -60,6 +60,13 @@ public abstract class List<A> {
   public static List<Integer> range(final int from, int toExclusive) {
 
     return (from == toExclusive) ? nil() : cons(from, lazy(() -> range(from + 1, toExclusive)));
+  }
+
+  public final Option<A> find(Predicate<A> p) {
+    Function<List<A>, Option<A>> cata = Lists.cata(
+        Options::none,
+        (a, tail) -> p.test(a) ? Options.some(a) : Options.lazy(tail));
+    return Options.lazy(() -> cata.apply(this));
   }
 
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {

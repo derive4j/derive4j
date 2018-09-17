@@ -5,6 +5,7 @@ archivesBaseName = "${project.projectName}-${project.name}"
 dependencies {
   compileOnly project(":annotation")
   annotationProcessor project(":processor")
+  annotationProcessor project(":processor-api")
   annotationProcessor "org.derive4j:derive4j-fj:0.1"
   compileOnly "com.google.auto.value:auto-value:1.5.3"
   annotationProcessor "com.google.auto.value:auto-value:1.5.3"
