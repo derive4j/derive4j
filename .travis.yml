@@ -1,18 +1,23 @@
 language: java
 sudo: false
+
 jdk:
-- oraclejdk8
-addons:
-  apt:
-    packages:
-    - oracle-java8-installer
+ - openjdk11
+
+matrix:
+
+  include:
+  - jdk: openjdk8
+    script:
+      - ./gradlew build codeCoverageReport -s -i
+    after_success:
+      - '[ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ] && ./gradlew
+        artifactoryPublish -s -i'
+      - bash <(curl -s https://codecov.io/bash)
+
 script:
-- "./gradlew build -s -i"
-- ./gradlew codeCoverageReport
-after_success:
-- '[ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ] && ./gradlew
-  artifactoryPublish -s -i'
-- bash <(curl -s https://codecov.io/bash)
+  - ./gradlew test
+
 env:
   global:
   - secure: cmXQwAJyATAnyEs1CcIQ/UDb1uDxMAw0Uk8gjBw9XOplzlJOWoe039VUOPFD/DQM4vXpemevBQ2Hip8NNqePiTrUe/qgUB02505V9h2jONWP927shB/mVyMALS8oajJI8nbw5DE3bV+CjcPiEV657AUDqBoKm4rVloBx49ErDfjTcTMr/ufFmRNM/tAVIeWxnjZCowDX+K5zx0+CTCjyvWgXEsTaTNvZt4yGthvZRmWgfBSklf5LJoQX40eibD6tAfl3/gOuY8MIMWIGgGVQiK2WNOfvz/2D+3pFkVEB9O09pqh1zjimqbKvYyRcAk3TFf5J/j2hVtE/DU9HHaozNEVSDwGIu3wELYtoW0ZOylRw2iZzj/BCqRMPDt6cPti5UJRWGtLvP8DmESWfPfodZ74tlGjqjC44l6Euf9Yo5B++ixw8LLo0XBB0+nQX+j1SIDs5HNdbMYmpEL1J4wQDNrtlblwH5UzIArLP3eKUUL7yddz0fGiE3432UxY/RIRbNLlod2TBNg6rZPrYMcLBlj6ycqmaQu5Uju6DNR21pkpBVv6QLt5qywmD6E9FEauMYeKOhFUwigBvdXXuNoQCTOyT4htY/Ts19bKVxi8N8Cb8vjwgrM9h5whDso+73wOynCYgbZvdv/fNXDu+mD4igP3h0mx63cW63nlQevfQQ/k=
