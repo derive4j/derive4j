@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -51,11 +51,11 @@ import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
-final class ModiersDerivator implements Derivator {
+final class ModifiersDerivator implements Derivator {
 
   private final DeriveUtils deriveUtils;
 
-  ModiersDerivator(DeriveUtils deriveUtils) {
+  ModifiersDerivator(DeriveUtils deriveUtils) {
     this.deriveUtils = deriveUtils;
   }
 

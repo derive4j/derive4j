@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -19,9 +19,11 @@
 package org.derive4j.processor.api.model;
 
 import com.squareup.javapoet.ClassName;
+import java.util.Optional;
 import org.derive4j.Data;
 
 import static org.derive4j.processor.api.model.DeriveTargetClasses.getClassName;
+import static org.derive4j.processor.api.model.DeriveTargetClasses.getExtend;
 import static org.derive4j.processor.api.model.DeriveTargetClasses.getVisibility;
 
 @Data
@@ -40,8 +42,12 @@ public abstract class DeriveTargetClass {
     return getVisibility(this);
   }
 
+  public final Optional<ClassName> extend() {
+    return getExtend(this);
+  }
+
   interface Case<X> {
-    X TargetClass(ClassName className, DeriveVisibility visibility);
+    X TargetClass(ClassName className, DeriveVisibility visibility, Optional<ClassName> extend);
   }
 
 }

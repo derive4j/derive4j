@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Processor API".
  *
@@ -23,6 +23,7 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -50,6 +51,8 @@ public interface DeriveUtils {
   Function<TypeVariable, Optional<TypeMirror>> typeRestrictions(List<TypeRestriction> typeRestrictions);
 
   TypeMirror resolve(TypeMirror typeMirror, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
+
+  Optional<Map<TypeVariable, TypeMirror>> unify(TypeMirror from, TypeMirror to);
 
   DeclaredType resolve(DeclaredType declaredType, Function<TypeVariable, Optional<TypeMirror>> typeArgs);
 
@@ -106,4 +109,7 @@ public interface DeriveUtils {
   CodeBlock parameterList(DataConstructor constructor);
 
   CodeBlock parameterList(DataConstructor constructor, String suffix);
+
+  Optional<TypeElement> findTypeElement(ClassName cn);
+
 }

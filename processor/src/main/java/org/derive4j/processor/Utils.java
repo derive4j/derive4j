@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -49,9 +49,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.SimpleElementVisitor8;
-import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
 import org.derive4j.processor.api.DeriveMessage;
@@ -98,7 +96,7 @@ final class Utils {
                                                                                               }
 
                                                                                             };
-  static final SimpleElementVisitor6<PackageElement, Void>              getPackage          = new SimpleElementVisitor6<PackageElement, Void>() {
+  static final SimpleElementVisitor8<PackageElement, Void>              getPackage          = new SimpleElementVisitor8<PackageElement, Void>() {
 
                                                                                               @Override
                                                                                               public PackageElement visitPackage(
@@ -120,7 +118,7 @@ final class Utils {
                                                                                               }
 
                                                                                             };
-  static final SimpleElementVisitor6<Optional<ExecutableElement>, Void> asExecutableElement = new SimpleElementVisitor6<Optional<ExecutableElement>, Void>() {
+  static final SimpleElementVisitor8<Optional<ExecutableElement>, Void> asExecutableElement = new SimpleElementVisitor8<Optional<ExecutableElement>, Void>() {
 
                                                                                               @Override
                                                                                               public Optional<ExecutableElement> visitExecutable(
@@ -140,7 +138,7 @@ final class Utils {
 
                                                                                             };
 
-  static final SimpleElementVisitor6<Optional<VariableElement>, Void> asVairableElement = new SimpleElementVisitor6<Optional<VariableElement>, Void>() {
+  static final SimpleElementVisitor8<Optional<VariableElement>, Void> asVariableElement = new SimpleElementVisitor8<Optional<VariableElement>, Void>() {
 
     @Override
     public Optional<VariableElement> visitVariable(final VariableElement e, final Void p) {
@@ -153,7 +151,7 @@ final class Utils {
     }
   };
 
-  static final TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor6<TypeMirror, Types>() {
+  static final TypeVisitor<TypeMirror, Types> asBoxedType = new SimpleTypeVisitor8<TypeMirror, Types>() {
 
     @Override
     public TypeMirror visitPrimitive(PrimitiveType t, Types types) {
@@ -279,7 +277,7 @@ final class Utils {
 
   static Stream<VariableElement> getFields(final List<? extends Element> amongElements) {
 
-    return amongElements.stream().map(asVairableElement::visit).flatMap(Utils::optionalAsStream);
+    return amongElements.stream().map(asVariableElement::visit).flatMap(Utils::optionalAsStream);
   }
 
   static <T> Predicate<T> p(Predicate<T> p) {

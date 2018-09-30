@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotations API".
  *
@@ -40,6 +40,8 @@ public @interface Derive {
   String inClass() default ":auto";
 
   Visibility withVisibility() default Same;
+
+  Class<?> extend() default Class.class;
 
   Make[] make() default { lambdaVisitor, constructors, getters, modifiers, lazyConstructor, caseOfMatching,
       casesMatching, catamorphism, hktCoerce };

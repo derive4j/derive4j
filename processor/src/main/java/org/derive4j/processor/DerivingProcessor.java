@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -88,6 +88,7 @@ public final class DerivingProcessor extends AbstractProcessor {
   private static final Set<ElementKind>                   scannedElementKinds = EnumSet.of(ElementKind.CLASS,
       ElementKind.INTERFACE, ElementKind.ENUM);
   private final ArrayList<P2<String, RuntimeException>>   remainingElements   = new ArrayList<>();
+  private DeriveUtilsImpl                                 deriveUtils;
   private Derivator                                       builtinDerivator;
   private AdtParser                                       adtParser;
   private DeriveConfigBuilder                             deriveConfigBuilder;
@@ -99,7 +100,8 @@ public final class DerivingProcessor extends AbstractProcessor {
     super.init(processingEnv);
 
     deriveConfigBuilder = new DeriveConfigBuilder(processingEnv.getElementUtils());
-    DeriveUtilsImpl deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
+
+    deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
         deriveConfigBuilder);
     builtinDerivator = BuiltinDerivator.derivator(deriveUtils);
     adtParser = new AdtParser(deriveUtils);
@@ -207,14 +209,23 @@ public final class DerivingProcessor extends AbstractProcessor {
   }
 
   private TypeSpec toTypeSpec(DeriveConfig deriveConfig, ClassName targetClassName, DerivedCodeSpec codeSpec) {
-    return TypeSpec.classBuilder(targetClassName)
+    TypeSpec.Builder builder = TypeSpec.classBuilder(targetClassName)
         .addModifiers(Modifier.FINAL,
             caseOf(deriveConfig.targetClass().visibility()).Package_(Modifier.FINAL).otherwise_(Modifier.PUBLIC))
         .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
         .addTypes(getClasses(codeSpec))
         .addFields(getFields(codeSpec))
-        .addMethods(getMethods(codeSpec))
-        .build();
+        .addMethods(getMethods(codeSpec));
+
+    deriveConfig.targetClass().extend().ifPresent(cn -> {
+      if (deriveUtils.findTypeElement(cn).get().getKind().isInterface()) {
+        builder.addSuperinterface(cn);
+      } else {
+        builder.superclass(cn);
+      }
+    });
+
+    return builder.build();
   }
 
   private Map<ClassName, P2<Stream<DeriveMessage>, DerivedCodeSpec>> derivedInstances(AlgebraicDataType adt) {

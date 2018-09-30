@@ -25,37 +25,6 @@
  */
 package org.derive4j.example;
 
-import fj.Equal;
-import fj.Hash;
-import fj.Ord;
-import fj.Show;
-import org.derive4j.Data;
-import org.derive4j.Derive;
-import org.derive4j.Instances;
+abstract class ListMethods {
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
-public enum Country {
-
-  Fr {
-    @Override
-    public <R> R match(Cases<R> cases) {
-
-      return cases.Fr();
-    }
-  },
-  Ch {
-    @Override
-    public <R> R match(Cases<R> cases) {
-
-      return cases.Ch();
-    }
-  };
-
-  public abstract <R> R match(Cases<R> cases);
-
-  interface Cases<R> {
-    R Fr();
-
-    R Ch();
-  }
 }

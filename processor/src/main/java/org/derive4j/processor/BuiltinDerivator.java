@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
@@ -47,7 +47,7 @@ final class BuiltinDerivator {
         .casesMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.Cases))
         .caseOfMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
         .getters_(new GettersDerivator(deriveUtils))
-        .modifiers_(new ModiersDerivator(deriveUtils))
+        .modifiers_(new ModifiersDerivator(deriveUtils))
         .catamorphism_(new CataDerivator(deriveUtils))
         .hktCoerce_(__ -> DeriveResult.result(DerivedCodeSpec.none()));
 

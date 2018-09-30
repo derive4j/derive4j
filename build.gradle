@@ -24,7 +24,8 @@ buildscript {
     }
 
     wrapper {
-        gradleVersion = "4.6"
+        gradleVersion = "4.10.2"
+        distributionType = Wrapper.DistributionType.ALL
     }
 }
 
@@ -54,8 +55,8 @@ allprojects {
 
         primaryEmail = "jb@giraudeau.info"
 
-        dependencyJavaPoet = "com.squareup:javapoet:1.10.0"
-        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.12.3"
+        dependencyJavaPoet = "com.squareup:javapoet:1.11.1"
+        dependencyPreviousDerive4J = "org.derive4j:derive4j:0.12.4"
         dependencyJunit = "junit:junit:4.12"
         dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc4"
 
