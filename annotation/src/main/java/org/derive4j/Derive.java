@@ -27,7 +27,6 @@ import static org.derive4j.Make.casesMatching;
 import static org.derive4j.Make.catamorphism;
 import static org.derive4j.Make.constructors;
 import static org.derive4j.Make.getters;
-import static org.derive4j.Make.hktCoerce;
 import static org.derive4j.Make.lambdaVisitor;
 import static org.derive4j.Make.lazyConstructor;
 import static org.derive4j.Make.modifiers;
@@ -44,7 +43,7 @@ public @interface Derive {
   Class<?> extend() default Class.class;
 
   Make[] make() default { lambdaVisitor, constructors, getters, modifiers, lazyConstructor, caseOfMatching,
-      casesMatching, catamorphism, hktCoerce };
+      casesMatching, catamorphism };
 
   Instances[] value() default {};
 

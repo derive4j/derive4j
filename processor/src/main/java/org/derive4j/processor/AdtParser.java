@@ -74,7 +74,7 @@ import static org.derive4j.processor.api.model.DataConstruction.multipleConstruc
 import static org.derive4j.processor.api.model.DataConstruction.noConstructor;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 import static org.derive4j.processor.api.model.DataConstructors.constructor;
-import static org.derive4j.processor.api.model.DataDeconstructor.deconstructor;
+import static org.derive4j.processor.api.model.DataDeconstructors.deconstructor;
 import static org.derive4j.processor.api.model.MatchMethod.matchMethod;
 import static org.derive4j.processor.api.model.MultipleConstructors.visitorDispatch;
 import static org.derive4j.processor.api.model.TypeConstructor.typeConstructor;
@@ -211,6 +211,16 @@ final class AdtParser {
                 : parseDataConstructionMultipleAgs(adtDeclaredType, adtTypeVariables, ps)));
   }
 
+  private List<TypeVariable> methodTypeVariables(ExecutableType method) {
+
+    return method
+        .getParameterTypes()
+        .stream()
+        .flatMap(t -> deriveUtils.typeVariablesIn(t).stream())
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
   private DeriveResult<DataConstruction> parseDataConstructionOneArg(DeclaredType adtDeclaredType,
       List<TypeVariable> adtTypeVariables, VariableElement visitorArg, DeclaredType visitorType) {
 
@@ -224,9 +234,15 @@ final class AdtParser {
     } else {
       result = Utils
           .traverseResults(abstractMethods,
-              m -> parseDataConstructor(adtDeclaredType, adtTypeVariables,
-                  deconstructor(visitorArg, visitorType, m, (ExecutableType) types.asMemberOf(visitorType, m)),
-                  abstractMethods.indexOf(m)))
+              m -> {
+                ExecutableType visitorMethodType = (ExecutableType) types
+                    .asMemberOf(asDeclaredType.visit(visitorType.asElement().asType()).get(), m);
+                return parseDataConstructor(adtDeclaredType, adtTypeVariables,
+                    deconstructor(visitorArg, visitorType, (ExecutableType) types.asMemberOf(visitorType, m),
+                        visitorMethodType, m, methodTypeVariables(visitorMethodType),
+                        asTypeVariable.visit(visitorMethodType.getReturnType()).get()),
+                    abstractMethods.indexOf(m));
+              })
           .map(constructors -> constructors.isEmpty()
               ? noConstructor()
               : findOnlyOne(constructors).map(DataConstruction::oneConstructor)
@@ -273,8 +289,8 @@ final class AdtParser {
   private DeriveResult<DataConstructor> parseDataConstructor(DeclaredType adtDeclaredType,
       List<TypeVariable> adtTypeParameters, DataDeconstructor deconstructor, int index) {
 
-    ExecutableElement visitorMethod = deconstructor.visitorMethod();
-    ExecutableType visitorMethodType = deconstructor.visitorMethodType();
+    ExecutableElement visitorMethod = deconstructor.method();
+    ExecutableType visitorMethodType = deconstructor.methodType();
     List<DataArgument> constructorArguments = new ArrayList<>();
     List<TypeRestriction> typeRestrictions = new ArrayList<>();
     List<TypeVariable> seenVariables = new ArrayList<>();

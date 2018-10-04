@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import org.derive4j.processor.api.Derivator;
@@ -43,6 +44,7 @@ import org.derive4j.processor.api.model.AlgebraicDataType;
 import org.derive4j.processor.api.model.DataArgument;
 import org.derive4j.processor.api.model.DataArguments;
 import org.derive4j.processor.api.model.DataConstructor;
+import org.derive4j.processor.api.model.DataConstructors;
 import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
@@ -67,15 +69,28 @@ final class CataDerivator implements Derivator {
   @Override
   public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
 
-    return adt.fields().stream().map(DataArguments::getType).anyMatch(
-        tm -> utils.types().isSameType(tm, adt.typeConstructor().declaredType()))
-            ? caseOf(adt.dataConstruction())
+    List<VariableElement> selfReferenceParams = adt
+        .dataConstruction()
+        .constructors()
+        .stream()
+        .map(DataConstructors::getDeconstructor)
+        .flatMap(dd -> Utils
+            .<VariableElement, TypeMirror>zip(dd.method().getParameters(),
+                dd.methodType().getParameterTypes())
+            .stream()
+            .filter(para -> utils.types().isSameType(para._2(), adt.typeConstructor().declaredType()))
+            .map(P2::_1))
+        .collect(toList());
+
+    return selfReferenceParams.isEmpty()
+        || selfReferenceParams.stream().anyMatch(p -> !Utils.asTypeVariable.visit(p.asType()).isPresent())
+            ? result(DerivedCodeSpec.none())
+            : caseOf(adt.dataConstruction())
                 .multipleConstructors(MultipleConstructorsSupport.cases()
                     .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchImpl(adt, visitorType,
                         constructors))
                     .functionsDispatch(dataConstructors -> functionDispatchImpl(adt, dataConstructors)))
-                .otherwise(() -> result(DerivedCodeSpec.none()))
-            : result(DerivedCodeSpec.none());
+                .otherwise(() -> result(DerivedCodeSpec.none()));
   }
 
   private TypeName cataMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {

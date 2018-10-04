@@ -47,6 +47,19 @@ import static org.derive4j.example.Lists.nil;
 @Data(@Derive(extend = ListMethods.class, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class List<A> {
 
+  public static <A, X> Function<List<A>, X> cata(Supplier<X> nil,
+      BiFunction<A, X, X> cons, Function<Supplier<X>, X> delay) {
+    Function<List<A>, X> cata = new Function<List<A>, X>() {
+      @Override
+      public X apply(List<A> list) {
+        return list.list(
+            nil,
+            (head, tail) -> cons.apply(head, delay.apply(() -> this.apply(tail))));
+      }
+    };
+    return list -> delay.apply(() -> cata.apply(list));
+  }
+
   public static List<Integer> naturals() {
 
     return integersFrom(0);
@@ -91,10 +104,10 @@ public abstract class List<A> {
   }
 
   public final List<A> filter(Predicate<A> p) {
-    Function<List<A>, List<A>> filter = Lists.cata(
+    Function<List<A>, List<A>> filter = cata(
         Lists::nil,
-        (a, tail) -> p.test(a) ? cons(a, lazy(tail)) : lazy(tail));
-    return lazy(() -> filter.apply(this));
+        (a, tail) -> p.test(a) ? cons(a, tail) : tail, Lists::lazy);
+    return filter.apply(this);
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {

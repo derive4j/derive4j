@@ -83,14 +83,6 @@ public enum Make {
 
       return cases.catamorphism();
     }
-  },
-
-  hktCoerce {
-    @Override
-    public <R> R match(Cases<R> cases) {
-
-      return cases.hktCoerce();
-    }
   };
 
   public interface Cases<R> {
@@ -109,8 +101,6 @@ public enum Make {
     R modifiers();
 
     R catamorphism();
-
-    R hktCoerce();
   }
 
   public abstract <R> R match(Cases<R> cases);

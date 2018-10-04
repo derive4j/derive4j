@@ -155,8 +155,7 @@ final class DeriveConfigBuilder {
       .caseOfMatching(() -> of(lambdaVisitor))
       .getters(() -> of(lambdaVisitor))
       .modifiers(() -> of(lambdaVisitor, constructors))
-      .catamorphism(() -> of(lambdaVisitor))
-      .hktCoerce(Stream::of);
+      .catamorphism(() -> of(lambdaVisitor));
 
   private final TypeElement       dataAnnotation;
   private final TypeElement       deriveAnnotation;

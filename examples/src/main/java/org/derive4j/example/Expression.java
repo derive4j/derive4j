@@ -61,15 +61,15 @@ public abstract class Expression {
       (left, right) -> left.get() * right.get(),
       expr -> -expr.get());
 
-  public abstract <R> R match(Cases<R> cases);
+  public abstract <R> R match(Cases<Expression, R> cases);
 
-  interface Cases<R> {
+  interface Cases<E, R> {
     R Const(int value);
 
-    R Add(Expression left, Expression right);
+    R Add(E left, E right);
 
-    R Mult(Expression left, Expression right);
+    R Mult(E left, E right);
 
-    R Neg(Expression expr);
+    R Neg(E expr);
   }
 }
