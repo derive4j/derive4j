@@ -17,6 +17,8 @@ matrix:
 
   allow_failures:
   - jdk: openjdk10
+  # Temporary allow failure of jdk11+ until JDK-8210483 fix is released:
+  - jdk: openjdk11
   - jdk: openjdk-ea
 
 script:
