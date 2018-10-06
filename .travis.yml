@@ -11,8 +11,13 @@ matrix:
       - '[ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ] && ./gradlew
         artifactoryPublish -s -i'
       - bash <(curl -s https://codecov.io/bash)
-  - jdk: openjdk11
   - jdk: openjdk10
+  - jdk: openjdk11
+  - jdk: openjdk-ea
+
+  allow_failures:
+  - jdk: openjdk10
+  - jdk: openjdk-ea
 
 script:
   - ./gradlew test
