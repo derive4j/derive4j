@@ -217,7 +217,7 @@ artifactory {
         }
         defaults {
             publishConfigs('archives')
-            //publishIvy = false
+            publishIvy = false
         }
     }
     resolve {
