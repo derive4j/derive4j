@@ -85,10 +85,6 @@ public final class PhoneAndPers {
       return null;
     }
 
-    @ExportAsPublic
-    static Show<PhoneAndPers.Phone<PhoneAndPers.Phone.Mobile>> mobPhoneShow() {
-      return PhoneInstances.mobPhoneShow;
-    }
   }
 
 }

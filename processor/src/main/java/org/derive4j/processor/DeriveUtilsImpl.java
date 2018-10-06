@@ -816,6 +816,11 @@ final class DeriveUtilsImpl implements DeriveUtils {
       DeclaredType declaredType,
       Optional<ClassName> deriveTarget, TypeMirror rawTypeClass) {
     return instancesProvider -> concat(
+        allStaticFields(instancesProvider)
+            .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawTypeClass))
+            .flatMap(ve -> optionalAsStream(
+                asDeclaredType(ve.asType()).filter(dt -> Types.isSameType(dt.getTypeArguments().get(0), declaredType))
+                    .map(te -> value(ClassName.get(instancesProvider), ve)))),
         allStaticMethods(instancesProvider)
             .filter(m -> Types.isSameType(Types.erasure(m.getReturnType()), rawTypeClass) && m.getParameters()
                 .stream()
@@ -830,12 +835,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
                     .anyMatch(am -> am.getAnnotationType().asElement().getSimpleName().contentEquals(
                         ExportAsPublic.class.getSimpleName())))
                             ? method(deriveTarget.orElse(ClassName.get(typeElement)), m, unificationSolution)
-                            : method(ClassName.get(instancesProvider), m, unificationSolution)))),
-        allStaticFields(instancesProvider)
-            .filter(ve -> Types.isSameType(Types.erasure(ve.asType()), rawTypeClass))
-            .flatMap(ve -> optionalAsStream(
-                asDeclaredType(ve.asType()).filter(dt -> Types.isSameType(dt.getTypeArguments().get(0), declaredType))
-                    .map(te -> value(ClassName.get(instancesProvider), ve)))));
+                            : method(ClassName.get(instancesProvider), m, unificationSolution)))));
   }
 
   private OptionModel lazyOptionModel(String optionClassQualifiedName, String noneConstructor, String someConstructor) {
