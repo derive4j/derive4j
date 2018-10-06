@@ -83,6 +83,14 @@ public enum Make {
 
       return cases.catamorphism();
     }
+  },
+
+  factory {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.factory();
+    }
   };
 
   public interface Cases<R> {
@@ -101,6 +109,8 @@ public enum Make {
     R modifiers();
 
     R catamorphism();
+
+    R factory();
   }
 
   public abstract <R> R match(Cases<R> cases);

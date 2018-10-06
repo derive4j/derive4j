@@ -18,15 +18,15 @@ interface Exp {
 
 @Data
 @FunctionalInterface
-interface ExpMul {
+interface ExpMul<T> {
 
   interface ExpMulAlg<E, A> extends Exp.ExpAlg<Unit, E, A> {
     A Mul(E e1, E e2);
   }
 
-  <A> A accept(ExpMulAlg<ExpMul, A> alg);
+  <A> A accept(ExpMulAlg<ExpMul<T>, A> alg);
 
-  static ExpMul fromExp(Exp exp) {
-    return Exps.cata(ExpMuls::Lit, ExpMuls::Add, ExpMuls::lazy).apply(exp);
+  static <T> ExpMul<T> fromExp(Exp exp) {
+    return Exps.cata(ExpMuls.<T>factory(), ExpMuls::lazy).apply(exp);
   }
 }

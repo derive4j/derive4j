@@ -72,6 +72,19 @@ final class CataDerivator implements Derivator {
   @Override
   public DeriveResult<DerivedCodeSpec> derive(AlgebraicDataType adt) {
 
+    return visitorIsObjectAlgebra(adt)
+        ? caseOf(adt.dataConstruction())
+            .multipleConstructors(MultipleConstructorsSupport.cases()
+                .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchImpl(adt, visitorType,
+                    constructors))
+                .functionsDispatch(dataConstructors -> functionDispatchImpl(adt, dataConstructors)))
+            .oneConstructor(
+                dataConstructor -> functionDispatchImpl(adt, Collections.singletonList(dataConstructor)))
+            .noConstructor(() -> result(DerivedCodeSpec.none()))
+        : result(DerivedCodeSpec.none());
+  }
+
+  boolean visitorIsObjectAlgebra(AlgebraicDataType adt) {
     List<VariableElement> selfReferenceParams = adt
         .dataConstruction()
         .constructors()
@@ -85,17 +98,8 @@ final class CataDerivator implements Derivator {
             .map(P2::_1))
         .collect(toList());
 
-    return selfReferenceParams.isEmpty()
-        || selfReferenceParams.stream().anyMatch(p -> !Utils.asTypeVariable.visit(p.asType()).isPresent())
-            ? result(DerivedCodeSpec.none())
-            : caseOf(adt.dataConstruction())
-                .multipleConstructors(MultipleConstructorsSupport.cases()
-                    .visitorDispatch((visitorParam, visitorType, constructors) -> visitorDispatchImpl(adt, visitorType,
-                        constructors))
-                    .functionsDispatch(dataConstructors -> functionDispatchImpl(adt, dataConstructors)))
-                .oneConstructor(
-                    dataConstructor -> functionDispatchImpl(adt, Collections.singletonList(dataConstructor)))
-                .noConstructor(() -> result(DerivedCodeSpec.none()));
+    return !selfReferenceParams.isEmpty()
+        && selfReferenceParams.stream().allMatch(p -> Utils.asTypeVariable.visit(p.asType()).isPresent());
   }
 
   private TypeName cataMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {

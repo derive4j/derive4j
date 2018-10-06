@@ -47,7 +47,8 @@ final class BuiltinDerivator {
         .caseOfMatching_(new PatternMatchingDerivator(deriveUtils, PatternMatchingDerivator.MatchingKind.CaseOf))
         .getters_(new GettersDerivator(deriveUtils))
         .modifiers_(new ModifiersDerivator(deriveUtils))
-        .catamorphism_(new CataDerivator(deriveUtils));
+        .catamorphism_(new CataDerivator(deriveUtils))
+        .factory_(new FactoryDerivator(deriveUtils));
 
     return adt -> traverseResults(
         concat(of(exportDerivator), adt.deriveConfig().makes().stream().map(makeDerivators)).map(d -> d.derive(adt))
