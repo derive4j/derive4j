@@ -26,13 +26,16 @@
 package org.derive4j.example;
 
 import fj.Equal;
+import fj.F;
+import fj.F0;
 import fj.Hash;
 import fj.Ord;
+import fj.P;
 import fj.Show;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import fj.control.Trampoline;
 import org.derive4j.Data;
 import org.derive4j.Derive;
+import org.derive4j.Flavour;
 import org.derive4j.Instances;
 
 import static org.derive4j.example.Expressions.Add;
@@ -41,12 +44,12 @@ import static org.derive4j.example.Expressions.Mult;
 import static org.derive4j.example.Expressions.expressionHash;
 import static org.derive4j.example.Expressions.expressionShow;
 
-@Data(@Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
+@Data(value = @Derive(@Instances({ Show.class, Hash.class, Equal.class, Ord.class })), flavour = Flavour.FJ)
 public abstract class Expression {
 
   public static Integer eval(Expression expression) {
 
-    return eval.apply(expression);
+    return stackSafeEval.f(expression).run();
   }
 
   public static void main(String[] args) {
@@ -56,12 +59,19 @@ public abstract class Expression {
     System.out.println(eval(expr)); // (1+(2*(3*3))) = 19
   }
 
-  private static final Function<Expression, Integer> eval = Expressions.cata(
+  private static final F<Expression, Integer> eval = Expressions.cata(
       value -> value,
       (left, right) -> left + right,
       (left, right) -> left * right,
       expr -> -expr,
-      Supplier::get);
+      F0::f);
+
+  private static final F<Expression, Trampoline<Integer>> stackSafeEval = Expressions.cata(
+      value -> Trampoline.pure(value),
+      (left, right) -> left.zipWith(right, (l, r) -> l + r),
+      (left, right) -> left.zipWith(right, (l, r) -> l * r),
+      expr -> expr.map(i -> -i),
+      i -> Trampoline.suspend(P.lazy(i)));
 
   public abstract <R> R match(Cases<Expression, R> cases);
 
