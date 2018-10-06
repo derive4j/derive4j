@@ -39,7 +39,7 @@ allprojects {
 
     ext {
         isSnapshot = true
-        d4jBaseVersion = "0.12.4"
+        d4jBaseVersion = "0.13.0"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
