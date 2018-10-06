@@ -167,14 +167,17 @@ public final class DerivingProcessor extends AbstractProcessor {
             if (className.equals(targetClassName)) {
               codeSpec = codeSpec.append(derivedClass.getValue()._2());
             } else {
-              TypeSpec classSpec = toTypeSpec(deriveConfig, className, derivedClass.getValue()._2());
+              TypeSpec classSpec = toTypeSpec(deriveConfig, className, derivedClass.getValue()._2())
+                  .addOriginatingElement(element)
+                  .build();
               JavaFile javaFile = JavaFile.builder(targetClassName.packageName(), classSpec).build();
               derivedInstances = derivedInstances.then(effect(() -> javaFile.writeTo(processingEnv.getFiler())));
             }
             derivedInstances = derivedClass.getValue()._1().map(messagePrint).reduce(derivedInstances, IO::then);
           }
 
-          TypeSpec classSpec = toTypeSpec(deriveConfig, targetClassName, codeSpec);
+          TypeSpec classSpec = toTypeSpec(deriveConfig, targetClassName, codeSpec).addOriginatingElement(element)
+              .build();
 
           IO<Unit> extendErrors = effect(() -> {
           });
@@ -208,7 +211,7 @@ public final class DerivingProcessor extends AbstractProcessor {
                         .voided());
   }
 
-  private TypeSpec toTypeSpec(DeriveConfig deriveConfig, ClassName targetClassName, DerivedCodeSpec codeSpec) {
+  private TypeSpec.Builder toTypeSpec(DeriveConfig deriveConfig, ClassName targetClassName, DerivedCodeSpec codeSpec) {
     TypeSpec.Builder builder = TypeSpec.classBuilder(targetClassName)
         .addModifiers(Modifier.FINAL,
             caseOf(deriveConfig.targetClass().visibility()).Package_(Modifier.FINAL).otherwise_(Modifier.PUBLIC))
@@ -225,7 +228,7 @@ public final class DerivingProcessor extends AbstractProcessor {
       }
     });
 
-    return builder.build();
+    return builder;
   }
 
   private Map<ClassName, P2<Stream<DeriveMessage>, DerivedCodeSpec>> derivedInstances(AlgebraicDataType adt) {
