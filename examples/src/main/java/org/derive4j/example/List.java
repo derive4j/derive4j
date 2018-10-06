@@ -32,6 +32,7 @@ import fj.Show;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -47,19 +48,6 @@ import static org.derive4j.example.Lists.nil;
 @Data(@Derive(extend = ListMethods.class, value = @Instances({ Show.class, Hash.class, Equal.class, Ord.class })))
 public abstract class List<A> {
 
-  public static <A, X> Function<List<A>, X> cata(Supplier<X> nil,
-      BiFunction<A, X, X> cons, Function<Supplier<X>, X> delay) {
-    Function<List<A>, X> cata = new Function<List<A>, X>() {
-      @Override
-      public X apply(List<A> list) {
-        return list.list(
-            nil,
-            (head, tail) -> cons.apply(head, delay.apply(() -> this.apply(tail))));
-      }
-    };
-    return list -> delay.apply(() -> cata.apply(list));
-  }
-
   public static List<Integer> naturals() {
 
     return integersFrom(0);
@@ -71,15 +59,19 @@ public abstract class List<A> {
   }
 
   public static List<Integer> range(final int from, int toExclusive) {
-
-    return (from == toExclusive) ? nil() : cons(from, lazy(() -> range(from + 1, toExclusive)));
+    IntFunction<List<Integer>> next = new IntFunction<List<Integer>>() {
+      @Override
+      public List<Integer> apply(int from) {
+        return (from >= toExclusive) ? nil() : cons(from, lazy(() -> apply(from + 1)));
+      }
+    };
+    return next.apply(from);
   }
 
   public final Option<A> find(Predicate<A> p) {
-    Function<List<A>, Option<A>> cata = Lists.cata(
+    return Lists.<A, Option<A>>cata(
         Options::none,
-        (a, tail) -> p.test(a) ? Options.some(a) : Options.lazy(tail));
-    return Options.lazy(() -> cata.apply(this));
+        (a, tail) -> p.test(a) ? Options.some(a) : tail, Options::lazy).apply(this);
   }
 
   public static <A> List<A> iterate(A seed, UnaryOperator<A> op) {
@@ -94,28 +86,21 @@ public abstract class List<A> {
   public abstract <X> X list(Supplier<X> nil, @FieldNames({ "head", "tail" }) BiFunction<A, List<A>, X> cons);
 
   public final <B> List<B> map(Function<A, B> f) {
-
-    return lazy(() -> list(Lists::nil, (h, tail) -> cons(f.apply(h), tail.map(f))));
+    return foldRight(Lists::nil, (h, tail) -> cons(f.apply(h), tail), Lists::lazy);
   }
 
   public final List<A> append(final List<A> list) {
-
-    return lazy(() -> list(() -> list, (head, tail) -> cons(head, tail.append(list))));
+    return foldRight(() -> list, Lists::cons, Lists::lazy);
   }
 
   public final List<A> filter(Predicate<A> p) {
-    Function<List<A>, List<A>> filter = cata(
+    return Lists.<A, List<A>>cata(
         Lists::nil,
-        (a, tail) -> p.test(a) ? cons(a, tail) : tail, Lists::lazy);
-    return filter.apply(this);
+        (a, tail) -> p.test(a) ? cons(a, tail) : tail, Lists::lazy).apply(this);
   }
 
   public final <B> List<B> bind(Function<A, List<B>> f) {
-
-    return lazy(() -> list(Lists::nil, (h, t) -> f.apply(h).append(t.bind(f))));
-    // alternative implementation using foldRight:
-    // return lazy(() -> foldRight((h, tail) -> f.apply(h).append(lazy(tail)),
-    // nil()));
+    return foldRight(Lists::nil, (h, tail) -> f.apply(h).append(tail), Lists::lazy);
   }
 
   public final List<A> take(int n) {
@@ -161,9 +146,8 @@ public abstract class List<A> {
     return foldLeft((i, a) -> i + 1, 0);
   }
 
-  public final <B> B foldRight(final BiFunction<A, Supplier<B>, B> f, final B zero) {
-
-    return Lists.cata(() -> zero, f).apply(this);
+  public final <B> B foldRight(Supplier<B> zero, BiFunction<A, B, B> f, Function<Supplier<B>, B> delay) {
+    return Lists.cata(zero, f, delay).apply(this);
   }
 
   public static void main(String[] args) {

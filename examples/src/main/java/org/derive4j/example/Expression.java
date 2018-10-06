@@ -30,6 +30,7 @@ import fj.Hash;
 import fj.Ord;
 import fj.Show;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.derive4j.Data;
 import org.derive4j.Derive;
 import org.derive4j.Instances;
@@ -57,9 +58,10 @@ public abstract class Expression {
 
   private static final Function<Expression, Integer> eval = Expressions.cata(
       value -> value,
-      (left, right) -> left.get() + right.get(),
-      (left, right) -> left.get() * right.get(),
-      expr -> -expr.get());
+      (left, right) -> left + right,
+      (left, right) -> left * right,
+      expr -> -expr,
+      Supplier::get);
 
   public abstract <R> R match(Cases<Expression, R> cases);
 
