@@ -18,13 +18,18 @@
  */
 package org.derive4j.processor.api.model;
 
+import java.util.List;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.Data;
 
-import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethod;
+import static org.derive4j.processor.api.model.DataDeconstructors.getArgumentTypeVariables;
+import static org.derive4j.processor.api.model.DataDeconstructors.getMethod;
+import static org.derive4j.processor.api.model.DataDeconstructors.getMethodType;
+import static org.derive4j.processor.api.model.DataDeconstructors.getReturnTypeVariable;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorMethodType;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorParam;
 import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType;
@@ -33,23 +38,33 @@ import static org.derive4j.processor.api.model.DataDeconstructors.getVisitorType
 public abstract class DataDeconstructor {
 
   public interface Case<R> {
-    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableElement visitorMethod,
-        ExecutableType visitorMethodType);
-  }
-
-  public static DataDeconstructor deconstructor(VariableElement visitorParam, DeclaredType visitorType,
-      ExecutableElement visitorMethod, ExecutableType visitorMethodType) {
-
-    return DataDeconstructors.deconstructor(visitorParam, visitorType, visitorMethod, visitorMethodType);
+    R deconstructor(VariableElement visitorParam, DeclaredType visitorType, ExecutableType methodType,
+        ExecutableType visitorMethodType, ExecutableElement method,
+        List<TypeVariable> argumentTypeVariables, TypeVariable returnTypeVariable);
   }
 
   DataDeconstructor() {
 
   }
 
-  public ExecutableElement visitorMethod() {
+  public ExecutableElement method() {
 
-    return getVisitorMethod(this);
+    return getMethod(this);
+  }
+
+  public List<TypeVariable> argumentTypeVariables() {
+
+    return getArgumentTypeVariables(this);
+  }
+
+  public TypeVariable returnTypeVariable() {
+
+    return getReturnTypeVariable(this);
+  }
+
+  public ExecutableType methodType() {
+
+    return getMethodType(this);
   }
 
   public ExecutableType visitorMethodType() {

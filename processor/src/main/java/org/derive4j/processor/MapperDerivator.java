@@ -21,19 +21,21 @@ package org.derive4j.processor;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.NameAllocator;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import org.derive4j.processor.api.Derivator;
 import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
@@ -47,6 +49,8 @@ import org.derive4j.processor.api.model.MultipleConstructorsSupport;
 import org.derive4j.processor.api.model.TypeRestriction;
 
 import static java.util.stream.Stream.concat;
+import static org.derive4j.processor.Utils.asTypeElement;
+import static org.derive4j.processor.Utils.zip;
 
 class MapperDerivator implements Derivator {
 
@@ -83,7 +87,7 @@ class MapperDerivator implements Derivator {
         ? deriveUtils.function0Model(deriveConfig.flavour()).sam().getSimpleName().toString()
         : nbArgs == 1
             ? deriveUtils.function1Model(deriveConfig.flavour()).sam().getSimpleName().toString()
-            : dc.deconstructor().visitorMethod().getSimpleName().toString();
+            : dc.deconstructor().method().getSimpleName().toString();
   }
 
   public TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
@@ -91,13 +95,54 @@ class MapperDerivator implements Derivator {
     return mapperTypeName(adt, dc, TypeVariableName.get(adt.matchMethod().returnTypeVariable()));
   }
 
+  public TypeName visitorMapperTypeName(AlgebraicDataType adt, DataConstructor dc) {
+
+    TypeName[] argsTypeNames = dc.deconstructor()
+        .visitorMethodType()
+        .getParameterTypes()
+        .stream()
+        .map(p -> Utils.asBoxedType.visit(p, deriveUtils.types()))
+        .map(dt -> deriveUtils.resolve(dt, v -> Optional.of(v.asElement().asType())))
+        .map(TypeName::get)
+        .toArray(TypeName[]::new);
+
+    TypeName returnType = TypeName.get(dc.deconstructor().visitorMethodType().getReturnType());
+
+    return argsTypeNames.length == 0
+        ? ParameterizedTypeName
+            .get(ClassName.get(deriveUtils.function0Model(adt.deriveConfig().flavour()).samClass()), returnType)
+        : argsTypeNames.length == 1
+            ? ParameterizedTypeName.get(
+                ClassName.get(deriveUtils.function1Model(adt.deriveConfig().flavour()).samClass()),
+                argsTypeNames[0], returnType)
+            : ParameterizedTypeName
+                .get(adt.deriveConfig().targetClass().className().nestedClass(mapperInterfaceName(dc)),
+                    mapperVariables(dc).toArray(TypeName[]::new));
+  }
+
   public TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, TypeName returnType) {
+    return mapperTypeName(adt, dc, adt.typeConstructor().declaredType(), returnType);
+  }
+
+  public TypeName mapperTypeName(AlgebraicDataType adt, DataConstructor dc, TypeMirror selfReferenceType,
+      TypeName returnType) {
 
     TypeName[] argsTypeNames = concat(dc.arguments().stream().map(DataArgument::type),
         dc.typeRestrictions().stream().map(TypeRestriction::typeEq).map(DataArgument::type))
-            .map(t -> Utils.asBoxedType.visit(t, deriveUtils.types()))
+            .map(t -> deriveUtils.types().isSameType(t, adt.typeConstructor().declaredType())
+                ? selfReferenceType
+                : Utils.asBoxedType.visit(t, deriveUtils.types()))
             .map(TypeName::get)
             .toArray(TypeName[]::new);
+
+    Map<TypeVariable, TypeMirror> visitorTypeVarSubstitutions = zip(dc.deconstructor().methodType().getParameterTypes(),
+        dc.deconstructor().visitorMethodType().getParameterTypes())
+            .stream()
+            .flatMap(p -> deriveUtils.unify(p._2(), p._1()).get().entrySet().stream())
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (v1, v2) -> v1));
 
     return adt.dataConstruction().isVisitorDispatch()
         ? argsTypeNames.length == 0
@@ -109,70 +154,74 @@ class MapperDerivator implements Derivator {
                     argsTypeNames[0], returnType)
                 : ParameterizedTypeName
                     .get(adt.deriveConfig().targetClass().className().nestedClass(mapperInterfaceName(dc)),
-                        concat(concat(dc.typeVariables().stream().map(TypeVariableName::get),
-                            Utils.fold(findInductiveArgument(adt, dc), Stream.of(), tm -> Stream.of(TypeName.get(tm)))),
+                        concat(
+                            dc.deconstructor()
+                                .argumentTypeVariables()
+                                .stream()
+                                .map(visitorTypeVarSubstitutions::get)
+                                .map(t -> deriveUtils.types().isSameType(t, adt.typeConstructor().declaredType())
+                                    ? selfReferenceType
+                                    : t)
+                                .map(TypeName::get),
                             Stream.of(returnType)).toArray(TypeName[]::new))
-        : deriveUtils.resolveToTypeName(dc.deconstructor().visitorType(),
-            tv -> deriveUtils.types().isSameType(tv, adt.matchMethod().returnTypeVariable())
-                ? Optional.of(returnType)
-                : Optional.empty());
+        : ParameterizedTypeName.get(
+            ClassName.get(asTypeElement.visit(dc.deconstructor().visitorType().asElement()).get()),
+            dc.deconstructor()
+                .visitorType()
+                .getTypeArguments()
+                .stream()
+                .map(t -> deriveUtils.types().isSameType(t, adt.typeConstructor().declaredType())
+                    ? TypeName.get(selfReferenceType)
+                    : deriveUtils.types().isSameType(adt.matchMethod().returnTypeVariable(), t)
+                        ? returnType
+                        : TypeName.get(t))
+                .toArray(TypeName[]::new));
   }
 
-  private Stream<TypeVariableName> mapperVariables(AlgebraicDataType adt, DataConstructor dc) {
-
-    String recursionTypeVar = inductionTypeVarName(adt, dc);
-
-    Stream<TypeVariableName> cataTypeVar = Utils.fold(findInductiveArgument(adt, dc), Stream.<TypeVariableName>of(),
-        __ -> Stream.of(TypeVariableName.get(recursionTypeVar)));
-
-    return concat(concat(dc.typeVariables().stream().map(TypeVariableName::get), cataTypeVar),
-        Stream.of(TypeVariableName.get(adt.matchMethod().returnTypeVariable())));
+  private Stream<TypeVariableName> mapperVariables(DataConstructor dc) {
+    return concat(dc.deconstructor().argumentTypeVariables().stream(),
+        Stream.of(dc.deconstructor().returnTypeVariable())).map(TypeVariableName::get);
   }
 
-  Optional<TypeMirror> findInductiveArgument(AlgebraicDataType adt, DataConstructor dc) {
-    return dc.arguments()
-        .stream()
-        .map(DataArgument::type)
-        .filter(typeMirror -> deriveUtils.types().isSameType(typeMirror, adt.typeConstructor().declaredType()))
-        .findFirst();
-  }
-
-  private TypeSpec mapperTypeSpec(AlgebraicDataType adt, DataConstructor dc) {
+  private TypeSpec mapperTypeSpec(DataConstructor dc) {
 
     return TypeSpec.interfaceBuilder(mapperInterfaceName(dc))
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .addTypeVariables(mapperVariables(adt, dc).collect(Collectors.toList()))
-        .addMethod(MethodSpec.methodBuilder(dc.deconstructor().visitorMethod().getSimpleName().toString())
+        .addTypeVariables(mapperVariables(dc).collect(Collectors.toList()))
+        .addMethod(MethodSpec.methodBuilder(dc.deconstructor().method().getSimpleName().toString())
             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-            .addParameters(concat(dc.arguments().stream(), dc.typeRestrictions().stream().map(TypeRestriction::typeEq))
-                .map(da -> ParameterSpec
-                    .builder(deriveUtils.types().isSameType(da.type(), adt.typeConstructor().declaredType())
-                        ? TypeVariableName.get(inductionTypeVarName(adt, dc))
-                        : TypeName.get(da.type()), da.fieldName())
-                    .build())
-                .collect(Collectors.toList()))
-            .returns(TypeName.get(adt.matchMethod().returnTypeVariable()))
+            .addParameters(zip(dc.deconstructor()
+                .method()
+                .getParameters(), dc.deconstructor().visitorMethodType().getParameterTypes())
+                    .stream()
+                    .map(param -> ParameterSpec
+                        .builder(TypeName.get(param._2()), param._1().getSimpleName().toString())
+                        .build())
+                    .collect(Collectors.toList()))
+            .returns(TypeName.get(dc.deconstructor().returnTypeVariable()))
             .build())
         .build();
   }
 
-  private DerivedCodeSpec createVisitorFactoryAndMappers(AlgebraicDataType adt, DeclaredType visitorType,
+  private DerivedCodeSpec createVisitorFactoryAndMappers(AlgebraicDataType adt, DeclaredType acceptedVisitorType,
       List<DataConstructor> constructors) {
 
-    String lambdaVisitorClassName = "Lambda" + visitorType.asElement().getSimpleName().toString();
+    DeclaredType visitorType = deriveUtils.asDeclaredType(acceptedVisitorType.asElement().asType()).get();
+    TypeElement visitorTypeElement = deriveUtils.asTypeElement(visitorType).get();
+    String lambdaVisitorClassName = lambdaVisitorClassName(acceptedVisitorType);
+
     final TypeSpec.Builder lambdaVisitorBuilder = TypeSpec.classBuilder(lambdaVisitorClassName)
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
         .addTypeVariables(
-            adt.typeConstructor().typeVariables().stream().map(TypeVariableName::get).collect(Collectors.toList()))
-        .addTypeVariable(TypeVariableName.get(adt.matchMethod().returnTypeVariable()))
+            visitorTypeElement.getTypeParameters().stream().map(TypeVariableName::get).collect(Collectors.toList()))
         .addSuperinterface(TypeName.get(visitorType))
         .addFields(constructors.stream()
-            .map(dc -> FieldSpec.builder(mapperTypeName(adt, dc), mapperFieldName(dc))
+            .map(dc -> FieldSpec.builder(visitorMapperTypeName(adt, dc), mapperFieldName(dc))
                 .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                 .build())
             .collect(Collectors.toList()))
         .addMethods(constructors.stream()
-            .map(dc -> deriveUtils.overrideMethodBuilder(dc.deconstructor().visitorMethod(), visitorType)
+            .map(dc -> deriveUtils.overrideMethodBuilder(dc.deconstructor().method(), visitorType)
                 .addStatement("return this.$L.$L($L)", mapperFieldName(dc), mapperApplyMethod(adt.deriveConfig(), dc),
                     Utils.asLambdaParametersString(dc.arguments(), dc.typeRestrictions()))
                 .build())
@@ -180,7 +229,7 @@ class MapperDerivator implements Derivator {
 
     final MethodSpec.Builder lambdaVisitorConstructor = MethodSpec.constructorBuilder()
         .addParameters(constructors.stream()
-            .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc), mapperFieldName(dc)).build())
+            .map(dc -> ParameterSpec.builder(visitorMapperTypeName(adt, dc), mapperFieldName(dc)).build())
             .collect(Collectors.toList()));
 
     for (DataConstructor dc : constructors) {
@@ -197,14 +246,14 @@ class MapperDerivator implements Derivator {
         .addParameters(constructors.stream()
             .map(dc -> ParameterSpec.builder(mapperTypeName(adt, dc), mapperFieldName(dc)).build())
             .collect(Collectors.toList()))
-        .returns(TypeName.get(visitorType))
+        .returns(TypeName.get(acceptedVisitorType))
         .addStatement("return new $L<>($L)", lambdaVisitorClassName,
             constructors.stream().map(MapperDerivator::mapperFieldName).reduce((s1, s2) -> s1 + ", " + s2).orElse(""))
         .build();
 
     return DerivedCodeSpec.codeSpec(
         concat(constructors.stream().filter(dc -> (dc.arguments().size() + dc.typeRestrictions().size()) > 1).map(
-            dc -> mapperTypeSpec(adt, dc)), Stream.of(lambdaVisitor)).collect(Collectors.toList()),
+            this::mapperTypeSpec), Stream.of(lambdaVisitor)).collect(Collectors.toList()),
         lambdaVisitorFactory);
 
   }
@@ -214,11 +263,7 @@ class MapperDerivator implements Derivator {
     return Utils.capitalize(dc.name()) + "Mapper";
   }
 
-  private static String inductionTypeVarName(AlgebraicDataType adt, DataConstructor dc) {
-
-    NameAllocator nameAllocator = new NameAllocator();
-    dc.typeVariables().forEach(variable -> nameAllocator.newName(variable.toString(), variable.toString()));
-    nameAllocator.newName(adt.matchMethod().returnTypeVariable().toString(), "returnTypeVar");
-    return nameAllocator.newName("R", "recursionTypeVar");
+  static String lambdaVisitorClassName(DeclaredType visitorType) {
+    return "Lambda" + visitorType.asElement().getSimpleName();
   }
 }

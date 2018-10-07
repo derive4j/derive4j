@@ -22,7 +22,6 @@ import java.util.function.Function;
 import org.derive4j.Make;
 import org.derive4j.Makes;
 import org.derive4j.processor.api.Derivator;
-import org.derive4j.processor.api.DeriveResult;
 import org.derive4j.processor.api.DeriveUtils;
 import org.derive4j.processor.api.DerivedCodeSpec;
 
@@ -49,7 +48,7 @@ final class BuiltinDerivator {
         .getters_(new GettersDerivator(deriveUtils))
         .modifiers_(new ModifiersDerivator(deriveUtils))
         .catamorphism_(new CataDerivator(deriveUtils))
-        .hktCoerce_(__ -> DeriveResult.result(DerivedCodeSpec.none()));
+        .factory_(new FactoryDerivator(deriveUtils));
 
     return adt -> traverseResults(
         concat(of(exportDerivator), adt.deriveConfig().makes().stream().map(makeDerivators)).map(d -> d.derive(adt))

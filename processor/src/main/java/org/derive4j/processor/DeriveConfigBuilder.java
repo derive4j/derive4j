@@ -156,7 +156,7 @@ final class DeriveConfigBuilder {
       .getters(() -> of(lambdaVisitor))
       .modifiers(() -> of(lambdaVisitor, constructors))
       .catamorphism(() -> of(lambdaVisitor))
-      .hktCoerce(Stream::of);
+      .factory(() -> of(lambdaVisitor));
 
   private final TypeElement       dataAnnotation;
   private final TypeElement       deriveAnnotation;
@@ -358,7 +358,7 @@ final class DeriveConfigBuilder {
             deduceDeriveVisibility(typeElement, Visibility.Same),
             Optional.empty()),
         EnumSet.of(constructors, Make.lazyConstructor, lambdaVisitor, Make.getters, Make.modifiers, Make.catamorphism,
-            Make.casesMatching, Make.caseOfMatching),
+            Make.factory, Make.casesMatching, Make.caseOfMatching),
         EnumSet.noneOf(ArgOption.class), Collections.emptyMap());
   }
 

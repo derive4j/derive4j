@@ -186,6 +186,10 @@ configure(subprojects) {
 task codeCoverageReport(type: JacocoReport) {
     executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
 
+
+    classDirectories = files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.output)
+    sourceDirectories = files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.allSource.srcDirs)
+
     subprojects.each {
         sourceSets it.sourceSets.main
     }

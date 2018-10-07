@@ -85,11 +85,11 @@ public enum Make {
     }
   },
 
-  hktCoerce {
+  factory {
     @Override
     public <R> R match(Cases<R> cases) {
 
-      return cases.hktCoerce();
+      return cases.factory();
     }
   };
 
@@ -110,7 +110,7 @@ public enum Make {
 
     R catamorphism();
 
-    R hktCoerce();
+    R factory();
   }
 
   public abstract <R> R match(Cases<R> cases);

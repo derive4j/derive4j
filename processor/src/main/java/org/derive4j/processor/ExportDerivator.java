@@ -103,7 +103,7 @@ final class ExportDerivator implements Derivator {
       result = DerivedCodeSpec.codeSpec(singleton,
           methodBuilder.addStatement("$1T _$2L = $2L", TypeName.get(returnType), methodName)
               .beginControlFlow("if (_$L == null)", methodName)
-              .addStatement("$1L = _$1L = $2T.$1L($3L)", methodName, className, parameters)
+              .addStatement("$1L = _$1L = $2T.$1L()", methodName, className)
               .endControlFlow()
               .addStatement("return _$L", methodName)
               .build());

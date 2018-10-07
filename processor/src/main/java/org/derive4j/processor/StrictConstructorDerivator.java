@@ -64,7 +64,6 @@ import static org.derive4j.processor.Utils.optionalAsStream;
 import static org.derive4j.processor.api.DeriveResult.result;
 import static org.derive4j.processor.api.DerivedCodeSpec.none;
 import static org.derive4j.processor.api.model.DataConstructions.caseOf;
-import static org.derive4j.processor.api.model.DataConstructions.caseOf;
 import static org.derive4j.processor.api.model.DeriveVisibilities.caseOf;
 
 final class StrictConstructorDerivator implements Derivator {
@@ -280,7 +279,7 @@ final class StrictConstructorDerivator implements Derivator {
         .addMethod(constructorBuilder.build())
         .addMethod(deriveUtils.overrideMethodBuilder(adt.matchMethod().element(), constructor.returnedType())
             .addStatement("return $L.$L($L)", constructor.deconstructor().visitorParam().getSimpleName(),
-                constructor.deconstructor().visitorMethod().getSimpleName(),
+                constructor.deconstructor().method().getSimpleName(),
                 Utils.asArgumentsString(constructor.arguments(), constructor.typeRestrictions()))
             .build());
     if (adt.typeConstructor().declaredType().asElement().getKind() == ElementKind.INTERFACE) {
@@ -304,7 +303,7 @@ final class StrictConstructorDerivator implements Derivator {
             .stream()
             .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build())
             .collect(Collectors.toList()))
-        .varargs(constructor.deconstructor().visitorMethod().isVarArgs())
+        .varargs(constructor.deconstructor().method().isVarArgs())
         .returns(constructedType);
 
     Optional<MethodSpec.Builder> gadtFactory = constructor.typeRestrictions().isEmpty()
@@ -319,7 +318,7 @@ final class StrictConstructorDerivator implements Derivator {
                     constructor.typeRestrictions().stream().map(TypeRestriction::typeEq))
                 .map(da -> ParameterSpec.builder(TypeName.get(da.type()), da.fieldName()).build())
                 .collect(Collectors.toList()))
-            .varargs(constructor.deconstructor().visitorMethod().isVarArgs())
+            .varargs(constructor.deconstructor().method().isVarArgs())
             .returns(TypeName.get(adt.typeConstructor().declaredType()))
             .addStatement("return ($T) $L($L)", TypeName.get(adt.typeConstructor().declaredType()), constructorName,
                 Utils.asArgumentsString(constructor.arguments())));
