@@ -30,7 +30,6 @@ import fj.F;
 import fj.F0;
 import fj.Hash;
 import fj.Ord;
-import fj.P;
 import fj.Show;
 import fj.control.Trampoline;
 import org.derive4j.Data;
