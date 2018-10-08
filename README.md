@@ -450,15 +450,15 @@ To be safe, use the `lazy`, (or `delay` or `suspend` or `defer`...) constructor 
 
 If no such constructor is available then your safe option is to use a `Trampoline`, such as the one provided by FunctionalJava:
 ```java
- 	public static Integer stackSafeEval(Expression expression) {
-        Expressions.cata(
-            value -> Trampoline.pure(value),
-            (left, right) -> left.zipWith(right, (l, r) -> l + r),
-            (left, right) -> left.zipWith(right, (l, r) -> l * r),
-            expr -> expr.map(i -> -i),
-            e -> Trampoline.suspend(P.lazy(e))
-        ).f(expression).run();
- 	}
+public static Integer stackSafeEval(Expression expression) {
+    Expressions.cata(
+        value -> Trampoline.pure(value),
+        (left, right) -> left.zipWith(right, (l, r) -> l + r),
+        (left, right) -> left.zipWith(right, (l, r) -> l * r),
+        expr -> expr.map(i -> -i),
+        e -> Trampoline.suspend(P.lazy(e))
+    ).f(expression).run();
+}
  ```
 
 # Extensible algebraic data types
