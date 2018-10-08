@@ -11,7 +11,7 @@ dependencies {
   annotationProcessor dependencyPreviousDerive4J
   testCompile dependencyJunit
   testCompile 'com.google.testing.compile:compile-testing:0.15'
-  testCompile "org.functionaljava:functionaljava_1.8:4.8"
+  testCompile "org.functionaljava:functionaljava_1.8:4.8.1"
   testCompile 'io.atlassian.fugue:fugue:4.7.2'
   testCompile 'com.atlassian.fugue:fugue:2.7.0'
   testCompile 'com.google.guava:guava:26.0-jre'

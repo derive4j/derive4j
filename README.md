@@ -456,7 +456,7 @@ public static Integer stackSafeEval(Expression expression) {
         (left, right) -> left.zipWith(right, (l, r) -> l + r),
         (left, right) -> left.zipWith(right, (l, r) -> l * r),
         expr -> expr.map(i -> -i),
-        e -> Trampoline.suspend(P.lazy(e))
+        Trampoline::suspend
     ).f(expression).run();
 }
  ```

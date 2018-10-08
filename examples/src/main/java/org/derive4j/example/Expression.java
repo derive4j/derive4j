@@ -71,7 +71,7 @@ public abstract class Expression {
       (left, right) -> left.zipWith(right, (l, r) -> l + r),
       (left, right) -> left.zipWith(right, (l, r) -> l * r),
       expr -> expr.map(i -> -i),
-      i -> Trampoline.suspend(P.lazy(i)));
+      Trampoline::suspend);
 
   public abstract <R> R match(Cases<Expression, R> cases);
 
