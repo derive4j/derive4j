@@ -22,7 +22,7 @@
 - [Updating deeply nested immutable data structure](#updating-deeply-nested-immutable-data-structure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Catamorphisms](#catamorphisms)
-- [Extensible algebraic data types](#Extensible-algebraic-data-types)
+- [Extensible algebraic data types](#extensible-algebraic-data-types)
 - [But what exactly is generated?](#but-what-exactly-is-generated)
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
