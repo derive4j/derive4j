@@ -22,6 +22,7 @@
 - [Updating deeply nested immutable data structure](#updating-deeply-nested-immutable-data-structure)
 - [Popular use-case: domain specific languages](#popular-use-case-domain-specific-languages)
 - [Catamorphisms](#catamorphisms)
+- [Extensible algebraic data types](#Extensible-algebraic-data-types)
 - [But what exactly is generated?](#but-what-exactly-is-generated)
 - [Parametric polymorphism](#parametric-polymorphism)
 - [Generalized Algebraic Data Types](#generalized-algebraic-data-types)
@@ -460,6 +461,100 @@ If no such constructor is available then your safe option is to use a `Trampolin
  	}
  ```
 
+# Extensible algebraic data types
+
+Algebraic data types defined as fix-point (aka initial algebra) of an object algebras can enjoy [their extensibility properties](https://www.cs.utexas.edu/~wcook/Drafts/2012/ecoop2012.pdf).
+
+## When the data type is not inductive the extensibility property comes directly from covariance
+
+Eg. an event type for an inventory service:
+```java
+  @Data
+  interface EventV1 {
+
+    interface Cases<R> {
+      R newItem(Long ref, String itemName);
+      R itemRemoved(Long ref);
+    }
+
+    <R> R match(Cases<R> cases);
+  }
+```
+
+Then comes a new version of the service, with enriched events and new cases.
+If the visitor for the new event type extend the old visitor interface then old events can be easily converted to new events, without change to the old classes:
+
+```java
+  @Data
+  interface EventV2 {
+
+    interface Cases<R> extends EventV1.Cases<R> { // extends V1 with:
+
+      // new `initialStock` field in `newItem` event:
+      R newItem(Long ref, String itemName, int initialStock);
+      // default to 0 for old events:
+      @Override
+      default R newItem(Long ref, String itemName) {
+        return newItem(ref, itemName, 0);
+      }
+      // new event:
+      R itemRenamed(Long ref, String newName);
+    }
+
+    <R> R match(Cases<R> cases);
+
+    static EventV2 fromV1(EventV1 v1Event) {
+      // Events are (polymorphic) functions!
+      // And functions are contra-variant in type argument,
+      // thus we can use method reference to convert from V1 to V2:
+      return v1Event::match;
+    }
+  }
+```
+
+
+## Extensible inductive data types via hylomorphisms
+
+Aka solving the expression problem via object-algebras used as visitor.
+For this, we need to slightly change the visitor of the above `Expression` so that a type variable is used instead of the self-reference:
+
+```java
+@Data
+interface Exp {
+
+  interface ExpAlg<E, R> {
+    R Lit(int lit);
+    R Add(E e1, E e2);
+  }
+
+  <R> R accept(ExpAlg<Exp, R> alg);
+}
+```
+
+When data types are defined is such a way, Derive4J generate (by default) an instance of the visitor/algebra that can serve as factory (aka. anamorphism).
+Using this factory as argument to compatible catamorphism (thus creating an hylomorphisms) we get conversion function from one ADT to another.
+
+Eg. we can create a new data type that add a multiplication case to the above data type, and still be able to maximally reuse the existing code without modification:
+
+```java
+@Data
+interface ExpMul {
+
+  interface ExpMulAlg<E, R> extends Exp.ExpAlg<E, R> {
+    R Mul(E e1, E e2);
+  }
+
+  <R> R accept(ExpMulAlg<ExpMul, R> alg);
+
+  static Function<Exp, ExpMul> fromExp() {
+    ExpMulAlg<ExpMul, ExpMul> factory = ExpMuls.factory();
+    return Exps.cata(factory, ExpMuls::lazy);
+  }
+}
+```
+
+To ensure smooth extensibility across compilation unit (or even during incremental compilation), it is best to **use the `-parameters` option of javac**.
+
 # But what exactly is generated?
 This is a very legitimate question. Here is the [```Expressions.java```](https://gist.github.com/jbgi/3904e696fb27a2e33ae1) file that is generated for the above ```@Data Expression``` class.
 
@@ -562,7 +657,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>0.12.4</version>
+  <version>1.0.0</version>
   <optional>true</optional>
 </dependency>
 ```
@@ -570,12 +665,12 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '0.12.4', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '1.0.0', ext: 'jar')
 ```
 or better using the [gradle-apt-plugin](https://github.com/tbroyer/gradle-apt-plugin):
 ```
-compileOnly "org.derive4j:derive4j-annotation:0.12.4"
-apt "org.derive4j:derive4j:0.12.4"
+compileOnly "org.derive4j:derive4j-annotation:1.0.0"
+apt "org.derive4j:derive4j:1.0.0"
 ```
 ## Contributing
 

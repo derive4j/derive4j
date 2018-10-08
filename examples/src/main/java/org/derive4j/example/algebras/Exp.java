@@ -1,32 +1,31 @@
 package org.derive4j.example.algebras;
 
-import fj.Unit;
+import java.util.function.Function;
 import org.derive4j.Data;
 
 @Data
-@FunctionalInterface
 interface Exp {
 
-  interface ExpAlg<T, E, A> {
-    A Lit(int lit);
+  interface ExpAlg<E, R> {
+    R Lit(int lit);
 
-    A Add(E e1, E e2);
+    R Add(E e1, E e2);
   }
 
-  <R> R accept(ExpAlg<Unit, Exp, R> alg);
+  <R> R accept(ExpAlg<Exp, R> alg);
 }
 
 @Data
-@FunctionalInterface
-interface ExpMul<T> {
+interface ExpMul {
 
-  interface ExpMulAlg<E, A> extends Exp.ExpAlg<Unit, E, A> {
-    A Mul(E e1, E e2);
+  interface ExpMulAlg<E, R> extends Exp.ExpAlg<E, R> {
+    R Mul(E e1, E e2);
   }
 
-  <A> A accept(ExpMulAlg<ExpMul<T>, A> alg);
+  <R> R accept(ExpMulAlg<ExpMul, R> alg);
 
-  static <T> ExpMul<T> fromExp(Exp exp) {
-    return Exps.cata(ExpMuls.<T>factory(), ExpMuls::lazy).apply(exp);
+  static Function<Exp, ExpMul> fromExp() {
+    ExpMulAlg<ExpMul, ExpMul> factory = ExpMuls.factory();
+    return Exps.cata(factory, ExpMuls::lazy);
   }
 }
