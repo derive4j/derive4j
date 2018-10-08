@@ -334,7 +334,7 @@ public abstract class Address {
   public abstract <R> R match(@FieldNames({"number", "street"}) 
   			      BiFunction<Integer, String, R> Address);
 }
-``` vgbu
+```
 ```java
 import org.derive4j.Data;
 
@@ -516,7 +516,7 @@ If the visitor for the new event type extend the old visitor interface then old 
 ## Extensible inductive data types via hylomorphisms
 
 Aka solving the expression problem via object-algebras used as visitor.
-For this, we need to slightly change the visitor of the above `Expression` so that a type variable is used instead of the self-reference:
+For this, we need to slightly change the visitor of the above `Expression` so that a type variable (`E`) is used instead of the self-reference:
 
 ```java
 @Data
@@ -530,9 +530,8 @@ interface Exp {
   <R> R accept(ExpAlg<Exp, R> alg);
 }
 ```
-
-When data types are defined is such a way, Derive4J generate (by default) an instance of the visitor/algebra that can serve as factory (aka. anamorphism).
-Using this factory as argument to compatible catamorphism (thus creating an hylomorphisms) we get conversion function from one ADT to another.
+When data types are defined is such a way (as a fix-point of the algebra), Derive4J generate (by default) an instance of the visitor/algebra that can serve as factory (aka. anamorphism).
+Using this factory as an argument to compatible catamorphism (thus creating a hylomorphism) we obtain a conversion function from one ADT to another.
 
 Eg. we can create a new data type that add a multiplication case to the above data type, and still be able to maximally reuse the existing code without modification:
 
@@ -556,7 +555,7 @@ interface ExpMul {
 To ensure smooth extensibility across compilation unit (or even during incremental compilation), it is best to **use the `-parameters` option of javac**.
 
 # But what exactly is generated?
-This is a very legitimate question. Here is the [```Expressions.java```](https://gist.github.com/jbgi/3904e696fb27a2e33ae1) file that is generated for the above ```@Data Expression``` class.
+This is a very legitimate question. Here is the [```ExpMuls.java```](https://gist.github.com/jbgi/31b891f00566feb301f8100762ee8511#file-expmuls-java) file that is generated for the above ```@Data ExpMul``` type.
 
 # Parametric polymorphism
 ... works as expected. For example, you can write the following:
