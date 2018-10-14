@@ -17,7 +17,7 @@ buildscript {
 
     dependencies {
         classpath "com.ofg:uptodate-gradle-plugin:1.6.3"
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.15"
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.19"
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2"
         classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
@@ -83,6 +83,7 @@ artifactoryPublish.skip = true
 subprojects {
 
     apply plugin: "net.ltgt.apt"
+    apply plugin: "net.ltgt.apt-idea"
 
     apply from: "$rootDir/lib.gradle"
     apply plugin: "java"
