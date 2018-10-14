@@ -90,7 +90,7 @@ public class CompileExamplesTest {
 
   @Test
   public void compile_extensible_algebras() {
-    checkCompileOf("algebras/Exp.java");
+    checkCompileOf("algebras/ObjectAlgebras.java");
   }
 
   private static void checkCompileOf(String... exampleFiles) {
