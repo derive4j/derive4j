@@ -65,7 +65,7 @@ public class CompileExamplesTest {
 
   @Test
   public void compile_InfiniteStream() {
-    checkCompileOf("InfiniteStream.java");
+    checkCompileOf("Stream.java");
   }
 
   @Test
