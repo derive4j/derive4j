@@ -11,7 +11,7 @@
 - [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
     - [Constructors](#constructors)  
     - [equals, hashCode, toString?](#equals-hashcode-tostring)  
-    - [Pattern matching syntax](#pattern-matching-syntax)
+    - [Pattern matching syntaxes](#pattern-matching-syntaxes)
     - [Accessors (getters)](#accessors-getters)
     - [Functional setters ('withers')](#functional-setters-withers)
     - [First class laziness](#first-class-laziness)
@@ -682,6 +682,7 @@ jb@giraudeau.info, [@jb9i](https://twitter.com/jb9i) or use the project GitHub i
 
 ## Further reading
 
+- [Encoding FP in Java](https://gracious-hypatia-aac58b.netlify.com/) (and links)
 - http://eng.wealthfront.com/2015/02/pattern-matching-in-java-with-visitor.html
 - https://en.wikipedia.org/wiki/Algebraic_data_type
 - https://en.wikipedia.org/wiki/Tagged_union
