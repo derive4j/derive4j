@@ -32,8 +32,11 @@ buildscript {
 allprojects {
 
     apply plugin: 'com.jfrog.artifactory'
-    apply plugin: "idea"
     apply plugin: 'jacoco'
+    apply plugin: 'idea'
+    apply plugin: "net.ltgt.apt"
+    apply plugin: "net.ltgt.apt-idea"
+
 
     defaultTasks "build"
 
@@ -82,13 +85,12 @@ artifactoryPublish.skip = true
 
 subprojects {
 
-    apply plugin: "net.ltgt.apt"
-    apply plugin: "net.ltgt.apt-idea"
-
     apply from: "$rootDir/lib.gradle"
     apply plugin: "java"
+    apply plugin: 'idea'
+    apply plugin: "net.ltgt.apt"
+    apply plugin: "net.ltgt.apt-idea"
     apply plugin: "eclipse"
-    apply plugin: "idea"
     apply plugin: "com.ofg.uptodate"
     apply plugin: "license"
     apply plugin: "com.jfrog.artifactory"
@@ -103,6 +105,7 @@ subprojects {
          endWithNewline()
      }
    }
+
 
     repositories {
         mavenLocal()
