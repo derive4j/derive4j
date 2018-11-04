@@ -178,7 +178,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Javaslang_(jdkSupplier)
         .Vavr_(jdkSupplier)
         .HighJ_(jdkSupplier)
-        .Guava_(guavaSupplier);
+        .Guava_(guavaSupplier)
+        .Cyclops_(jdkSupplier);
 
     SamInterface jdkFunction = samInterface(Function.class.getName()).get();
     SamInterface guavaFunction = lazySamInterface("com.google.common.base.Function");
@@ -191,7 +192,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Javaslang_(lazySamInterface("javaslang.Function1"))
         .Vavr_(lazySamInterface("io.vavr.Function1"))
         .HighJ_(lazySamInterface("org.highj.function.F1"))
-        .Guava_(guavaFunction);
+        .Guava_(guavaFunction)
+        .Cyclops_(lazySamInterface("cyclops.function.Function1"));
 
     optionModel = Flavours.cases()
         .Jdk_(lazyOptionModel(Optional.class.getName(), "empty", "of"))
@@ -201,7 +203,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Javaslang_(lazyOptionModel("javaslang.control.Option", "none", "some"))
         .Vavr_(lazyOptionModel("io.vavr.control.Option", "none", "some"))
         .HighJ_(lazyOptionModel("org.highj.data.Maybe", "Nothing", "Just"))
-        .Guava_(lazyOptionModel("com.google.common.base.Optional", "absent", "of"));
+        .Guava_(lazyOptionModel("com.google.common.base.Optional", "absent", "of"))
+        .Cyclops_(lazyOptionModel("cyclops.control.Option", "none", "some"));
 
     eitherModel = Flavours.cases()
         .Jdk_(Optional.<EitherModel>empty())
@@ -211,7 +214,8 @@ final class DeriveUtilsImpl implements DeriveUtils {
         .Javaslang_(eitherModel("javaslang.control.Either", "left", "right"))
         .Vavr_(eitherModel("io.vavr.control.Either", "left", "right"))
         .HighJ_(eitherModel("org.highj.data.Either", "Left", "Right"))
-        .Guava_(Optional.empty());
+        .Guava_(Optional.empty())
+        .Cyclops_(eitherModel("cyclops.control.Either", "left", "right"));
   }
 
   @Override

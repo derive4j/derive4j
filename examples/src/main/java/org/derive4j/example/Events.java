@@ -1,10 +1,10 @@
 package org.derive4j.example;
 
-import org.derive4j.Data;
+import org.derive4j.*;
 
 public class Events {
 
-  @Data
+  @Data(flavour = Flavour.Cyclops)
   interface EventV1 {
 
     interface Cases<R> {
@@ -16,7 +16,7 @@ public class Events {
     <R> R match(Cases<R> cases);
   }
 
-  @Data
+  @Data(flavour = Flavour.Cyclops)
   interface EventV2 {
 
     interface Cases<R> extends EventV1.Cases<R> { // extends V1 with:
