@@ -662,7 +662,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 <dependency>
   <groupId>org.derive4j</groupId>
   <artifactId>derive4j</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <optional>true</optional>
 </dependency>
 ```
@@ -670,12 +670,12 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
 
 ## Gradle
 ```
-compile(group: 'org.derive4j', name: 'derive4j', version: '1.0.0', ext: 'jar')
+compile(group: 'org.derive4j', name: 'derive4j', version: '1.1.0', ext: 'jar')
 ```
 or better using the [gradle-apt-plugin](https://github.com/tbroyer/gradle-apt-plugin):
 ```
-compileOnly "org.derive4j:derive4j-annotation:1.0.0"
-apt "org.derive4j:derive4j:1.0.0"
+compileOnly "org.derive4j:derive4j-annotation:1.1.0"
+apt "org.derive4j:derive4j:1.1.0"
 ```
 ## Contributing
 
