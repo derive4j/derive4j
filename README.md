@@ -244,7 +244,7 @@ In the example above, we have used the default ```JDK``` flavour. Also available
 ```Javaslang```/```Vavr``` ([Vavr](http://www.vavr.io/)),
 ```HighJ``` ([HighJ](https://github.com/DanielGronau/highj)),
 ```Guava``` and
-```Cyclops``` ([Cyclops-react](http://cyclops-react.io/) flavours.
+```Cyclops``` ([Cyclops-react](http://cyclops-react.io/)) flavours.
 When using those alternative flavours, Derive4J will use eg. the specific ```Option``` implementations from those projects instead of the jdk ```Optional``` class.
 
 ## Optics (functional lenses)
