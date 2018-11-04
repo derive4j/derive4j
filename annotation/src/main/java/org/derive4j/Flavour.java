@@ -83,6 +83,14 @@ public enum Flavour {
 
       return cases.Guava();
     }
+  },
+
+  Cyclops {
+    @Override
+    public <R> R match(Cases<R> cases) {
+
+      return cases.Cyclops();
+    }
   };
 
   public interface Cases<R> {
@@ -101,6 +109,8 @@ public enum Flavour {
     R HighJ();
 
     R Guava();
+
+    R Cyclops();
   }
 
   public abstract <R> R match(Cases<R> cases);
