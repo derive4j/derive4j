@@ -40,7 +40,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -81,7 +80,6 @@ import static org.derive4j.processor.api.model.DerivedInstanceConfigs.getImplSel
 import static org.derive4j.processor.api.model.DerivedInstanceConfigs.getTargetClass;
 
 @AutoService(Processor.class)
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("*")
 public final class DerivingProcessor extends AbstractProcessor {
 
@@ -94,6 +92,11 @@ public final class DerivingProcessor extends AbstractProcessor {
   private DeriveConfigBuilder                             deriveConfigBuilder;
   private List<Extension>                                 extensions;
   private Map<P2<ClassName, Optional<String>>, Derivator> derivators;
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
