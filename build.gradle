@@ -24,7 +24,7 @@ buildscript {
     }
 
     wrapper {
-        gradleVersion = "4.10.2"
+        gradleVersion = "5.4.1"
         distributionType = Wrapper.DistributionType.ALL
     }
 }
@@ -78,7 +78,7 @@ allprojects {
 
     version = d4jVersion
     group = "org.derive4j"
-
+    
 }
 
 artifactoryPublish.skip = true
@@ -87,25 +87,21 @@ subprojects {
 
     apply from: "$rootDir/lib.gradle"
     apply plugin: "java"
-    apply plugin: 'idea'
-    apply plugin: "net.ltgt.apt"
-    apply plugin: "net.ltgt.apt-idea"
     apply plugin: "eclipse"
     apply plugin: "com.ofg.uptodate"
     apply plugin: "license"
-    apply plugin: "com.jfrog.artifactory"
     apply plugin: "com.diffplug.gradle.spotless"
 
-   spotless {
-     java {
-         eclipse("4.7.2").configFile "$rootDir/etc/eclipse-format.xml"
-         indentWithSpaces(2)
-         trimTrailingWhitespace()
-         removeUnusedImports()
-         endWithNewline()
-     }
-   }
-
+    spotless {
+        java {
+            eclipse("4.7.2").configFile "$rootDir/etc/eclipse-format.xml"
+            indentWithSpaces(2)
+            trimTrailingWhitespace()
+            removeUnusedImports()
+            endWithNewline()
+        }
+    }
+    
 
     repositories {
         mavenLocal()
@@ -138,13 +134,13 @@ configure(subprojects) {
     sourceCompatibility = "1.8"
 
     task javadocJar(type: Jar, dependsOn: "javadoc") {
-        classifier = 'javadoc'
+        archiveClassifier = 'javadoc'
         from "build/docs/javadoc"
     }
 
     task sourcesJar(type: Jar) {
         from sourceSets.main.allSource
-        classifier = 'sources'
+        archiveClassifier = 'sources'
     }
 
     artifacts {
@@ -154,7 +150,7 @@ configure(subprojects) {
     }
 
     jar {
-        version project.d4jVersion
+        archiveVersion = project.d4jVersion
         manifest {
             name = 'Derive for Java'
             instruction 'Signature-Version', project.d4jVersion
@@ -191,8 +187,8 @@ task codeCoverageReport(type: JacocoReport) {
     executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
 
 
-    classDirectories = files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.output)
-    sourceDirectories = files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.allSource.srcDirs)
+    classDirectories.setFrom(files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.output))
+    sourceDirectories.setFrom(files(subprojects.findAll {subproject -> subproject.name != "examples"} .sourceSets.main.allSource.srcDirs))
 
     subprojects.each {
         sourceSets it.sourceSets.main
