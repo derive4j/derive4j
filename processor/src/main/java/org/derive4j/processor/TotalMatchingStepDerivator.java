@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Jean-Baptiste Giraudeau <jb@giraudeau.info>
+ * Copyright (c) 2019, Jean-Baptiste Giraudeau <jb@giraudeau.info>
  *
  * This file is part of "Derive4J - Annotation Processor".
  *
