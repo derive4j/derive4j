@@ -16,11 +16,10 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.ofg:uptodate-gradle-plugin:1.6.3"
-        classpath "net.ltgt.gradle:gradle-apt-plugin:0.19"
-        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.14.0"
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2"
-        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.10.0"
+        classpath "com.github.ben-manes:gradle-versions-plugin:0.21.0"
+        classpath "gradle.plugin.com.hierynomus.gradle.plugins:license-gradle-plugin:0.15.0"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.9.7"
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:3.23.1"
     }
 
     wrapper {
@@ -34,15 +33,13 @@ allprojects {
     apply plugin: 'com.jfrog.artifactory'
     apply plugin: 'jacoco'
     apply plugin: 'idea'
-    apply plugin: "net.ltgt.apt"
-    apply plugin: "net.ltgt.apt-idea"
 
 
     defaultTasks "build"
 
     ext {
         isSnapshot = true
-        d4jBaseVersion = "1.2.0"
+        d4jBaseVersion = "1.1.1"
 
         snapshotAppendix = "-SNAPSHOT"
         d4jVersion = d4jBaseVersion + (isSnapshot ? snapshotAppendix : "")
@@ -87,9 +84,8 @@ subprojects {
 
     apply from: "$rootDir/lib.gradle"
     apply plugin: "java"
-    apply plugin: "eclipse"
-    apply plugin: "com.ofg.uptodate"
-    apply plugin: "license"
+    apply plugin: "com.github.ben-manes.versions"
+    apply plugin: "com.github.hierynomus.license"
     apply plugin: "com.diffplug.gradle.spotless"
 
     spotless {
@@ -116,7 +112,7 @@ subprojects {
     }
 
     license {
-        header project.file('etc/HEADER.txt')
+        header file('etc/HEADER.txt')
         strictCheck true
         ignoreFailures true
         mapping {
@@ -129,7 +125,6 @@ subprojects {
 configure(subprojects) {
 
     apply plugin: "maven"
-    apply plugin: "osgi"
 
     sourceCompatibility = "1.8"
 
@@ -151,32 +146,7 @@ configure(subprojects) {
 
     jar {
         archiveVersion = project.d4jVersion
-        manifest {
-            name = 'Derive for Java'
-            instruction 'Signature-Version', project.d4jVersion
-            instruction 'Bundle-ActivationPolicy', 'lazy'
-            instruction 'Bundle-Vendor', 'derive4j.org'
-            if(project.name != "processor") {
-                instruction 'Require-Bundle', 'org.derive4j;bundle-version="'+project.d4jBaseVersion+'"'
-            }
-        }
     }
-
-    eclipse {
-        project {
-            natures 'org.eclipse.pde.PluginNature'
-            buildCommand 'org.eclipse.pde.ManifestBuilder'
-            buildCommand 'org.eclipse.pde.SchemaBuilder'
-        }
-    }
-
-    // Output MANIFEST.MF statically so eclipse can see it for plugin development
-    task eclipsePluginManifest(dependsOn: jar) doLast {
-        file("META-INF").mkdirs()
-        jar.manifest.writeTo(file("META-INF/MANIFEST.MF"))
-    }
-
-    eclipseProject.dependsOn eclipsePluginManifest
 
     artifactoryPublish {
         dependsOn sourcesJar, javadocJar
