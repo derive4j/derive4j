@@ -45,7 +45,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.TypeKindVisitor7;
+import javax.lang.model.util.TypeKindVisitor8;
 import org.derive4j.ArgOption;
 import org.derive4j.Make;
 import org.derive4j.processor.api.Derivator;
@@ -382,7 +382,7 @@ final class StrictConstructorDerivator implements Derivator {
   private static String equalityTest(DataArgument da) {
 
     String thisField = "this." + da.fieldName();
-    return da.type().accept(new TypeKindVisitor7<String, String>() {
+    return da.type().accept(new TypeKindVisitor8<String, String>() {
 
       @Override
       public String visitTypeVariable(TypeVariable t, String p) {
@@ -425,7 +425,7 @@ final class StrictConstructorDerivator implements Derivator {
 
   private static String hascode(DataArgument da) {
 
-    return da.type().accept(new TypeKindVisitor7<String, String>() {
+    return da.type().accept(new TypeKindVisitor8<String, String>() {
 
       @Override
       public String visitArray(final ArrayType t, final String p) {
@@ -491,7 +491,7 @@ final class StrictConstructorDerivator implements Derivator {
 
   private static String toString(DataArgument da) {
 
-    return da.type().accept(new TypeKindVisitor7<String, String>() {
+    return da.type().accept(new TypeKindVisitor8<String, String>() {
 
       @Override
       public String visitArray(final ArrayType t, final String p) {
