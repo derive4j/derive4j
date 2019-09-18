@@ -58,7 +58,7 @@ allprojects {
         dependencyJavaPoet = "com.squareup:javapoet:1.11.1"
         dependencyPreviousDerive4J = "org.derive4j:derive4j:1.1.0"
         dependencyJunit = "junit:junit:4.12"
-        dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc4"
+        dependencyAutoService = "com.google.auto.service:auto-service:1.0-rc5"
 
         gplLicenseName = "The GNU General Public License"
         lgplLicenseName = "The GNU Lesser General Public License"
@@ -75,7 +75,7 @@ allprojects {
 
     version = d4jVersion
     group = "org.derive4j"
-    
+
 }
 
 artifactoryPublish.skip = true
@@ -97,7 +97,7 @@ subprojects {
             endWithNewline()
         }
     }
-    
+
 
     repositories {
         mavenLocal()

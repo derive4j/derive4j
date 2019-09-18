@@ -19,6 +19,7 @@
 package org.derive4j.processor;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -104,7 +105,10 @@ public final class DerivingProcessor extends AbstractProcessor {
 
     deriveConfigBuilder = new DeriveConfigBuilder(processingEnv.getElementUtils());
 
-    deriveUtils = new DeriveUtilsImpl(processingEnv.getElementUtils(), processingEnv.getTypeUtils(),
+    deriveUtils = new DeriveUtilsImpl(
+        processingEnv.getElementUtils(),
+        processingEnv.getTypeUtils(),
+        processingEnv.getSourceVersion(),
         deriveConfigBuilder);
     builtinDerivator = BuiltinDerivator.derivator(deriveUtils);
     adtParser = new AdtParser(deriveUtils);
@@ -222,6 +226,11 @@ public final class DerivingProcessor extends AbstractProcessor {
         .addTypes(getClasses(codeSpec))
         .addFields(getFields(codeSpec))
         .addMethods(getMethods(codeSpec));
+
+    deriveUtils.generatedAnnotation()
+        .ifPresent(annotation -> builder.addAnnotation(AnnotationSpec.builder(ClassName.get(annotation))
+            .addMember("value", "$S", getClass().getCanonicalName())
+            .build()));
 
     deriveConfig.targetClass().extend().ifPresent(cn -> {
       if (deriveUtils.findTypeElement(cn).get().getKind().isInterface()) {

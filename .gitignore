@@ -1,12 +1,13 @@
 target
 out
 lib_managed
-*.iws
 .deps
 .idea
 .gradle
 build
 *.iml
+*.ipr
+*.iws
 .settings
 .classpath
 .project
