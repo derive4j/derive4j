@@ -538,7 +538,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
                             .add(asTypeArguments(method.getTypeParameters()
                                 .stream()
                                 .map(tpe -> asTypeVariable.visit(tpe.asType()).get())
-                                .map(typeArgs::get)))
+                                .map(key -> typeArgs.get(key)))) // crash du compilo si method ref (bug openjdk ?)
                             .add("$L(", method.getSimpleName())
                             .add(cb)
                             .add(")")
