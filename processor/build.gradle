@@ -6,7 +6,7 @@ dependencies {
   compile project(":annotation")
   compile project(":processor-api")
   compile dependencyJavaPoet
-  compileOnly dependencyAutoService
+  compile dependencyAutoService
   annotationProcessor dependencyAutoService
   annotationProcessor dependencyPreviousDerive4J
   testCompile dependencyJunit

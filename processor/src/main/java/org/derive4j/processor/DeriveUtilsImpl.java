@@ -18,6 +18,7 @@
  */
 package org.derive4j.processor;
 
+import com.google.auto.common.GeneratedAnnotations;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -42,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -145,6 +147,7 @@ final class DeriveUtilsImpl implements DeriveUtils {
 
   private final Elements            Elements;
   private final Types               Types;
+  private final SourceVersion       SourceVersion;
   private final DeriveConfigBuilder deriveConfigBuilder;
   private final ObjectModel         objectModel;
 
@@ -153,10 +156,12 @@ final class DeriveUtilsImpl implements DeriveUtils {
   private final Function<Flavour, OptionModel>           optionModel;
   private final Function<Flavour, Optional<EitherModel>> eitherModel;
 
-  DeriveUtilsImpl(Elements Elements, Types Types, DeriveConfigBuilder deriveConfigBuilder) {
+  DeriveUtilsImpl(
+      Elements Elements, Types Types, SourceVersion SourceVersion, DeriveConfigBuilder deriveConfigBuilder) {
 
     this.Elements = Elements;
     this.Types = Types;
+    this.SourceVersion = SourceVersion;
     this.deriveConfigBuilder = deriveConfigBuilder;
 
     TypeElement object = Elements.getTypeElement(Object.class.getName());
@@ -381,6 +386,10 @@ final class DeriveUtilsImpl implements DeriveUtils {
   @Override
   public Optional<TypeElement> asTypeElement(TypeMirror typeMirror) {
     return asDeclaredType(typeMirror).map(DeclaredType::asElement).flatMap(asTypeElement::visit);
+  }
+
+  public Optional<TypeElement> generatedAnnotation() {
+    return GeneratedAnnotations.generatedAnnotation(Elements, SourceVersion);
   }
 
   @Override
