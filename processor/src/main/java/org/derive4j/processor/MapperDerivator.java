@@ -26,6 +26,8 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -138,7 +140,11 @@ class MapperDerivator implements Derivator {
     Map<TypeVariable, TypeMirror> visitorTypeVarSubstitutions = zip(dc.deconstructor().methodType().getParameterTypes(),
         dc.deconstructor().visitorMethodType().getParameterTypes())
             .stream()
-            .flatMap(p -> deriveUtils.unify(p._2(), p._1()).get().entrySet().stream())
+            .flatMap(p -> deriveUtils
+                .unify(p._2(), p._1())
+                .orElseGet(Collections::emptyMap)
+                .entrySet()
+                .stream())
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
                 Map.Entry::getValue,

@@ -23,12 +23,8 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
 
-import javax.lang.model.SourceVersion;
 import javax.tools.*;
-import java.io.*;
-import java.lang.module.ResolvedModule;
 import java.net.MalformedURLException;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -106,14 +102,13 @@ public class CompileExamplesTest {
 
   private static void checkCompileOf(String... exampleFiles) {
     final Compilation compilation = Compiler
-        .compiler(new ModulePathCompiler())
+        .compiler(new ModulePathCompiler(CompileExamplesTest.class))
         .withOptions("--release", "9")
         .withProcessors(new DerivingProcessor())
         .compile(Stream
-            .concat(Stream.of(getJavaFileObject(Paths.get("../examples/src/main/java/module-info.java")))
-                , Arrays
-                    .stream(exampleFiles)
-                    .map(file -> getJavaFileObject(Paths.get("../examples/src/main/java/org/derive4j/example/" + file))))
+            .concat(Stream.of(getJavaFileObject(Paths.get("../examples/src/main/java/module-info.java"))), Arrays
+                .stream(exampleFiles)
+                .map(file -> getJavaFileObject(Paths.get("../examples/src/main/java/org/derive4j/example/" + file))))
             .collect(Collectors.toList()));
 
     assertThat(compilation).succeeded();
@@ -127,59 +122,4 @@ public class CompileExamplesTest {
     }
   }
 
-}
-
-final class ModulePathCompiler implements JavaCompiler {
-  private final JavaCompiler compiler;
-  private final List<File> modulesFiles;
-
-  ModulePathCompiler() {
-    this.compiler = ToolProvider.getSystemJavaCompiler();
-
-    final Module module = CompileExamplesTest.class.getModule();
-    final Set<ResolvedModule> modules = module.getLayer().configuration().modules();
-    this.modulesFiles = modules
-        .stream()
-        .map(rm -> rm.reference().location())
-        .filter(Optional::isPresent)
-        .filter(ouri -> ouri.get().getScheme().startsWith("file"))
-        .map(ouri -> {
-          final String path = Paths.get(ouri.get()).toString();
-          return new File(path);
-        })
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public CompilationTask getTask(Writer writer, JavaFileManager javaFileManager, DiagnosticListener<? super JavaFileObject> diagnosticListener, Iterable<String> iterable, Iterable<String> iterable1, Iterable<? extends JavaFileObject> iterable2) {
-    return compiler.getTask(writer, javaFileManager, diagnosticListener, iterable, iterable1, iterable2);
-  }
-
-  @Override
-  public StandardJavaFileManager getStandardFileManager(DiagnosticListener<? super JavaFileObject> diagnosticListener, Locale locale, Charset charset) {
-    final StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticListener, locale, charset);
-
-    try {
-      fileManager.setLocation(StandardLocation.MODULE_PATH, modulesFiles);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return fileManager;
-  }
-
-  @Override
-  public int isSupportedOption(String s) {
-    return compiler.isSupportedOption(s);
-  }
-
-  @Override
-  public int run(InputStream inputStream, OutputStream outputStream, OutputStream outputStream1, String... strings) {
-    return compiler.run(inputStream, outputStream, outputStream1, strings);
-  }
-
-  @Override
-  public Set<SourceVersion> getSourceVersions() {
-    return compiler.getSourceVersions();
-  }
 }

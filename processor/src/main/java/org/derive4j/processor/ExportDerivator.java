@@ -74,7 +74,7 @@ final class ExportDerivator implements Derivator {
   private DerivedCodeSpec exportAsPublic(ExecutableElement executableElement) {
     MethodSpec.Builder methodBuilder = replicate(executableElement).addModifiers(Modifier.PUBLIC);
 
-    TypeName className = ClassName.get(executableElement.getEnclosingElement().asType());
+    TypeName className = ClassName.get((TypeElement) executableElement.getEnclosingElement());
     String methodName = executableElement.getSimpleName().toString();
     String parameters = executableElement.getParameters().stream().map(ve -> ve.getSimpleName().toString()).collect(
         Collectors.joining(", "));
@@ -108,7 +108,7 @@ final class ExportDerivator implements Derivator {
               .addStatement("return _$L", methodName)
               .build());
     } else {
-      result = methodSpec(replicate(executableElement).addModifiers(Modifier.PUBLIC)
+      result = methodSpec(methodBuilder
           .addStatement("return $L.$L($L)", className, methodName, parameters)
           .build());
     }

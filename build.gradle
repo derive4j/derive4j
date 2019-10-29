@@ -92,6 +92,7 @@ subprojects {
     spotless {
         java {
             eclipse("4.7.2").configFile "$rootDir/etc/eclipse-format.xml"
+            targetExclude fileTree("$buildDir/generated") { include("**/*.java") }
             indentWithSpaces(2)
             trimTrailingWhitespace()
             removeUnusedImports()
@@ -126,7 +127,7 @@ configure(subprojects) {
 
     apply plugin: "maven"
 
-    sourceCompatibility = "1.9"
+    sourceCompatibility = JavaVersion.VERSION_1_9
 
     sourceSets {
         generated {

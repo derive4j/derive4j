@@ -6,17 +6,27 @@ dependencies {
   compileOnly project(":annotation")
   annotationProcessor project(":processor")
   annotationProcessor project(":processor-api")
-  annotationProcessor "org.derive4j:derive4j-fj:0.2"
+  annotationProcessor "org.derive4j:derive4j-fj:0.3-SNAPSHOT"
   compileOnly "com.google.auto.value:auto-value-annotations:1.6.2"
   annotationProcessor "com.google.auto.value:auto-value:1.6.2"
-  compile "org.functionaljava:functionaljava_1.8:4.8.1"
+  compile 'org.functionaljava:functionaljava_1.8:4.9-SNAPSHOT'
   compile 'io.atlassian.fugue:fugue:4.7.2'
   compile 'com.atlassian.fugue:fugue:2.7.0'
   compile 'com.google.guava:guava:26.0-jre'
   compile 'io.vavr:vavr:0.9.2'
-  compile "org.derive4j.hkt:hkt:0.9.2"
+  compile "org.derive4j.hkt:hkt:0.10.0-SNAPSHOT"
   compile group: 'com.oath.cyclops', name: 'cyclops', version: '10.0.2'
+
+  testCompile project(":annotation")
   testCompile dependencyJunit
+}
+
+task compileOne(type: JavaCompile) {
+  source = sourceSets.main.java.srcDirs
+  include 'org/derive4j/example/Exists.java'
+  classpath = compileJava.classpath
+  destinationDir = compileJava.destinationDir
+  options.annotationProcessorPath = compileJava.options.annotationProcessorPath
 }
 
 configureUpload(bsd3LicenseName)

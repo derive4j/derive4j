@@ -20,29 +20,34 @@ package org.derive4j.processor;
 
 import com.google.common.collect.Sets;
 import com.google.common.truth.Truth;
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
-import java.util.List;
-import java.util.Set;
+import org.junit.Test;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
-import org.junit.Test;
+import java.net.MalformedURLException;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.CompilationSubject.assertThat;
 
 public class DeriveUtilsImplTest {
 
   @Test
-  public void allAbstractMethods_should_return_abstract_override() {
-
-    Truth.assert_()
-        .about(javaSource())
-        .that(JavaFileObjects.forSourceString("org.derive4j.processor.TestF",
-            "public abstract class TestF<A,B> implements com.google.common.base.Function<A,B>, java.util.function.Function<A,B> {}"))
-        .processedWith(new AbstractProcessor() {
+  public void allAbstractMethods_should_return_abstract_override() throws MalformedURLException {
+    final Compilation compilation = Compiler
+        .compiler(new ModulePathCompiler(DeriveUtilsImplTest.class))
+        .withOptions("--release", "9")
+        .withProcessors(new AbstractProcessor() {
           @Override
           public Set<String> getSupportedAnnotationTypes() {
 
@@ -65,7 +70,13 @@ public class DeriveUtilsImplTest {
             return false;
           }
         })
-        .compilesWithoutError();
+        .compile(Stream
+            .of(JavaFileObjects.forResource(Paths.get("../examples/src/main/java/module-info.java").toUri().toURL()),
+                JavaFileObjects.forSourceString("org.derive4j.processor.TestF",
+                    "public abstract class TestF<A,B> implements com.google.common.base.Function<A,B>, java.util.function.Function<A,B> {}"))
+            .collect(Collectors.toList()));
+
+    assertThat(compilation).succeeded();
   }
 
 }
