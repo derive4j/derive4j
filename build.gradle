@@ -129,14 +129,8 @@ configure(subprojects) {
 
     sourceCompatibility = JavaVersion.VERSION_1_9
 
-    sourceSets {
-        generated {
-            java.srcDir "$buildDir/generated/sources/annotationProcessor/java/main"
-        }
-    }
-
     task customJavadoc(type: Javadoc) {
-        source = sourceSets.main.java + sourceSets.generated.java
+        source = sourceSets.main.java + "$buildDir/generated/sources/annotationProcessor/java/main"
         classpath = sourceSets.main.compileClasspath
         doFirst {
             options.addStringOption('-module-path', classpath.asPath)
