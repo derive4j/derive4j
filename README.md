@@ -9,8 +9,8 @@
 
 ## Table of contents
 - [Example: a 'Visitor' for HTTP Request](#example-a-visitor-for-http-request)
-    - [Constructors](#constructors)  
-    - [equals, hashCode, toString?](#equals-hashcode-tostring)  
+    - [Constructors](#constructors)
+    - [equals, hashCode, toString?](#equals-hashcode-tostring)
     - [Pattern matching syntaxes](#pattern-matching-syntaxes)
     - [Accessors (getters)](#accessors-getters)
     - [Functional setters ('withers')](#functional-setters-withers)
@@ -107,7 +107,7 @@ But thanks to the ```@Data``` annotation, Derive4j will do that for you! That is
   public static Request PUT(String path, String body) {...}
   public static Request POST(String path, String body) {...}
 ```
-You can also ask Derive4J to generate null checks with: 
+You can also ask Derive4J to generate null checks with:
 ```java
 @Data(arguments = ArgOption.checkedNotNull)
 ```
@@ -128,7 +128,7 @@ The project [Derive4J for Functional Java](https://github.com/derive4j/derive4j-
 ## Pattern matching syntaxes
 Now let's say that you want a function that returns the body size of a ```Request```. Without Derive4J you would write something like:
 ```java
-  static final Function<Request, Integer> getBodySize = request -> 
+  static final Function<Request, Integer> getBodySize = request ->
       request.match(new Cases<Integer>() {
         public Integer GET(String path) {
           return 0;
@@ -236,7 +236,7 @@ Languages like Haskell provide laziness by default, which simplifies a lot of al
     ...
   }
 ```
-Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)). 
+Have a look at [List](https://github.com/derive4j/derive4j/blob/master/examples/src/main/java/org/derive4j/example/List.java) for how to implement a lazy cons list in Java using Derive4J (you may also want to see the associated [generated code](https://gist.github.com/jbgi/43c1bd0ab67e3f4b9634)).
 
 ## Flavours
 In the example above, we have used the default ```JDK``` flavour. Also available are ```FJ``` ([Functional Java](https://github.com/functionaljava/)),
@@ -337,7 +337,7 @@ import java.util.function.BiFunction;
 
 @Data
 public abstract class Address {
-  public abstract <R> R match(@FieldNames({"number", "street"}) 
+  public abstract <R> R match(@FieldNames({"number", "street"})
   			      BiFunction<Integer, String, R> Address);
 }
 ```
@@ -386,7 +386,7 @@ import static org.derive4j.example.Persons.modContact;
     Function<Person, Person> incrementStreetNumber = modContact(
     						       modPostalAddress(
     						         modNumber(number -> number + 1)));
-    
+
     // correctedJoe is a copy of joe with the street number incremented:
     Person correctedJoe = incrementStreetNumber.apply(joe);
 
@@ -414,7 +414,7 @@ public abstract class Expression {
 		R Mult(Expression left, Expression right);
 		R Neg(Expression expr);
 	}
-	
+
 	public abstract <R> R match(Cases<R> cases);
 
 	private static Function<Expression, Integer> eval = Expressions
@@ -664,6 +664,7 @@ Derive4J should be declared as a compile-time only dependency (not needed at run
   <artifactId>derive4j</artifactId>
   <version>1.1.1</version>
   <optional>true</optional>
+  <scope>provided</scope>
 </dependency>
 ```
 [search.maven]: http://search.maven.org/#search|ga|1|org.derive4j.derive4j
