@@ -217,12 +217,13 @@ final class DeriveConfigBuilder {
   }
 
   private Stream<Function<DeriveConfig, DeriveConfig>> deriveConfigs(TypeElement typeElement, Element element,
-      HashSet<AnnotationMirror> seenAnnotations) {
-    return element.getAnnotationMirrors().stream().sequential().filter(a -> !seenAnnotations.contains(a)).flatMap(a -> {
-      seenAnnotations.add(a);
-      return concat(deriveConfigs(typeElement, a.getAnnotationType().asElement(), seenAnnotations),
-          annotationConfig(typeElement, a));
-    });
+      HashSet<Map<? extends ExecutableElement, ? extends AnnotationValue>> seenAnnotations) {
+    return element.getAnnotationMirrors().getElementValues().stream().sequential().filter(
+            a -> !seenAnnotations.contains(a)).flatMap(a -> {
+              seenAnnotations.add(a);
+              return concat(deriveConfigs(typeElement, a.getAnnotationType().asElement(), seenAnnotations),
+                  annotationConfig(typeElement, a));
+            });
   }
 
   private Function<DeriveConfig, DeriveConfig> deriveConfig(TypeElement typeElement,
