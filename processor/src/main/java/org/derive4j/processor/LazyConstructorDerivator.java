@@ -102,7 +102,7 @@ final class LazyConstructorDerivator implements Derivator {
                 .addStatement("break")
                 .endControlFlow()
                 .beginControlFlow("else")
-                .addStatement("$T eval = expr.$L", typeName, f0.sam())
+                .addStatement("$T eval = expr.$N()", typeName, f0.sam().getSimpleName())
                 .beginControlFlow("if (eval instanceof $T)", className)
                 .addStatement("lazy = ($T) eval", lazyTypeName)
                 .endControlFlow()
