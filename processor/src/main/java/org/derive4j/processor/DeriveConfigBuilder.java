@@ -19,10 +19,10 @@
 package org.derive4j.processor;
 
 import com.squareup.javapoet.ClassName;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -191,7 +191,7 @@ final class DeriveConfigBuilder {
   }
 
   Optional<P2<TypeElement, DeriveConfig>> findDeriveConfig(TypeElement typeElement) {
-    return deriveConfigs(typeElement, typeElement, new HashSet<>()).reduce(Function::andThen)
+    return deriveConfigs(typeElement, typeElement, new ArrayList<>()).reduce(Function::andThen)
         .map(customConfig -> P2s.P2(typeElement, customConfig.apply(defaultConfig(typeElement))));
   }
 
@@ -217,7 +217,7 @@ final class DeriveConfigBuilder {
   }
 
   private Stream<Function<DeriveConfig, DeriveConfig>> deriveConfigs(TypeElement typeElement, Element element,
-      HashSet<AnnotationMirror> seenAnnotations) {
+      List<AnnotationMirror> seenAnnotations) {
     return element.getAnnotationMirrors().stream().sequential().filter(a -> !seenAnnotations.contains(a)).flatMap(a -> {
       seenAnnotations.add(a);
       return concat(deriveConfigs(typeElement, a.getAnnotationType().asElement(), seenAnnotations),
